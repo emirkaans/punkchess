@@ -161,6 +161,9 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const { settings, players, timeline, setup } = session;
   const { variant, game, atEnd, outcome, turn, toMove, vsBot, watching, humanColor, timed } = view;
   const now = () => Date.now();
+  // Against the computer, a signed-in player plays under their username (and their spray tag goes with it).
+  const playerName = (p: (typeof players)['w']) =>
+    vsBot && p.kind === 'human' && account.user ? account.user.username : botName(p, t);
   // Arrow keys step through a game on this device (not one against a bot, which cannot be browsed).
   useStepKeys(
     page === 'game' && !vsBot && !newGame
@@ -183,8 +186,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
     states: timeline.states,
     subtitle: gameLabel,
     meta: {
-      white: botName(players.w, t),
-      black: botName(players.b, t),
+      white: playerName(players.w),
+      black: playerName(players.b),
       result: view.finalOutcome ? resultCode(view.finalOutcome) : '*',
     },
     gameId: session.gameId,
@@ -467,7 +470,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const timeControl = TIME_CONTROLS.find((tc) => tc.id === settings.timeControl);
   const gameLabel = [
     texts.name,
-    settings.mode === 'hotseat' ? t('mode.hotseatShort') : `${botName(players.w, t)} – ${botName(players.b, t)}`,
+    settings.mode === 'hotseat' ? t('mode.hotseatShort') : `${playerName(players.w)} – ${playerName(players.b)}`,
     timeControl && timed ? timeControl.label : null,
   ]
     .filter(Boolean)
@@ -643,6 +646,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   variant={variant}
                   color={top}
                   player={players[top]}
+                  label={playerName(players[top])}
                   position={game.position}
                   active={!outcome && !setup && turn === top}
                   clock={timed ? session.clock : null}
@@ -652,6 +656,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   variant={variant}
                   color={bottom}
                   player={players[bottom]}
+                  label={playerName(players[bottom])}
                   position={game.position}
                   active={!outcome && !setup && turn === bottom}
                   clock={timed ? session.clock : null}
@@ -859,8 +864,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                 cursor={timeline.cursor}
                 gameId={session.gameId}
                 meta={{
-                  white: botName(players.w, t),
-                  black: botName(players.b, t),
+                  white: playerName(players.w),
+                  black: playerName(players.b),
                   result: view.finalOutcome ? resultCode(view.finalOutcome) : '*',
                 }}
                 onOpenAnalysis={() => openAnalysis(variant.id, timeline.states, timeline.cursor)}
