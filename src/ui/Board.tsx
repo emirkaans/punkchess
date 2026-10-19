@@ -68,9 +68,12 @@ interface Drag {
   touch: boolean;
 }
 
-/** On touch screens the dragged piece is this much larger than a square and sits this far above the finger. */
-const TOUCH_SCALE = 1.6;
-const TOUCH_LIFT = 0.55;
+/**
+ * On touch screens the dragged piece is this much larger than a square and its
+ * middle sits this far (in squares) above the finger, so the finger never hides it.
+ */
+const TOUCH_SCALE = 1.8;
+const TOUCH_LIFT = 1.05;
 
 /** Right-button drag in progress: from where, to where now, in which colour. */
 interface Drawing {
@@ -134,6 +137,10 @@ export function Board({
     o.style.display = inside ? 'block' : 'none';
     o.style.left = `${col * 12.5}%`;
     o.style.top = `${row * 12.5}%`;
+    // Where the piece may land shows bright; elsewhere a faint ring, so the drop is clear before lifting the finger.
+    const under = flipped ? makeSquare(7 - col, row) : makeSquare(col, 7 - row);
+    o.classList.toggle('legal', inside && under !== d.from && dropsRef.current.has(under));
+    o.classList.toggle('touch', d.touch);
   };
   useLayoutEffect(placeGhost);
   const [shapes, setShapes] = useState<{ arrows: Arrow[]; circles: Circle[] }>({ arrows: [], circles: [] });
@@ -169,6 +176,9 @@ export function Board({
     () => (selected === null || !premoving ? [] : premoveTargets(variant, position, selected)),
     [variant, position, selected, premoving],
   );
+  // The squares the dragged piece may land on (read while dragging, without a render).
+  const dropsRef = useRef<Set<Square>>(new Set());
+  dropsRef.current = new Set([...targets.map((m) => m.to), ...premoveDests]);
 
   const checkSquares = useMemo(
     () => (isInCheck(variant, position) ? royalSquares(variant, position, position.turn) : []),
