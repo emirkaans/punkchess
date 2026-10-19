@@ -164,3 +164,27 @@ describe('spray tags', () => {
     expect(seeded('AdaPunk')()).toBe(seeded('AdaPunk')());
   });
 });
+
+describe('gang wars', () => {
+  it('adds up each side over its boards', async () => {
+    const { warScore } = await import('../src/online/tournament.ts');
+    const war = {
+      warId: 'w',
+      pairs: [
+        ['a1', 'b1'],
+        ['b2', 'a2'],
+      ] as const,
+      players: [
+        { id: 'a1', username: 'A1', side: 'c' as const },
+        { id: 'a2', username: 'A2', side: 'c' as const },
+        { id: 'b1', username: 'B1', side: 'd' as const },
+        { id: 'b2', username: 'B2', side: 'd' as const },
+      ],
+      tags: { c: 'AA', d: 'BB' },
+    };
+    expect(warScore(war, { a1: { score: 1 }, a2: { score: 0.5 }, b1: { score: 0 }, b2: { score: 0.5 } })).toEqual({
+      c: 1.5,
+      d: 0.5,
+    });
+  });
+});

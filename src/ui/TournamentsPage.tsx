@@ -11,6 +11,7 @@ import {
   tournamentNameProblem,
 } from '../online/tournament.ts';
 import type { TournamentFormat, TournamentList, TournamentSummary, TournamentView } from '../online/tournament.ts';
+import { warScore } from '../online/tournament.ts';
 import { useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
 import { useTournament } from './online/tournamentConnection.ts';
@@ -57,7 +58,11 @@ function Rules({ format }: { format: TournamentFormat }) {
   return (
     <p className="tz-rule">
       <strong className={`tz-format ${format}`}>{t(`tournament.format.${format}`)}</strong>
-      <span>{t(format === 'swiss' ? 'tournament.swissRules' : 'tournament.rules')}</span>
+      <span>
+        {t(
+          format === 'swiss' ? 'tournament.swissRules' : format === 'war' ? 'tournament.warRules' : 'tournament.rules',
+        )}
+      </span>
     </p>
   );
 }
@@ -357,6 +362,12 @@ function TournamentRoom({
   }
   const me = v.standings.find((p) => p.userId === v.you) ?? null;
   const swiss = v.format === 'swiss';
+  // A gang war: the two gangs' points so far, and which gang each player plays for.
+  const war = v.war ? warScore(v.war, Object.fromEntries(v.standings.map((p) => [p.userId, p]))) : null;
+  const sideTag = (id: string) => {
+    const side = v.war?.players.find((p) => p.id === id)?.side;
+    return side ? v.war!.tags[side] : null;
+  };
   // The top three once they have points: patches on the jacket, the winner's in the middle.
   const podium = v.standings.filter((p) => p.score > 0).slice(0, 3);
 
@@ -411,7 +422,12 @@ function TournamentRoom({
       </header>
 
       <div className="tz-bar">
-        {v.status !== 'finished' && account.user && (
+        {v.war && me?.game && (
+          <button className="tz-pill primary" onClick={() => onOpenGame(me.game!)}>
+            {t('tournament.backToGame')}
+          </button>
+        )}
+        {!v.war && v.status !== 'finished' && account.user && (
           <>
             {!me || me.paused ? (
               <button className="tz-pill primary" onClick={link.join} disabled={link.status !== 'open'}>
@@ -441,7 +457,7 @@ function TournamentRoom({
             ) : null}
           </>
         )}
-        {v.status !== 'finished' && !account.user && !account.loading && (
+        {!v.war && v.status !== 'finished' && !account.user && !account.loading && (
           <span className="muted">{t('tournament.signIn')}</span>
         )}
         <button
@@ -455,7 +471,16 @@ function TournamentRoom({
       </div>
       {link.error && <p className="error">{t(`tournament.error.${link.error}`)}</p>}
 
-      {podium.length > 0 && (
+      {v.war && war && (
+        <div className={`tz-war${v.status === 'finished' ? ' over' : ''}`} aria-label={t('gang.war.title')}>
+          <span className={war.c > war.d ? 'lead' : ''}>[{v.war.tags.c}]</span>
+          <strong>
+            {scoreText(war.c)} – {scoreText(war.d)}
+          </strong>
+          <span className={war.d > war.c ? 'lead' : ''}>[{v.war.tags.d}]</span>
+        </div>
+      )}
+      {!v.war && podium.length > 0 && (
         <ol className="tz-podium" aria-label={t('tournament.podium')}>
           {podium.map((p, i) => (
             <li key={p.userId} className={`tz-patch place-${i + 1}`}>
@@ -482,6 +507,7 @@ function TournamentRoom({
           >
             <span className="tz-place">{i + 1}</span>
             <span className="tz-player">
+              {sideTag(p.userId) && <span className="tz-side">[{sideTag(p.userId)}]</span>}
               <ProfileLink username={p.username}>{p.username}</ProfileLink>
               {p.fire && (
                 <span className="tz-fire" title={t('tournament.onFire')}>

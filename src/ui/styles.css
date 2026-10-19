@@ -6673,3 +6673,132 @@ a:focus-visible {
   height: 64px;
   flex: none;
 }
+
+/* Gang wars: on a gang's page, and the war's own page (a tournament page). */
+.gang-wars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gang-wars-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+.gang-wars-head h2 {
+  margin: 0;
+}
+.gang-wars-rule {
+  margin: 0;
+  font-size: 13px;
+}
+.gang-war-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 2px dashed var(--pink);
+  border-radius: 10px;
+}
+.gang-war-tcs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gang-war-tcs .chip {
+  min-height: 36px;
+  padding: 0 12px;
+}
+.gang-war-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gang-war {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--panel);
+  border: 2px dashed var(--border);
+}
+.gang-war.live {
+  border-color: var(--lime);
+}
+.gang-war.pending {
+  border-color: var(--pink);
+}
+.gang-war.declined,
+.gang-war.cancelled,
+.gang-war.expired {
+  opacity: 0.6;
+}
+.gang-war-score {
+  margin: 0 8px;
+  font: 400 22px/1 var(--display);
+  color: var(--lime);
+  font-variant-numeric: tabular-nums;
+}
+.gang-war-state {
+  font-size: 13px;
+  color: var(--muted);
+}
+.gang-war-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.gang-war-actions button {
+  min-height: 36px;
+  padding: 0 12px;
+}
+.gang-war-actions a {
+  color: var(--lime);
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .gang-war {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.tz-war {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #1b1b1f;
+  border: 2px dashed var(--pink);
+  font: 400 34px/1 var(--display);
+  letter-spacing: 0.03em;
+}
+.tz-war strong {
+  font-size: 54px;
+  color: var(--lime);
+  font-variant-numeric: tabular-nums;
+}
+.tz-war .lead {
+  color: var(--pink);
+}
+.tz-format.war {
+  background: var(--fg);
+}
+.tz-side {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--panel-2);
+  font:
+    700 12px/1.6 'Space Mono',
+    monospace;
+  color: var(--muted);
+}

@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { GANG_POINTS, GANG_SIZE, GANG_WEEK_DAYS, cleanTag, gangProblem } from '../online/gang.ts';
-import type { GangDetail, GangList, GangSummary } from '../online/gang.ts';
+import type { GangDetail, GangList, GangSummary, GangWar } from '../online/gang.ts';
+import { TOURNAMENT_TIME_CONTROLS } from '../online/tournament.ts';
+import { timeControl } from '../clock/clock.ts';
+import { scoreText } from './TournamentsPage.tsx';
 import type { MessageKey } from '../i18n/index.ts';
 import { useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
@@ -167,6 +170,7 @@ function GangView({ tag, onOpen }: { tag: string; onOpen: (path: string) => void
   const account = useAccount();
   const [gang, setGang] = useState<GangDetail | null | 'missing'>(null);
   const [mine, setMine] = useState<string | null>(null);
+  const [me, setMe] = useState<GangList | null>(null);
   const [error, setError] = useState<MessageKey | null>(null);
   const [reload, setReload] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -181,6 +185,7 @@ function GangView({ tag, onOpen }: { tag: string; onOpen: (path: string) => void
         if (!live) return;
         setGang(g ?? 'missing');
         setMine(list.mine);
+        setMe(list);
       })
       .catch(() => live && setGang('missing'));
     return () => {
@@ -285,6 +290,147 @@ function GangView({ tag, onOpen }: { tag: string; onOpen: (path: string) => void
           </li>
         ))}
       </ol>
+      <GangWars gang={gang} me={account.user ? me : null} onChange={() => setReload((n) => n + 1)} onOpen={onOpen} />
     </main>
+  );
+}
+
+/**
+ * A gang's wars: its record, a challenge from the viewer's gang (its founder,
+ * both gangs full), and the latest wars with what can be done about them.
+ */
+function GangWars({
+  gang,
+  me,
+  onChange,
+  onOpen,
+}: {
+  gang: GangDetail;
+  me: GangList | null;
+  onChange: () => void;
+  onOpen: (path: string) => void;
+}) {
+  const { t } = useI18n();
+  const [tc, setTc] = useState('5+0');
+  const [problem, setProblem] = useState<MessageKey | null>(null);
+  const [busy, setBusy] = useState(false);
+  const canChallenge = !!me?.mine && me.mine !== gang.tag && me.mineOwner && me.mineActive && gang.active;
+  const fail = async (res: Response | null) => {
+    const code = ((await res?.json().catch(() => null)) as { error?: string } | null)?.error;
+    setProblem(
+      code === 'busy'
+        ? 'gang.war.busy'
+        : code === 'not-active'
+          ? 'gang.war.notActive'
+          : code === 'not-founder'
+            ? 'gang.war.notFounder'
+            : code === 'over'
+              ? 'gang.war.over'
+              : 'signup.problem.network',
+    );
+  };
+  const challenge = async () => {
+    setBusy(true);
+    setProblem(null);
+    const res = await post(`/api/gangs/${gang.tag}/war`, { timeControlId: tc });
+    setBusy(false);
+    if (res?.ok) onChange();
+    else await fail(res);
+  };
+  const answer = async (war: GangWar, action: 'accept' | 'decline' | 'cancel') => {
+    setBusy(true);
+    setProblem(null);
+    const res = await post(`/api/gangs/${gang.tag}/war/${war.id}/${action}`);
+    setBusy(false);
+    if (!res?.ok) return fail(res);
+    const data = (await res.json().catch(() => ({}))) as { tournamentId?: string };
+    if (data.tournamentId) onOpen(`/tournament/${data.tournamentId}`);
+    else onChange();
+  };
+  const { won, lost, drawn } = gang.record;
+  return (
+    <section className="gang-wars">
+      <div className="gang-wars-head">
+        <h2>{t('gang.war.title')}</h2>
+        <span className="muted">
+          {t('gang.war.record', { won: String(won), lost: String(lost), drawn: String(drawn) })}
+        </span>
+      </div>
+      <p className="muted gang-wars-rule">{t('gang.war.rule')}</p>
+      {canChallenge && (
+        <div className="gang-war-form">
+          <div className="gang-war-tcs" role="group" aria-label={t('newGame.time')}>
+            {TOURNAMENT_TIME_CONTROLS.map((id) => (
+              <button key={id} className={`chip${tc === id ? ' on' : ''}`} onClick={() => setTc(id)}>
+                {timeControl(id).label}
+              </button>
+            ))}
+          </div>
+          <button className="primary" disabled={busy} onClick={() => void challenge()}>
+            {t('gang.war.declare', { tag: gang.tag })}
+          </button>
+        </div>
+      )}
+      {problem && <p className="error">{t(problem)}</p>}
+      {gang.wars.length === 0 && <p className="muted">{t('gang.war.none')}</p>}
+      <ul className="gang-war-list">
+        {gang.wars.map((w) => {
+          const canAnswer = w.status === 'pending' && !!me?.mineOwner && me.mine === w.defender.tag;
+          const canCancel = w.status === 'pending' && !!me?.mineOwner && me.mine === w.challenger.tag;
+          const winnerTag = w.winner === 'c' ? w.challenger.tag : w.winner === 'd' ? w.defender.tag : null;
+          return (
+            <li key={w.id} className={`gang-war ${w.status}`}>
+              <span className="gang-war-sides">
+                <strong>[{w.challenger.tag}]</strong>
+                {w.score ? (
+                  <span className="gang-war-score">
+                    {scoreText(w.score.c)} – {scoreText(w.score.d)}
+                  </span>
+                ) : (
+                  <span className="muted"> vs </span>
+                )}
+                <strong>[{w.defender.tag}]</strong>
+                <small className="muted"> · {timeControl(w.timeControlId).label}</small>
+              </span>
+              <span className="gang-war-state">
+                {w.status === 'finished'
+                  ? winnerTag
+                    ? t('gang.war.won', { tag: winnerTag })
+                    : t('gang.war.drawn')
+                  : t(`gang.war.status.${w.status}`)}
+              </span>
+              <span className="gang-war-actions">
+                {canAnswer && (
+                  <>
+                    <button className="primary" disabled={busy} onClick={() => void answer(w, 'accept')}>
+                      {t('gang.war.accept')}
+                    </button>
+                    <button disabled={busy} onClick={() => void answer(w, 'decline')}>
+                      {t('gang.war.decline')}
+                    </button>
+                  </>
+                )}
+                {canCancel && (
+                  <button disabled={busy} onClick={() => void answer(w, 'cancel')}>
+                    {t('gang.war.cancel')}
+                  </button>
+                )}
+                {w.tournamentId && (
+                  <a
+                    href={`/tournament/${w.tournamentId}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onOpen(`/tournament/${w.tournamentId}`);
+                    }}
+                  >
+                    {w.status === 'live' ? t('gang.war.go') : t('gang.war.see')}
+                  </a>
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

@@ -29,7 +29,9 @@ export const EARLY_DRAW_PLIES = 20;
 export const PAIRING_MS = 3000;
 
 export type TournamentStatus = 'created' | 'started' | 'finished';
-export type TournamentFormat = 'arena' | 'swiss';
+/** 'war': a gang war (src/online/gang.ts), one round of fixed boards between two gangs; not listed. */
+export type TournamentFormat = 'arena' | 'swiss' | 'war';
+/** The formats staff can pick for a tournament (a war is made by gangs). */
 export const TOURNAMENT_FORMATS: readonly TournamentFormat[] = ['arena', 'swiss'];
 /** Numbers of rounds a Swiss tournament can have. */
 export const SWISS_ROUNDS = [3, 5, 7, 9] as const;
@@ -81,6 +83,24 @@ export interface TournamentMeta {
   readonly format?: TournamentFormat;
   /** Swiss: how many rounds. */
   readonly rounds?: number;
+  /** A gang war: its boards and sides. */
+  readonly war?: WarSetup;
+}
+
+/** A gang war's setup: the boards ([white, black] user ids) and which gang each player plays for. */
+export interface WarSetup {
+  readonly warId: string;
+  readonly pairs: readonly (readonly [string, string])[];
+  readonly players: readonly { readonly id: string; readonly username: string; readonly side: 'c' | 'd' }[];
+  /** The challenging and the defending gang's tags. */
+  readonly tags: { readonly c: string; readonly d: string };
+}
+
+/** A war's score so far: each side's points over its finished boards. */
+export function warScore(war: WarSetup, players: Readonly<Record<string, Pick<TournamentPlayer, 'score'>>>) {
+  const score = { c: 0, d: 0 };
+  for (const p of war.players) score[p.side] += players[p.id]?.score ?? 0;
+  return score;
 }
 
 export interface TournamentState extends TournamentMeta {

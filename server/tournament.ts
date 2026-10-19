@@ -43,6 +43,7 @@ import {
   swissScored,
   swissStandings,
   tournamentNameProblem,
+  warScore,
 } from '../src/online/tournament.ts';
 import type {
   CreateTournament,
@@ -85,7 +86,7 @@ interface LiveGame {
  * off as a no-show: Arena players are on the page when paired; Swiss players
  * may have to come back to it.
  */
-const FIRST_MOVE_MS: Record<TournamentFormat, number> = { arena: 30_000, swiss: 60_000 };
+const FIRST_MOVE_MS: Record<TournamentFormat, number> = { arena: 30_000, swiss: 60_000, war: 5 * 60_000 };
 
 /** Longest a game of this time control should take; after that its room is asked how it ended. */
 function overdueMs(timeControlId: string): number {
@@ -161,7 +162,9 @@ export class Tournament extends DurableObject<Env> {
   private async init(request: Request): Promise<Response> {
     if (await this.load()) return json({ error: 'bad-request' }, 409);
     const meta = (await request.json()) as TournamentMeta;
-    await this.save({ ...meta, status: 'created', players: {}, round: 0, nextRoundAt: null });
+    // A gang war starts with its eight players in.
+    const players = Object.fromEntries((meta.war?.players ?? []).map((p) => [p.id, newPlayer(p.id, p.username)]));
+    await this.save({ ...meta, status: 'created', players, round: 0, nextRoundAt: null });
     await this.ctx.storage.setAlarm(meta.startsAt);
     return json({ ok: true });
   }
@@ -182,6 +185,7 @@ export class Tournament extends DurableObject<Env> {
       createdBy: state.createdBy,
       format: formatOf(state),
       rounds: state.rounds,
+      war: state.war,
       round: state.round ?? 0,
       nextRoundAt: state.nextRoundAt ?? null,
       status: state.status,
@@ -235,6 +239,8 @@ export class Tournament extends DurableObject<Env> {
     const me = this.account(ws);
     if (!me) return this.send(ws, { t: 'error', code: 'signed-out' });
     if (state.status === 'finished') return this.send(ws, { t: 'error', code: 'finished' });
+    // A gang war's players are set: nobody joins or leaves.
+    if (state.war) return this.send(ws, { t: 'error', code: 'bad-request' });
     const mine = state.players[me.id];
     if (msg.t === 'join') {
       if (!mine && Object.keys(state.players).length >= TOURNAMENT_MAX_PLAYERS) {
@@ -282,7 +288,7 @@ export class Tournament extends DurableObject<Env> {
         .catch(() => undefined);
     }
     await this.checkOverdue(now);
-    if (formatOf(state) === 'swiss') return this.swissTick();
+    if (formatOf(state) !== 'arena') return this.swissTick();
     await this.pair();
     // Nobody on the page and no game going: nothing to pair for a while.
     const idle = this.ctx.getWebSockets().length === 0 && Object.keys(this.games).length === 0;
@@ -317,7 +323,10 @@ export class Tournament extends DurableObject<Env> {
     const active = Object.values(state.players).filter((p) => !p.paused);
     // Fewer than two players left: nothing more to play.
     if (active.length < 2) return this.finish();
-    const { pairs, bye } = swissPairings(active, state.players, Math.random);
+    // A gang war's boards are set when it is accepted.
+    const { pairs, bye } = state.war
+      ? { pairs: state.war.pairs.map(([w, b]): [string, string] => [w, b]), bye: null }
+      : swissPairings(active, state.players, Math.random);
     let players: Record<string, TournamentPlayer> = { ...state.players };
     if (bye) players[bye] = swissBye(players[bye]);
     for (const [w, b] of pairs) {
@@ -445,7 +454,8 @@ export class Tournament extends DurableObject<Env> {
     const g = this.games[end.gameId];
     if (!state || !g) return;
     delete this.games[end.gameId];
-    const swiss = formatOf(state) === 'swiss';
+    // Swiss and gang wars score 1, ½, 0; a no-show loses the game.
+    const swiss = formatOf(state) !== 'arena';
     const players = { ...state.players };
     const free = (id: string): TournamentPlayer => ({ ...players[id], game: null });
     if (state.status === 'finished') {
@@ -490,8 +500,8 @@ export class Tournament extends DurableObject<Env> {
       Object.entries(state.players).map(([id, p]) => [id, { ...p, game: null }]),
     ) as Record<string, TournamentPlayer>;
     const now = Date.now();
-    // A Swiss tournament ends when its rounds do: the real end replaces the estimate.
-    const endsAt = formatOf(state) === 'swiss' ? now : state.endsAt;
+    // A Swiss tournament (or a war) ends when its rounds do: the real end replaces the estimate.
+    const endsAt = formatOf(state) !== 'arena' ? now : state.endsAt;
     const done: TournamentState = { ...state, status: 'finished', players, endsAt, nextRoundAt: null };
     this.games = {};
     this.tickets = {};
@@ -510,6 +520,18 @@ export class Tournament extends DurableObject<Env> {
       )
       .run()
       .catch((e: unknown) => console.error('saving the tournament standings failed', e));
+    // A gang war: its result goes to the gangs' record.
+    if (state.war) {
+      const score = warScore(state.war, players);
+      await this.env.DB?.prepare(
+        `UPDATE gang_wars SET status = 'finished', finished_at = ?1, challenger_score = ?2, defender_score = ?3,
+           winner = CASE WHEN ?2 > ?3 THEN challenger WHEN ?3 > ?2 THEN defender ELSE NULL END
+         WHERE id = ?4`,
+      )
+        .bind(now, score.c, score.d, state.war.warId)
+        .run()
+        .catch((e: unknown) => console.error('saving the war result failed', e));
+    }
     this.broadcast();
   }
 }

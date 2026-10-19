@@ -29,12 +29,39 @@ export interface GangMember {
 export interface GangDetail extends GangSummary {
   readonly createdAt: number;
   readonly list: readonly GangMember[];
+  /** Its latest wars, newest first. */
+  readonly wars: readonly GangWar[];
+  /** Its finished wars. */
+  readonly record: { readonly won: number; readonly lost: number; readonly drawn: number };
 }
 
 export interface GangList {
   readonly gangs: readonly GangSummary[];
   /** The signed-in player's gang tag, or null. */
   readonly mine: string | null;
+  /** Whether that player founded it (founders declare and answer wars), and whether it is active. */
+  readonly mineOwner: boolean;
+  readonly mineActive: boolean;
+}
+
+/** A challenge waits this long for an answer. */
+export const WAR_ANSWER_MS = 30 * 60_000;
+
+export type GangWarStatus = 'pending' | 'live' | 'finished' | 'declined' | 'cancelled' | 'expired';
+
+/** A gang war: the challenging gang ('c') against the defending one ('d'). */
+export interface GangWar {
+  readonly id: string;
+  readonly challenger: { readonly tag: string; readonly name: string };
+  readonly defender: { readonly tag: string; readonly name: string };
+  readonly timeControlId: string;
+  readonly status: GangWarStatus;
+  readonly createdAt: number;
+  /** Once over: each side's points (a win 1, a draw ½ per board). */
+  readonly score: { readonly c: number; readonly d: number } | null;
+  readonly winner: 'c' | 'd' | null;
+  /** The boards (a tournament page), once accepted. */
+  readonly tournamentId: string | null;
 }
 
 export type GangProblem = 'name' | 'tag' | 'taken' | 'in-gang' | 'full' | 'signed-out';
