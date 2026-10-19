@@ -14,6 +14,8 @@ export interface JacketStats {
   readonly dailyBest: number;
   /** Online games won by checkmate (missing in older callers: none). */
   readonly mates?: number;
+  /** Friends invited (invite link) who joined and finished an online game. */
+  readonly invites?: number;
 }
 
 export type JacketNeed =
@@ -22,7 +24,8 @@ export type JacketNeed =
   | { readonly kind: 'rating'; readonly n: number }
   | { readonly kind: 'rush'; readonly n: number }
   | { readonly kind: 'daily'; readonly n: number }
-  | { readonly kind: 'mates'; readonly n: number };
+  | { readonly kind: 'mates'; readonly n: number }
+  | { readonly kind: 'invites'; readonly n: number };
 
 export interface JacketDef {
   readonly id: string;
@@ -64,6 +67,8 @@ export function progress(need: JacketNeed, s: JacketStats): number {
       return s.dailyBest;
     case 'mates':
       return s.mates ?? 0;
+    case 'invites':
+      return s.invites ?? 0;
   }
 }
 

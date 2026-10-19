@@ -24,7 +24,7 @@ const json = (data: unknown, status = 200) =>
 
 /** What earns the jackets: patches, games, the best settled rating, Puzzle Rush, daily puzzles. */
 async function jacketStats(db: D1Database, userId: string): Promise<JacketStats> {
-  const [patches, games, rating, rush, daily, mates] = await db.batch([
+  const [patches, games, rating, rush, daily, mates, invites] = await db.batch([
     db.prepare('SELECT count(*) AS n FROM user_patches WHERE user_id = ?1').bind(userId),
     db
       .prepare("SELECT count(*) AS n FROM games WHERE (white_user = ?1 OR black_user = ?1) AND result != '*'")
@@ -40,6 +40,12 @@ async function jacketStats(db: D1Database, userId: string): Promise<JacketStats>
            ((white_user = ?1 AND result = '1-0') OR (black_user = ?1 AND result = '0-1'))`,
       )
       .bind(userId),
+    db
+      .prepare(
+        `SELECT count(*) AS n FROM users u WHERE u.invited_by = ?1 AND u.banned_at IS NULL AND EXISTS
+           (SELECT 1 FROM games g WHERE (g.white_user = u.id OR g.black_user = u.id) AND g.result != '*')`,
+      )
+      .bind(userId),
   ]);
   const first = <T>(r: D1Result) => r.results[0] as T | undefined;
   const best = first<{ r: number | null }>(rating)?.r;
@@ -50,6 +56,7 @@ async function jacketStats(db: D1Database, userId: string): Promise<JacketStats>
     rushBest: first<{ best: number }>(rush)?.best ?? 0,
     dailyBest: longestRun((daily.results as { day: string }[]).map((d) => d.day)),
     mates: first<{ n: number }>(mates)?.n ?? 0,
+    invites: first<{ n: number }>(invites)?.n ?? 0,
   };
 }
 

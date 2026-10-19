@@ -43,6 +43,8 @@ export interface AuthEnv {
 
 const SESSION_COOKIE = 'pc_session';
 const SIGNUP_COOKIE = 'pc_signup';
+/** Set by the page from an invite link (src/ui/invite.ts): the inviter's username. */
+const REF_COOKIE = 'pc_ref';
 const OAUTH_COOKIE = 'pc_oauth';
 const SESSION_DAYS = 60;
 const SIGNUP_MINUTES = 30;
@@ -227,9 +229,21 @@ export async function handleAuth(request: Request, env: AuthEnv, url: URL): Prom
 
     const userId = crypto.randomUUID();
     const now = Date.now();
+    // Came through a friend's invite link (/?ref=<username>): remember who.
+    const ref = parseCookies(request.headers.get('cookie'))[REF_COOKIE] ?? '';
+    const inviter = /^[A-Za-z0-9_-]{3,20}$/.test(ref)
+      ? await env.DB.prepare('SELECT id FROM users WHERE username = ?1 AND banned_at IS NULL')
+          .bind(ref)
+          .first<{ id: string }>()
+      : null;
     try {
       await env.DB.batch([
-        env.DB.prepare('INSERT INTO users (id, username, created_at) VALUES (?1, ?2, ?3)').bind(userId, username, now),
+        env.DB.prepare('INSERT INTO users (id, username, created_at, invited_by) VALUES (?1, ?2, ?3, ?4)').bind(
+          userId,
+          username,
+          now,
+          inviter?.id ?? null,
+        ),
         env.DB.prepare(
           'INSERT INTO identities (provider, subject, user_id, email, created_at) VALUES (?1, ?2, ?3, ?4, ?5)',
         ).bind(signup.provider, signup.subject, userId, signup.email, now),
@@ -242,6 +256,7 @@ export async function handleAuth(request: Request, env: AuthEnv, url: URL): Prom
     const headers = new Headers({ 'content-type': 'application/json' });
     headers.append('set-cookie', await newSession(env, userId, secure));
     headers.append('set-cookie', cookie(SIGNUP_COOKIE, '', { maxAge: 0, secure }));
+    if (ref) headers.append('set-cookie', cookie(REF_COOKIE, '', { maxAge: 0, secure }));
     return new Response(JSON.stringify({ user: { id: userId, username, rating: null } satisfies AccountUser }), {
       headers,
     });

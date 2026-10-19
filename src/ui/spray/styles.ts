@@ -242,6 +242,19 @@ export const SPRAY_LOOKS: Readonly<Record<string, SprayLook>> = {
     drips: { end: 0.25, color: '#8f3dff', layer: 2 },
     flourish: ['underline'],
   },
+  // Earned by inviting friends: lime to cyan with a pink 3D side, stars and a swoosh.
+  crew: {
+    slant: 0.12,
+    bounce: 0.35,
+    spacing: -0.2,
+    layers: [
+      { kind: 'extrude', width: 18, color: '#ff2e93', dx: 6, dy: 7, steps: 4 },
+      { kind: 'paint', width: 23, color: '#0b0b0c', mist: 0.3 },
+      { kind: 'paint', width: 15, color: gradX('#c6ff3d', '#3fd8ff'), mist: 0.5 },
+    ],
+    drips: { end: 0.2, color: '#3fd8ff', layer: 2 },
+    flourish: ['stars', 'underline'],
+  },
 };
 
 export const lookOf = (id: string): SprayLook => SPRAY_LOOKS[id] ?? SPRAY_LOOKS.signature;

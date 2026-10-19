@@ -6638,3 +6638,38 @@ a:focus-visible {
   font-size: 20px;
   line-height: 1;
 }
+
+/* Own profile: the invite link, and the crew tag it earns. */
+.invite-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #1b1b1f;
+  border: 2px dashed var(--lime);
+}
+.invite-text {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.invite-text strong {
+  font: 400 20px/1 var(--display);
+  letter-spacing: 0.03em;
+  color: var(--fg);
+}
+.invite-progress {
+  color: var(--lime);
+  font-weight: 700;
+}
+.invite-art {
+  width: 170px;
+  height: 64px;
+  flex: none;
+}

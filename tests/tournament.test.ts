@@ -154,7 +154,7 @@ describe('swiss tournaments', () => {
 describe('spray tags', () => {
   it('has five open styles and ten earned ones, the mates counting', async () => {
     const { TAG_STYLES, tagOpen, tagById, seeded } = await import('../src/achievements/tags.ts');
-    expect(TAG_STYLES).toHaveLength(15);
+    expect(TAG_STYLES).toHaveLength(16);
     expect(TAG_STYLES.filter((s) => !s.need)).toHaveLength(5);
     const none = { patches: 0, games: 0, bestRating: null, rushBest: 0, dailyBest: 0, mates: 0 };
     expect(TAG_STYLES.filter((s) => tagOpen(s, none))).toHaveLength(5);

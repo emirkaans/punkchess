@@ -13,7 +13,8 @@ import { AccountSettings } from './AccountSettings.tsx';
 import { JacketWindow } from './JacketWindow.tsx';
 import { Modal } from './Modal.tsx';
 import { SprayPlayer, SprayStill } from './SprayTag.tsx';
-import { TAG_STYLES, tagById, tagOpen } from '../achievements/tags.ts';
+import { INVITES_FOR_CREW, TAG_STYLES, tagById, tagOpen } from '../achievements/tags.ts';
+import { inviteLink } from './invite.ts';
 import { loadPrefs } from './prefs.ts';
 import { progress } from '../achievements/jackets.ts';
 import { ProfileLink } from './ProfileLink.tsx';
@@ -43,6 +44,7 @@ export function ProfilePage({ username, onOpen }: Props) {
   const account = useAccount();
   // Own profile: the spray tag picker is open.
   const [pickingTag, setPickingTag] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
   // Own profile: the followers or following list being shown.
   const [followList, setFollowList] = useState<'followers' | 'following' | null>(null);
 
@@ -364,6 +366,35 @@ export function ProfilePage({ username, onOpen }: Props) {
           </button>
         )}
       </section>
+      {mine && (
+        <section className="invite-card" aria-label={t('invite.title')}>
+          <div className="invite-text">
+            <strong>{t('invite.title')}</strong>
+            <span>{t('invite.text', { n: String(INVITES_FOR_CREW) })}</span>
+            <span className="invite-progress">
+              {t('invite.progress', {
+                n: String(Math.min(profile.stats.invites ?? 0, INVITES_FOR_CREW)),
+                of: String(INVITES_FOR_CREW),
+              })}
+            </span>
+          </div>
+          <SprayStill username={profile.username} styleId="crew" className="invite-art" />
+          <button
+            className="tz-pill primary"
+            onClick={() => {
+              void navigator.clipboard
+                ?.writeText(inviteLink(profile.username))
+                .then(() => {
+                  setInviteCopied(true);
+                  setTimeout(() => setInviteCopied(false), 2000);
+                })
+                .catch(() => {});
+            }}
+          >
+            {inviteCopied ? t('invite.copied') : t('invite.copy')}
+          </button>
+        </section>
+      )}
       {pickingTag && (
         <TagPicker
           username={profile.username}

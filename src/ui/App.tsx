@@ -9,6 +9,7 @@ import { GameControls, GameTools } from './GameControls.tsx';
 import { GameOverOverlay } from './GameOverOverlay.tsx';
 import { SprayTag } from './SprayTag.tsx';
 import { useAccount } from './account.ts';
+import { keepInviter } from './invite.ts';
 import { GameViewer } from './GameViewer.tsx';
 import { HomePage } from './HomePage.tsx';
 import { Modal } from './Modal.tsx';
@@ -127,6 +128,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const boardArea = useRef<HTMLDivElement>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const account = useAccount();
+  // Opened through a friend's invite link: remember who sent it (for the sign-up).
+  useEffect(keepInviter, []);
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('signin') !== 'banned') return;

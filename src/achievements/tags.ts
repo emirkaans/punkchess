@@ -7,6 +7,9 @@
 import { progress } from './jackets.ts';
 import type { JacketNeed, JacketStats } from './jackets.ts';
 
+/** Friends to bring (who also finish an online game) for the crew tag. */
+export const INVITES_FOR_CREW = 3;
+
 export interface TagStyle {
   readonly id: string;
   /** What earns it (none: open to everyone). */
@@ -30,6 +33,7 @@ export const TAG_STYLES: readonly TagStyle[] = [
   { id: 'retro', need: { kind: 'rush', n: 25 } },
   { id: 'chrome', need: { kind: 'rating', n: 1600 } },
   { id: 'night', need: { kind: 'rating', n: 1800 } },
+  { id: 'crew', need: { kind: 'invites', n: INVITES_FOR_CREW } },
 ];
 
 export const DEFAULT_TAG = TAG_STYLES[0].id;
