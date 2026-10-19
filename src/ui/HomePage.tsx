@@ -132,11 +132,6 @@ export function HomePage({ onPlay, onOnline, onDaily, onOpenGame }: Props) {
               )}
             </p>
           )}
-          <ul className="facts">
-            <li>{t('home.fact1')}</li>
-            <li>{t('home.fact2')}</li>
-            <li>{t('home.fact3')}</li>
-          </ul>
         </div>
         <p className="slogan" aria-hidden="true">
           {t('home.slogan1')}
