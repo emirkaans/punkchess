@@ -523,6 +523,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           history.pushState(null, '', `/${id}`);
           applyRouteRef.current(parseRoute(`/${id}`));
         }}
+        onOpen={(path) => {
+          history.pushState(null, '', path);
+          applyRouteRef.current(parseRoute(path));
+        }}
       />
       {notice && page !== 'game' && (
         <div className="app-notice" role="status">

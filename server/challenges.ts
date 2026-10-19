@@ -8,7 +8,8 @@
 // works for anyone); the challenge only tells one player about it.
 
 import { CHALLENGE_TTL_MS } from '../src/online/challenge.ts';
-import type { Challenge, ChallengeList } from '../src/online/challenge.ts';
+import type { Challenge, ChallengeList, WarAlert } from '../src/online/challenge.ts';
+import { WAR_ANSWER_MS } from '../src/online/gang.ts';
 import { GAME_ID } from '../src/online/protocol.ts';
 import type { AuthEnv } from './auth.ts';
 import { currentUser, sameOrigin } from './auth.ts';
@@ -54,7 +55,40 @@ export async function handleChallenges(request: Request, env: AuthEnv, url: URL)
       rated: r.rated === 1,
       createdAt: r.created_at,
     }));
-    return json({ challenges } satisfies ChallengeList);
+    // The player's gang at war: a war under way, or (founders) a challenge to answer.
+    const wars = await env.DB.prepare(
+      `SELECT w.id, w.status, w.tournament_id, w.challenger, w.defender, g.id AS mine, g.owner,
+              c.tag AS c_tag, d.tag AS d_tag
+       FROM gang_members m JOIN gangs g ON g.id = m.gang_id
+       JOIN gang_wars w ON (w.challenger = g.id OR w.defender = g.id)
+       JOIN gangs c ON c.id = w.challenger JOIN gangs d ON d.id = w.defender
+       WHERE m.user_id = ?1 AND (w.status = 'live' OR (w.status = 'pending' AND w.defender = g.id AND g.owner = ?1
+         AND w.created_at > ?2))
+       ORDER BY w.created_at DESC LIMIT 3`,
+    )
+      .bind(user.id, now - WAR_ANSWER_MS)
+      .all<{
+        id: string;
+        status: string;
+        tournament_id: string | null;
+        challenger: string;
+        defender: string;
+        mine: string;
+        c_tag: string;
+        d_tag: string;
+      }>()
+      .catch(() => ({ results: [] }));
+    const alerts: WarAlert[] = wars.results.map((w) => {
+      const weChallenged = w.challenger === w.mine;
+      return {
+        kind: w.status === 'live' ? 'live' : 'pending',
+        warId: w.id,
+        us: weChallenged ? w.c_tag : w.d_tag,
+        them: weChallenged ? w.d_tag : w.c_tag,
+        tournamentId: w.tournament_id,
+      };
+    });
+    return json({ challenges, wars: alerts } satisfies ChallengeList);
   }
 
   if (request.method !== 'POST') return json({ error: 'not-found' }, 404);

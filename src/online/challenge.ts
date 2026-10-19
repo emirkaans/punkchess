@@ -19,6 +19,23 @@ export interface Challenge {
 
 export interface ChallengeList {
   readonly challenges: readonly Challenge[];
+  /** Gang wars to tell the player about (missing from older servers: none). */
+  readonly wars?: readonly WarAlert[];
+}
+
+/**
+ * A gang war the player should know about: their gang's war has started
+ * ('live': go to the boards), or, for a founder, another gang declared war
+ * on theirs ('pending': answer it on the gang's page).
+ */
+export interface WarAlert {
+  readonly kind: 'live' | 'pending';
+  readonly warId: string;
+  /** The player's gang's tag, and the other gang's. */
+  readonly us: string;
+  readonly them: string;
+  /** The boards, once live. */
+  readonly tournamentId: string | null;
 }
 
 export interface ChallengeRequest {

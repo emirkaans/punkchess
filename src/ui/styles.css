@@ -6802,3 +6802,11 @@ a:focus-visible {
     monospace;
   color: var(--muted);
 }
+
+/* A gang war notice (the challenge corner): louder than a challenge. */
+.challenge-toast.war-toast {
+  border-color: var(--pink);
+  box-shadow:
+    0 0 0 3px rgba(255, 46, 147, 0.35),
+    0 18px 40px rgba(0, 0, 0, 0.55);
+}
