@@ -21,6 +21,9 @@ export type Page =
   | 'tournaments'
   | 'admin'
   | 'leaderboard'
+  | 'privacy'
+  | 'terms'
+  | 'licenses'
   | 'loading';
 
 interface Props {

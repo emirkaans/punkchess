@@ -29,6 +29,9 @@ export type Route =
   | { readonly kind: 'gangs'; readonly tag: string | null }
   | { readonly kind: 'tournaments'; readonly id: string | null }
   | { readonly kind: 'leaderboard' }
+  | { readonly kind: 'privacy' }
+  | { readonly kind: 'terms' }
+  | { readonly kind: 'licenses' }
   | { readonly kind: 'game'; readonly id: string }
   | { readonly kind: 'review'; readonly id: string };
 
@@ -83,6 +86,7 @@ export function parseRoute(pathname: string): Route {
   const gang = /^\/gang\/([A-Za-z0-9]{2,4})$/.exec(p);
   if (gang) return { kind: 'gangs', tag: gang[1].toUpperCase() };
   if (p === '/leaderboard') return { kind: 'leaderboard' };
+  if (p === '/privacy' || p === '/terms' || p === '/licenses') return { kind: p.slice(1) as 'privacy' | 'terms' | 'licenses' };
   const puzzle = /^\/puzzles\/([A-Za-z0-9]{3,16})$/.exec(p);
   if (puzzle) return { kind: 'puzzles', id: puzzle[1] };
   const profile = /^\/@\/([A-Za-z][A-Za-z0-9_-]{2,19})$/.exec(p);
@@ -120,6 +124,10 @@ export function pathOf(r: Route): string {
       return r.id ? `/tournament/${r.id}` : '/tournaments';
     case 'leaderboard':
       return '/leaderboard';
+    case 'privacy':
+    case 'terms':
+    case 'licenses':
+      return `/${r.kind}`;
     case 'game':
       return `/${r.id}`;
     case 'review':

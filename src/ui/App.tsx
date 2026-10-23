@@ -72,6 +72,7 @@ const AdminPage = lazy(() => import('./AdminPage.tsx').then((m) => ({ default: m
 const TournamentsPage = lazy(() => import('./TournamentsPage.tsx').then((m) => ({ default: m.TournamentsPage })));
 const GangsPage = lazy(() => import('./GangsPage.tsx').then((m) => ({ default: m.GangsPage })));
 const TvPage = lazy(() => import('./TvPage.tsx').then((m) => ({ default: m.TvPage })));
+const LegalPage = lazy(() => import('./LegalPage.tsx').then((m) => ({ default: m.LegalPage })));
 const RushPage = lazy(() => import('./RushPage.tsx').then((m) => ({ default: m.RushPage })));
 
 /** Storage key of the running local game (restored after a reload). */
@@ -280,7 +281,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         r.kind === 'rush' ||
         r.kind === 'tv' ||
         r.kind === 'admin' ||
-        r.kind === 'leaderboard'
+        r.kind === 'leaderboard' ||
+        r.kind === 'privacy' ||
+        r.kind === 'terms' ||
+        r.kind === 'licenses'
       )
         return setPage(r.kind);
       if (r.kind === 'online') {
@@ -562,6 +566,14 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           />
         ) : page === 'leaderboard' ? (
           <LeaderboardPage />
+        ) : page === 'privacy' || page === 'terms' || page === 'licenses' ? (
+          <LegalPage
+            doc={page}
+            onOpen={(path) => {
+              history.pushState(null, '', path);
+              applyRouteRef.current(parseRoute(path));
+            }}
+          />
         ) : page === 'admin' ? (
           <AdminPage />
         ) : page === 'tournaments' ? (

@@ -59,7 +59,7 @@ function toRoom(env: Env, request: Request, id: string, path: string): Promise<R
   return stub.fetch(new Request(url, request));
 }
 
-/** Static pages in public/ (served as they are, never as a game). */
+/** The app's page names that have a game id's shape (never looked up as games). */
 const STATIC_PAGES = new Set(['licenses', 'privacy', 'terms']);
 
 /**
@@ -175,7 +175,7 @@ export default {
     if (og) return toRoom(env, request, og[1], '/og');
 
     const page = /^\/([A-Za-z0-9]{8})(?:\/analysis)?\/?$/.exec(url.pathname);
-    // Eight-letter page names ('licenses') look like game ids; those stay static pages.
+    // Eight-letter page names ('licenses') look like game ids; those are app pages, not games.
     if (page && !STATIC_PAGES.has(page[1]) && request.method === 'GET' && !paused)
       return gamePage(env, request, url, page[1]);
     if (url.pathname === '/sitemap.xml' && !paused) return sitemap(env, url);

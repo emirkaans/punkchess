@@ -28,6 +28,6 @@ describe('gangs', () => {
 
 describe('static pages', () => {
   it('are not game links, though "licenses" has the length of a game id', () => {
-    for (const p of ['/licenses', '/privacy', '/terms']) expect(parseRoute(p).kind).toBe('home');
+    for (const p of ['/licenses', '/privacy', '/terms']) expect(parseRoute(p).kind).toBe(p.slice(1));
   });
 });

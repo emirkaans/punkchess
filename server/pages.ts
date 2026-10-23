@@ -25,6 +25,18 @@ const STATIC: Readonly<Record<string, Preview>> = {
     title: 'Liderler · punkchess',
     description: 'Her kategorinin en iyileri: bullet, blitz, rapid, klasik, varyantlar ve bulmacalar.',
   },
+  '/privacy': {
+    title: 'Gizlilik Politikası · punkchess',
+    description: 'punkchess hangi kişisel verileri tutar, neden tutar ve hakların neler: gizlilik politikası ve KVKK aydınlatma metni.',
+  },
+  '/terms': {
+    title: 'Kullanım Koşulları · punkchess',
+    description: 'punkchess kullanım koşulları.',
+  },
+  '/licenses': {
+    title: 'Lisanslar · punkchess',
+    description: 'punkchess’in kullandığı açık kaynak yazılımlar, fontlar ve veriler ile lisansları.',
+  },
   '/analysis': {
     title: 'Analiz tahtası · punkchess',
     description: 'Konum kur, oyna, Stockfish ile analiz et. Varyantlar da dahil.',

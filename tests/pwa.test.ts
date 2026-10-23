@@ -16,11 +16,12 @@ describe('PWA', () => {
     expect(src.match(/ignoreVary: true/g)).toHaveLength(2);
   });
 
-  it('service worker geçerli JavaScript; giriş, API, gizlilik ve koşullar sayfaları ağdan gelir', () => {
+  it('service worker geçerli JavaScript; giriş ve API ağdan gelir, yasal sayfalar uygulamadan', () => {
     const src = serviceWorkerSource(files, versionOf(files));
     // A syntax error would stop the worker from installing at all.
     expect(() => new Function(src)).not.toThrow();
-    expect(src).toContain("['/privacy', '/privacy/', '/terms', '/terms/', '/licenses', '/licenses/']");
+    // The privacy policy, terms and licenses are app pages now: served from the cache like the rest.
+    expect(src).not.toContain("'/privacy'");
     // Sign-in must reach the server (it redirects to Google), never the cached app page.
     expect(src).toContain("path.startsWith('/auth/')");
   });
