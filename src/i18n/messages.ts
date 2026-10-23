@@ -132,9 +132,9 @@ export const tr = {
   'menu.logo': 'punkchess anasayfa',
 
   // Home page
-  'home.tape1': 'AYNI OYUN.',
-  'home.tape2': 'FARKLI TAVIR.',
-  'home.lede': 'Satranç oyna. Kuralları boz.',
+  'home.lede1': 'Satranç Artık',
+  'home.lede2': 'Kötü Yola Düştü.',
+  'home.pitch': 'Ücretsiz online satranç, tuhaf yeni varyantlar, çeteler, turnuvalar ve biraz da kaos. İndirme yok. Kıyafet zorunluluğu hiç yok.',
   'home.play': 'Hemen oyna',
   'home.explore': 'Varyantları gör',
   'home.slogan1': 'DÜŞÜN.',
@@ -936,9 +936,9 @@ export const en: Record<MessageKey, string> = {
   'leaders.back': 'All',
   'menu.logo': 'punkchess home',
 
-  'home.tape1': 'SAME GAME.',
-  'home.tape2': 'DIFFERENT ATTITUDE.',
-  'home.lede': 'Play chess. Break the rules.',
+  'home.lede1': 'Chess Has',
+  'home.lede2': 'Bad Friends Now.',
+  'home.pitch': 'Free online chess, weird new variants, gangs, tournaments, and a little chaos. No downloads. No dress code.',
   'home.play': 'Play now',
   'home.explore': 'Explore variants',
   'home.slogan1': 'THINK.',

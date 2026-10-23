@@ -80,17 +80,10 @@ export function HomePage({ onPlay, onOnline, onDaily, onOpenGame }: Props) {
         <img className="hero-image" src={`${import.meta.env.BASE_URL}hero.webp`} alt={t('home.heroAlt')} />
         <div className="hero-copy">
           <h1 className="sr-only">punkchess</h1>
-          <p className="tape">
-            <span>{t('home.tape1')}</span>
-            <span>{t('home.tape2')}</span>
-          </p>
           <p className="lede">
-            {t('home.lede')
-              .split(/(?<=\.)\s+/)
-              .map((sentence) => (
-                <span key={sentence}>{sentence}</span>
-              ))}
+            <span>{t('home.lede1')}</span> <span>{t('home.lede2')}</span>
           </p>
+          <p className="pitch">{t('home.pitch')}</p>
           <div className="ctas">
             <button className="cta" onClick={onOnline}>
               <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
