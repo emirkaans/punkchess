@@ -730,12 +730,12 @@ button.primary:hover:not(:disabled) {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: radial-gradient(
-    ellipse 46% 34% at 24% 54%,
-    rgba(10, 10, 11, 0.62) 0%,
-    rgba(10, 10, 11, 0.42) 55%,
-    rgba(10, 10, 11, 0) 100%
-  );
+  /* Spray mist behind the copy: overlapping uneven dark clouds, no hard edge. */
+  background:
+    radial-gradient(ellipse 34% 30% at 22% 38%, rgba(10, 10, 11, 0.68) 0%, rgba(10, 10, 11, 0.44) 50%, rgba(10, 10, 11, 0) 100%),
+    radial-gradient(ellipse 40% 34% at 26% 62%, rgba(10, 10, 11, 0.64) 0%, rgba(10, 10, 11, 0.36) 55%, rgba(10, 10, 11, 0) 100%),
+    radial-gradient(ellipse 22% 26% at 40% 50%, rgba(10, 10, 11, 0.36) 0%, rgba(10, 10, 11, 0) 100%),
+    radial-gradient(ellipse 30% 60% at 4% 50%, rgba(10, 10, 11, 0.56) 0%, rgba(10, 10, 11, 0) 100%);
   pointer-events: none;
 }
 .hero-copy {
