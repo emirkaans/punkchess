@@ -9,10 +9,18 @@
 import { PROVISIONAL_RD } from '../src/rating/glicko2.ts';
 import type { ProfileGame, ProfileRating, ProfileResponse, RatingPoint, Rival } from '../src/online/profile.ts';
 import type { AuthEnv } from './auth.ts';
+import { profileStats } from '../src/online/profileStats.ts';
+import type { StatsGame } from '../src/online/profileStats.ts';
+import { listVariants } from '../src/engine/index.ts';
 import { currentUser, sameOrigin } from './auth.ts';
 import { JACKETS, jacketById, jacketOpen, longestRun } from '../src/achievements/jackets.ts';
 import type { JacketStats } from '../src/achievements/jackets.ts';
 import { TAG_STYLES, tagById, tagOpen } from '../src/achievements/tags.ts';
+
+/** How many of a player's latest games their statistics are worked out from. */
+const STATS_GAMES = 1000;
+/** The usual chess start (openings are named only for games from it). */
+const STANDARD_START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w';
 
 const PAGE = 20;
 
@@ -144,7 +152,7 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
       .all<{ username: string }>();
     return json(rows.results);
   }
-  const m = /^\/api\/users\/([^/]+)(?:\/(games|history))?$/.exec(url.pathname);
+  const m = /^\/api\/users\/([^/]+)(?:\/(games|history|stats))?$/.exec(url.pathname);
   if (!m || request.method !== 'GET') return null;
   if (!env.DB) return json({ error: 'accounts-off' }, 503);
   const user = await env.DB.prepare(
@@ -205,6 +213,60 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
       tag: tagById(user.tag).id,
       stats: await jacketStats(env.DB, user.id),
     } satisfies ProfileResponse);
+  }
+
+  // Statistics: worked out from the player's latest finished games (src/online/profileStats.ts).
+  if (m[2] === 'stats') {
+    const rows = await env.DB.prepare(
+      `SELECT id, variant_id, time_control, white_user, white_name, black_name, white_rating, black_rating,
+              result, termination, start_fen, moves, ended_at,
+              (SELECT username FROM users WHERE id = games.white_user) AS white_username,
+              (SELECT username FROM users WHERE id = games.black_user) AS black_username
+       FROM games WHERE (white_user = ?1 OR black_user = ?1) AND result != '*'
+       ORDER BY ended_at DESC LIMIT ?2`,
+    )
+      .bind(user.id, STATS_GAMES)
+      .all<{
+        id: string;
+        variant_id: string;
+        time_control: string;
+        white_user: string | null;
+        white_name: string;
+        black_name: string;
+        white_rating: number | null;
+        black_rating: number | null;
+        result: string;
+        termination: string;
+        start_fen: string;
+        moves: string;
+        ended_at: number;
+        white_username: string | null;
+        black_username: string | null;
+      }>();
+    const games: StatsGame[] = rows.results.map((g) => {
+      const white = g.white_user === user.id;
+      let moves: string[] = [];
+      try {
+        moves = JSON.parse(g.moves) as string[];
+      } catch {
+        // a damaged record: counted without its moves
+      }
+      return {
+        id: g.id,
+        variantId: g.variant_id,
+        timeControlId: g.time_control,
+        color: white ? 'w' : 'b',
+        outcome: g.result === '1/2-1/2' ? 'd' : (g.result === '1-0') === white ? 'w' : 'l',
+        termination: g.termination,
+        moves,
+        opponent: white ? g.black_name : g.white_name,
+        opponentUsername: white ? g.black_username : g.white_username,
+        opponentRating: white ? g.black_rating : g.white_rating,
+        endedAt: g.ended_at,
+        standardStart: g.start_fen.startsWith(STANDARD_START),
+      };
+    });
+    return json(profileStats(games, listVariants()[0].id, Date.now()));
   }
 
   if (m[2] === 'games') {

@@ -20,6 +20,7 @@ import { progress } from '../achievements/jackets.ts';
 import { ProfileLink } from './ProfileLink.tsx';
 import { FriendGame } from './online/LobbyPage.tsx';
 import { PATCHES } from '../achievements/patches.ts';
+import { ProfileStats } from './ProfileStats.tsx';
 
 interface Props {
   username: string;
@@ -325,7 +326,7 @@ export function ProfilePage({ username, onOpen }: Props) {
           aria-label={t('profile.graph', { category: categoryName(selected.category) })}
         >
           <h2>{t('profile.graph', { category: categoryName(selected.category) })}</h2>
-          <RatingGraph points={history} />
+          <RatingHistory points={history} />
         </section>
       )}
 
@@ -356,6 +357,8 @@ export function ProfilePage({ username, onOpen }: Props) {
           </p>
         </section>
       )}
+
+      <ProfileStats username={profile.username} ratings={profile.ratings} onOpen={onOpen} />
 
       <section className="tag-card" aria-label={t(mine ? 'tag.title' : 'tag.theirs')}>
         <span className="tag-card-label">{t(mine ? 'tag.title' : 'tag.theirs')}</span>
@@ -476,6 +479,54 @@ export function ProfilePage({ username, onOpen }: Props) {
 }
 
 /** Rating after each game, as a line over an area (game number across, rating up). */
+const PERIODS = [
+  { id: 'pstats.period1m', days: 30 },
+  { id: 'pstats.period3m', days: 90 },
+  { id: 'pstats.periodAll', days: Infinity },
+] as const;
+
+/** The rating graph with a choice of period, and its peak, low and change over that period. */
+function RatingHistory({ points }: { points: readonly RatingPoint[] }) {
+  const { t } = useI18n();
+  const [days, setDays] = useState<number>(Infinity);
+  const since = Date.now() - days * 86_400_000;
+  const inPeriod = points.filter((p) => p.at >= since);
+  // The rating at the start of the period (the last point before it) begins the line.
+  const before = points.filter((p) => p.at < since).at(-1);
+  const shown = before ? [before, ...inPeriod] : inPeriod;
+  const ratings = shown.map((p) => p.rating);
+  const change = shown.length > 1 ? shown[shown.length - 1].rating - shown[0].rating : 0;
+  return (
+    <>
+      <div className="graph-periods" role="group">
+        {PERIODS.map((p) => (
+          <button
+            key={p.id}
+            className={days === p.days ? 'on' : ''}
+            aria-pressed={days === p.days}
+            onClick={() => setDays(p.days)}
+          >
+            {t(p.id)}
+          </button>
+        ))}
+      </div>
+      {shown.length > 1 ? (
+        <>
+          <RatingGraph points={shown} />
+          <p className="graph-summary">
+            <span className={change >= 0 ? 'up' : 'down'}>
+              {t('pstats.change', { d: `${change >= 0 ? '▲ +' : '▼ '}${change}` })}
+            </span>
+            <span>{t('pstats.peakLow', { hi: String(Math.max(...ratings)), lo: String(Math.min(...ratings)) })}</span>
+          </p>
+        </>
+      ) : (
+        <p className="muted">{t('profile.noGamesPeriod')}</p>
+      )}
+    </>
+  );
+}
+
 function RatingGraph({ points }: { points: readonly RatingPoint[] }) {
   const W = 600;
   const H = 160;
