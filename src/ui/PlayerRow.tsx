@@ -22,10 +22,15 @@ interface Props {
   place: 'top' | 'bottom';
   /** Shown under the colour instead of the player kind (e.g. an online player's name). */
   label?: ReactNode;
+  /**
+   * A taunt this player just flashed: a speech bubble from the card (never over the board or
+   * the clock). `key` restarts its animation; `tone` is its sticker's colour class.
+   */
+  taunt?: { key: number | string; tone: string; who: string; text: string } | null;
 }
 
 /** One player card left of the board: skull avatar, who plays, the material lead, clock. */
-export function PlayerRow({ variant, color, player, position, active, clock, place, label }: Props) {
+export function PlayerRow({ variant, color, player, position, active, clock, place, label, taunt }: Props) {
   const { t } = useI18n();
   // Only the difference, as on lichess: one short line that never pushes the board around.
   const diff = materialDiff(variant, position);
@@ -49,6 +54,12 @@ export function PlayerRow({ variant, color, player, position, active, clock, pla
           ))}
           {lead > 0 && <span className="lead">+{lead}</span>}
         </div>
+        {taunt && (
+          <div key={taunt.key} className={`taunt-bubble ${taunt.tone}`} role="status">
+            <span className="taunt-who">{taunt.who}</span>
+            <span className="taunt-text">{taunt.text}</span>
+          </div>
+        )}
       </div>
       {clock && <ClockView clock={clock} color={color} />}
     </div>

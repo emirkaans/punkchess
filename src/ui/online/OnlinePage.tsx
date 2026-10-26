@@ -461,21 +461,21 @@ function OnlineGame({
               active={playing && state?.position.turn === c}
               clock={timed ? clock : null}
               place={i === 0 ? 'top' : 'bottom'}
+              taunt={
+                prefs.stickers && poppedSticker?.from === c
+                  ? {
+                      key: poppedSticker.key,
+                      tone: `sticker-${poppedSticker.id}`,
+                      who: nameOf(c),
+                      text: t(`sticker.${poppedSticker.id}`),
+                    }
+                  : null
+              }
             />
           ))}
         </aside>
         <div className="board-col">
           <div className="board-frame">
-            {prefs.stickers && poppedSticker && (
-              <div
-                key={poppedSticker.key}
-                className={`sticker-pop ${poppedSticker.from === top ? 'top' : 'bottom'} sticker-${poppedSticker.id}`}
-                role="status"
-              >
-                <span className="sticker-who">{nameOf(poppedSticker.from)}</span>
-                {t(`sticker.${poppedSticker.id}`)}
-              </div>
-            )}
             <Splatter className="splatter-tl" />
             <Splatter className="splatter-br" />
             {yourTurn && atEnd && <div className="turn-tape">{t('game.yourTurn')}</div>}

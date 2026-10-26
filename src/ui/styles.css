@@ -2958,7 +2958,7 @@ button.primary:hover:not(:disabled) {
   line-height: 1.5;
 }
 
-/* Taunt stickers: the palette under the controls, and the sticker flashed over the board. */
+/* Taunt stickers: the palette under the controls (their colours also colour the bubble). */
 .sticker-menu {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2975,33 +2975,6 @@ button.primary:hover:not(:disabled) {
 .sticker-chip:nth-child(even) {
   transform: rotate(2deg);
 }
-.sticker-pop {
-  position: absolute;
-  left: 50%;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 8px 16px;
-  border: 3px solid #0a0a0b;
-  box-shadow: 4px 4px 0 #0a0a0b;
-  font: 400 clamp(20px, 4vw, 30px) / 1 var(--marker);
-  color: var(--on-pink);
-  pointer-events: none;
-  animation: sticker-slap 3s ease-out both;
-}
-.sticker-pop.top {
-  top: 10%;
-}
-.sticker-pop.bottom {
-  bottom: 10%;
-}
-.sticker-who {
-  font: 500 11px/1 var(--ui);
-  letter-spacing: 0.06em;
-  opacity: 0.75;
-}
 .sticker-bored,
 .sticker-oops,
 .sticker-gg {
@@ -3016,31 +2989,138 @@ button.primary:hover:not(:disabled) {
 .sticker-respect {
   background: #f1eee8;
 }
-@keyframes sticker-slap {
+/*
+ * A taunt: a speech bubble from the player's card, in its sticker's colour. Beside the board it
+ * hangs in the free space between the two cards (below the top one, above the bottom one); on
+ * narrow screens it takes the name's place in the card. Never over the board or a clock.
+ */
+.player-row {
+  position: relative;
+}
+.taunt-bubble {
+  position: absolute;
+  z-index: 20;
+  left: 10px;
+  right: -6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 16px 12px;
+  border: 3px solid #0a0a0b;
+  border-radius: 18px;
+  box-shadow: 4px 4px 0 #0a0a0b;
+  color: var(--on-pink);
+  pointer-events: none;
+  animation: taunt-pop 3s ease-out both;
+}
+.player-row.top .taunt-bubble {
+  top: calc(100% + 16px);
+  transform-origin: 34px -12px;
+}
+.player-row.bottom .taunt-bubble {
+  bottom: calc(100% + 16px);
+  transform-origin: 34px calc(100% + 12px);
+}
+/* The tail, pointing at the avatar. */
+.taunt-bubble::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  width: 16px;
+  height: 16px;
+  background: inherit;
+  border: 3px solid #0a0a0b;
+  transform: rotate(45deg);
+}
+.player-row.top .taunt-bubble::before {
+  top: -11px;
+  border-right: none;
+  border-bottom: none;
+}
+.player-row.bottom .taunt-bubble::before {
+  bottom: -11px;
+  border-left: none;
+  border-top: none;
+}
+.taunt-who {
+  font: 500 12px/1 var(--ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.taunt-text {
+  font: 400 clamp(22px, 2.2vw, 30px) / 1.05 var(--marker);
+}
+@keyframes taunt-pop {
   0% {
     opacity: 0;
-    transform: translateX(-50%) scale(2.2) rotate(-14deg);
+    transform: scale(0.4) rotate(-6deg);
   }
-  12% {
+  10% {
     opacity: 1;
-    transform: translateX(-50%) scale(0.92) rotate(-6deg);
+    transform: scale(1.06) rotate(1deg);
   }
-  20% {
-    transform: translateX(-50%) scale(1) rotate(-6deg);
+  18% {
+    transform: scale(1) rotate(-1deg);
   }
   85% {
     opacity: 1;
-    transform: translateX(-50%) scale(1) rotate(-6deg);
+    transform: scale(1) rotate(-1deg);
   }
   100% {
     opacity: 0;
-    transform: translateX(-50%) scale(0.9) rotate(-6deg);
+    transform: scale(0.96) rotate(-1deg);
+  }
+}
+/* Cards in a row above the board, or the phone's strips: the bubble covers the name, not the board. */
+@media (max-width: 900px) {
+  .player-info {
+    position: relative;
+    align-self: stretch;
+    justify-content: center;
+  }
+  .player-row.top .taunt-bubble,
+  .player-row.bottom .taunt-bubble {
+    inset: 2px -4px 2px 8px;
+    justify-content: center;
+    padding: 2px 10px 3px;
+    border-width: 2px;
+    border-radius: 12px;
+    box-shadow: 3px 3px 0 #0a0a0b;
+    transform-origin: -8px 50%;
+  }
+  .player-row.top .taunt-bubble::before,
+  .player-row.bottom .taunt-bubble::before {
+    top: 50%;
+    bottom: auto;
+    left: -7px;
+    width: 10px;
+    height: 10px;
+    margin-top: -5px;
+    border: 2px solid #0a0a0b;
+    border-top: none;
+    border-right: none;
+  }
+  /* The name under the bubble would peek out beside it. */
+  .player-info:has(.taunt-bubble) > :not(.taunt-bubble) {
+    visibility: hidden;
+  }
+  .taunt-who {
+    font-size: 10px;
+  }
+  .taunt-text {
+    font-size: 19px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sticker-pop {
+  .taunt-bubble {
     animation: none;
-    transform: translateX(-50%) rotate(-6deg);
   }
 }
 
