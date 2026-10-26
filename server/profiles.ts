@@ -32,7 +32,7 @@ function parseMoves(text: string): string[] {
   }
 }
 
-const PAGE = 20;
+const PAGE = 10;
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {

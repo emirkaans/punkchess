@@ -89,13 +89,20 @@ export function ProfilePage({ username, onOpen }: Props) {
     };
   }, [username, category]);
 
+  // The next older games (scrolling down the Games tab asks for them); one request at a time.
+  const [loadingMore, setLoadingMore] = useState(false);
   const loadMore = async () => {
+    if (loadingMore || !more) return;
+    setLoadingMore(true);
     const before = games.at(-1)?.endedAt;
-    const g = (await fetch(`/api/users/${encodeURIComponent(username)}/games?before=${before}`).then((r) =>
-      r.json(),
-    )) as { games: ProfileGame[]; more: boolean };
-    setGames((old) => [...old, ...g.games]);
-    setMore(g.more);
+    const g = (await fetch(`/api/users/${encodeURIComponent(username)}/games?before=${before}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null)) as { games: ProfileGame[]; more: boolean } | null;
+    if (g) {
+      setGames((old) => [...old, ...g.games.filter((n) => !old.some((o) => o.id === n.id))]);
+      setMore(g.more);
+    }
+    setLoadingMore(false);
   };
 
   const mine = !!account.user && typeof profile === 'object' && profile?.username === account.user.username;
@@ -447,6 +454,7 @@ export function ProfilePage({ username, onOpen }: Props) {
             username={profile.username}
             games={games}
             more={more}
+            loading={loadingMore}
             onMore={() => void loadMore()}
             onOpen={onOpen}
           />

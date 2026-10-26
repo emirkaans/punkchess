@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { MouseEvent } from 'react';
 import { timeControl } from '../clock/clock.ts';
 import { createGame, getVariant, listVariants, playSan } from '../engine/index.ts';
@@ -15,7 +15,9 @@ interface Props {
   /** The profile's player. */
   username: string;
   games: readonly ProfileGame[];
+  /** Older games are left to load, and they are being loaded now. */
   more: boolean;
+  loading: boolean;
   onMore: () => void;
   onOpen: (path: string) => void;
 }
@@ -54,7 +56,7 @@ function MiniBoard({ variant, state, flipped }: { variant: VariantDefinition; st
 }
 
 /** The profile's "Games" tab: finished games as cards (board, players, result, opening). */
-export function ProfileGames({ username, games, more, onMore, onOpen }: Props) {
+export function ProfileGames({ username, games, more, loading, onMore, onOpen }: Props) {
   const { t, vt, locale } = useI18n();
   const ago = useMemo(() => new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }), [locale]);
   const when = (ms: number) => {
@@ -71,6 +73,21 @@ export function ProfileGames({ username, games, more, onMore, onOpen }: Props) {
     onOpen(path);
   };
 
+  // Lichess-style: nearing the end of the list loads the next older games.
+  const end = useRef<HTMLDivElement>(null);
+  const loadNext = useRef(onMore);
+  useEffect(() => {
+    loadNext.current = onMore;
+  });
+  useEffect(() => {
+    const el = end.current;
+    if (!el || !more || typeof IntersectionObserver === 'undefined') return;
+    const seen = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && loadNext.current(), {
+      rootMargin: '600px 0px',
+    });
+    seen.observe(el);
+    return () => seen.disconnect();
+  }, [more, games.length]);
   const standardId = listVariants()[0].id;
   if (games.length === 0) return <p className="muted">{t('profile.noGames')}</p>;
   return (
@@ -158,9 +175,15 @@ export function ProfileGames({ username, games, more, onMore, onOpen }: Props) {
         })}
       </ul>
       {more && (
-        <button className="profile-more" onClick={onMore}>
-          {t('profile.more')}
-        </button>
+        <div ref={end} className="pgames-end">
+          {loading ? (
+            <span className="muted">{t('profile.loadingMore')}</span>
+          ) : (
+            <button className="profile-more" onClick={onMore}>
+              {t('profile.more')}
+            </button>
+          )}
+        </div>
       )}
     </>
   );

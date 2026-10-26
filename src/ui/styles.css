@@ -7779,3 +7779,10 @@ a:focus-visible {
     font-size: 20px;
   }
 }
+.pgames-end {
+  display: flex;
+  justify-content: center;
+  min-height: 48px;
+  align-items: center;
+}
+
