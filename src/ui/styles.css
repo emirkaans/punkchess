@@ -296,6 +296,68 @@
   --board-grime: none;
 }
 
+/* Faded punk boards: low-saturation squares, a soft yellow last move (easy on the eyes). */
+[data-board='afis'] {
+  --light: #dcd2c2;
+  --dark: #a6687d;
+  --coord: #5c2f40;
+  --last: rgba(232, 214, 140, 0.6);
+  --selected: rgba(120, 160, 200, 0.55);
+  --hint: rgba(20, 20, 20, 0.35);
+  --premove: rgba(20, 30, 85, 0.45);
+  --zone: rgba(232, 214, 140, 0.25);
+  --zone-line: rgba(150, 130, 60, 0.7);
+  --board-grime: none;
+}
+[data-board='kot'] {
+  --light: #ccd2d8;
+  --dark: #5e7088;
+  --coord: #26303d;
+  --last: rgba(232, 214, 140, 0.6);
+  --selected: rgba(120, 160, 200, 0.55);
+  --hint: rgba(20, 20, 20, 0.35);
+  --premove: rgba(20, 30, 85, 0.45);
+  --zone: rgba(232, 214, 140, 0.25);
+  --zone-line: rgba(150, 130, 60, 0.7);
+  --board-grime: none;
+}
+[data-board='yosun'] {
+  --light: #d5d8be;
+  --dark: #7a8756;
+  --coord: #3a4224;
+  --last: rgba(232, 214, 140, 0.6);
+  --selected: rgba(120, 160, 200, 0.55);
+  --hint: rgba(20, 20, 20, 0.35);
+  --premove: rgba(20, 30, 85, 0.45);
+  --zone: rgba(232, 214, 140, 0.25);
+  --zone-line: rgba(150, 130, 60, 0.7);
+  --board-grime: none;
+}
+[data-board='pas'] {
+  --light: #dccbb5;
+  --dark: #9a5c41;
+  --coord: #4e2a1a;
+  --last: rgba(232, 214, 140, 0.6);
+  --selected: rgba(120, 160, 200, 0.55);
+  --hint: rgba(20, 20, 20, 0.35);
+  --premove: rgba(20, 30, 85, 0.45);
+  --zone: rgba(232, 214, 140, 0.25);
+  --zone-line: rgba(150, 130, 60, 0.7);
+  --board-grime: none;
+}
+[data-board='morluk'] {
+  --light: #d3cad9;
+  --dark: #6d5a7b;
+  --coord: #352a3f;
+  --last: rgba(232, 214, 140, 0.6);
+  --selected: rgba(120, 160, 200, 0.55);
+  --hint: rgba(20, 20, 20, 0.35);
+  --premove: rgba(20, 30, 85, 0.45);
+  --zone: rgba(232, 214, 140, 0.25);
+  --zone-line: rgba(150, 130, 60, 0.7);
+  --board-grime: none;
+}
+
 /* ---------- piece themes ---------- */
 [data-pieces='klasik'] {
   --pw: #fafafa;

@@ -4,7 +4,7 @@ import { loadJSON, saveJSON } from '../storage/local.ts';
 import { PIECE_SETS, setPieceSet } from './pieceSets.ts';
 import type { PieceSet } from './pieceSets.ts';
 
-export type BoardTheme = 'punk' | 'klasik' | 'koyu' | 'dork' | PunkTheme;
+export type BoardTheme = 'punk' | 'klasik' | 'koyu' | 'dork' | PunkTheme | FadedTheme;
 export type PieceTheme = 'punk' | 'klasik' | 'neon' | PunkTheme;
 
 /** Board and piece themes drawn together: each name is both a board and a piece theme. */
@@ -22,6 +22,10 @@ export const PUNK_THEMES = [
 ] as const;
 type PunkTheme = (typeof PUNK_THEMES)[number];
 
+/** Boards only, in faded punk colours that are easy on the eyes over a long game. */
+export const FADED_THEMES = ['afis', 'kot', 'yosun', 'pas', 'morluk'] as const;
+type FadedTheme = (typeof FADED_THEMES)[number];
+
 export interface Prefs {
   readonly boardTheme: BoardTheme;
   readonly pieceTheme: PieceTheme;
@@ -35,7 +39,7 @@ export interface Prefs {
   readonly boardSize: number | null;
 }
 
-export const BOARD_THEMES: readonly BoardTheme[] = ['punk', 'klasik', 'koyu', 'dork', ...PUNK_THEMES];
+export const BOARD_THEMES: readonly BoardTheme[] = ['punk', 'klasik', 'koyu', 'dork', ...FADED_THEMES, ...PUNK_THEMES];
 export const PIECE_THEMES: readonly PieceTheme[] = ['punk', 'klasik', 'neon', ...PUNK_THEMES];
 
 const DEFAULT_PREFS: Omit<Prefs, 'locale'> = {
