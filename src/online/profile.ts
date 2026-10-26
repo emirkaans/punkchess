@@ -67,6 +67,9 @@ export interface ProfileGame {
   readonly result: string;
   readonly termination: string;
   readonly endedAt: number;
+  /** The start position (FEN) and the moves in SAN, for the game card's board and opening. */
+  readonly startFen: string;
+  readonly moves: readonly string[];
 }
 
 export interface RatingPoint {

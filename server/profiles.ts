@@ -22,6 +22,16 @@ const STATS_GAMES = 1000;
 /** The usual chess start (openings are named only for games from it). */
 const STANDARD_START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w';
 
+/** A stored game's moves (a JSON array of SAN); a damaged record has none. */
+function parseMoves(text: string): string[] {
+  try {
+    const moves: unknown = JSON.parse(text);
+    return Array.isArray(moves) ? moves.filter((m): m is string => typeof m === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 const PAGE = 20;
 
 const json = (data: unknown, status = 200) =>
@@ -245,12 +255,7 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
       }>();
     const games: StatsGame[] = rows.results.map((g) => {
       const white = g.white_user === user.id;
-      let moves: string[] = [];
-      try {
-        moves = JSON.parse(g.moves) as string[];
-      } catch {
-        // a damaged record: counted without its moves
-      }
+      const moves = parseMoves(g.moves);
       return {
         id: g.id,
         variantId: g.variant_id,
@@ -273,7 +278,7 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
     const before = Number(url.searchParams.get('before')) || Number.MAX_SAFE_INTEGER;
     const rows = await env.DB.prepare(
       `SELECT id, variant_id, time_control, rated, white_user, white_name, black_name, white_rating, black_rating,
-              white_diff, black_diff, result, termination, ended_at,
+              white_diff, black_diff, result, termination, start_fen, moves, ended_at,
               (SELECT username FROM users WHERE id = games.white_user) AS white_username,
               (SELECT username FROM users WHERE id = games.black_user) AS black_username
        FROM games WHERE (white_user = ?1 OR black_user = ?1) AND ended_at < ?2
@@ -294,6 +299,8 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
         black_diff: number | null;
         result: string;
         termination: string;
+        start_fen: string;
+        moves: string;
         ended_at: number;
         white_username: string | null;
         black_username: string | null;
@@ -314,6 +321,8 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
         result: g.result,
         termination: g.termination,
         endedAt: g.ended_at,
+        startFen: g.start_fen,
+        moves: parseMoves(g.moves),
       };
     });
     return json({ games, more: rows.results.length > PAGE });

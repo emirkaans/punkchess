@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { timeControl } from '../clock/clock.ts';
 import { getVariant, listVariants } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
-import { outcomeFor } from '../online/profile.ts';
 import type { ProfileGame, ProfileRating, ProfileResponse, RatingPoint } from '../online/profile.ts';
 import type { FollowLists } from '../online/follow.ts';
 import { allCategories, variantOfCategory } from '../rating/categories.ts';
@@ -21,6 +19,7 @@ import { ProfileLink } from './ProfileLink.tsx';
 import { FriendGame } from './online/LobbyPage.tsx';
 import { PATCHES } from '../achievements/patches.ts';
 import { ProfileStats } from './ProfileStats.tsx';
+import { ProfileGames } from './ProfileGames.tsx';
 
 interface Props {
   username: string;
@@ -33,6 +32,8 @@ export function ProfilePage({ username, onOpen }: Props) {
   const { t, vt, locale } = useI18n();
   const [profile, setProfile] = useState<ProfileResponse | null | 'missing'>(null);
   const [category, setCategory] = useState<string | null>(null);
+  // Statistics (the rating graph, results and the stats cards) or the finished games.
+  const [tab, setTab] = useState<'stats' | 'games'>('stats');
   const [games, setGames] = useState<ProfileGame[]>([]);
   const [more, setMore] = useState(false);
   const [history, setHistory] = useState<RatingPoint[]>([]);
@@ -303,7 +304,11 @@ export function ProfilePage({ username, onOpen }: Props) {
               <button
                 key={c}
                 className={`rating-card${r ? '' : ' empty'}${category === c ? ' on' : ''}`}
-                onClick={() => r && setCategory(c)}
+                onClick={() => {
+                  if (!r) return;
+                  setCategory(c);
+                  setTab('stats');
+                }}
                 disabled={!r}
                 aria-pressed={category === c}
               >
@@ -319,46 +324,6 @@ export function ProfilePage({ username, onOpen }: Props) {
             );
           })}
       </section>
-
-      {selected && history.length > 1 && (
-        <section
-          className="profile-graph"
-          aria-label={t('profile.graph', { category: categoryName(selected.category) })}
-        >
-          <h2>{t('profile.graph', { category: categoryName(selected.category) })}</h2>
-          <RatingHistory points={history} />
-        </section>
-      )}
-
-      {played > 0 && (
-        <section className="profile-stats" aria-label={t('profile.results')}>
-          <h2>
-            {t('profile.results')}
-            {selected ? ` · ${categoryName(selected.category)}` : ''}
-          </h2>
-          <div className="result-bar" aria-hidden="true">
-            <span className="win" style={{ flexGrow: stats.wins }} />
-            <span className="draw" style={{ flexGrow: stats.draws }} />
-            <span className="loss" style={{ flexGrow: stats.losses }} />
-          </div>
-          <p className="result-legend">
-            {selected?.category === 'puzzle' ? (
-              <>
-                <span className="win">{t('profile.solved', { n: String(stats.wins) })}</span>
-                <span className="loss">{t('profile.missed', { n: String(stats.losses) })}</span>
-              </>
-            ) : (
-              <>
-                <span className="win">{t('profile.wins', { n: String(stats.wins) })}</span>
-                <span className="draw">{t('profile.draws', { n: String(stats.draws) })}</span>
-                <span className="loss">{t('profile.losses', { n: String(stats.losses) })}</span>
-              </>
-            )}
-          </p>
-        </section>
-      )}
-
-      <ProfileStats username={profile.username} ratings={profile.ratings} onOpen={onOpen} />
 
       <section className="tag-card" aria-label={t(mine ? 'tag.title' : 'tag.theirs')}>
         <span className="tag-card-label">{t(mine ? 'tag.title' : 'tag.theirs')}</span>
@@ -416,56 +381,77 @@ export function ProfilePage({ username, onOpen }: Props) {
           }}
         />
       )}
-      <section className="profile-games" aria-label={t('profile.recent')}>
-        <h2>{t('profile.recent')}</h2>
-        {games.length === 0 && <p className="muted">{t('profile.noGames')}</p>}
-        <ul>
-          {games.map((g) => {
-            const outcome = outcomeFor(g);
-            const tc = timeControl(g.timeControlId);
-            return (
-              <li key={g.id} className={`profile-game ${outcome}`}>
-                <button className="game-open" onClick={() => onOpen(`/${g.id}/analysis`)}>
-                  <span className={`outcome ${outcome}`}>{t(`profile.${outcome}`)}</span>
-                  <span className="game-meta">
-                    {vt(getVariant(g.variantId)).name} · {tc.initialMs === null ? t('time.none') : tc.label}
-                    {g.rated ? ` · ${t('lobby.rated')}` : ''}
-                  </span>
-                  <span className="game-date">{date(g.endedAt)}</span>
-                </button>
-                <span className="game-vs">
-                  <span className={`seek-color ${g.color === 'w' ? 'b' : 'w'}`} aria-hidden="true" />
-                  {g.opponentUsername ? (
-                    <a
-                      href={`/@/${g.opponentUsername}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onOpen(`/@/${g.opponentUsername}`);
-                      }}
-                    >
-                      {g.opponent}
-                    </a>
-                  ) : (
-                    g.opponent
-                  )}
-                  {g.opponentRating !== null && <span className="muted"> ({g.opponentRating})</span>}
-                </span>
-                {g.diff !== null && (
-                  <span className={`game-diff ${g.diff >= 0 ? 'up' : 'down'}`}>
-                    {g.diff >= 0 ? '+' : ''}
-                    {g.diff}
-                  </span>
+      <div className="profile-tabs" role="tablist" aria-label={profile.username}>
+        <button
+          role="tab"
+          aria-selected={tab === 'stats'}
+          className={tab === 'stats' ? 'on' : ''}
+          onClick={() => setTab('stats')}
+        >
+          {t('profile.tabStats')}
+        </button>
+        <button
+          role="tab"
+          aria-selected={tab === 'games'}
+          className={tab === 'games' ? 'on' : ''}
+          onClick={() => setTab('games')}
+        >
+          {t('profile.tabGames', { n: String(profile.games) })}
+        </button>
+      </div>
+      {tab === 'stats' ? (
+        <div className="profile-tab" role="tabpanel">
+          {selected && history.length > 1 && (
+            <section
+              className="profile-graph"
+              aria-label={t('profile.graph', { category: categoryName(selected.category) })}
+            >
+              <h2>{t('profile.graph', { category: categoryName(selected.category) })}</h2>
+              <RatingHistory points={history} />
+            </section>
+          )}
+
+          {played > 0 && (
+            <section className="profile-stats" aria-label={t('profile.results')}>
+              <h2>
+                {t('profile.results')}
+                {selected ? ` · ${categoryName(selected.category)}` : ''}
+              </h2>
+              <div className="result-bar" aria-hidden="true">
+                <span className="win" style={{ flexGrow: stats.wins }} />
+                <span className="draw" style={{ flexGrow: stats.draws }} />
+                <span className="loss" style={{ flexGrow: stats.losses }} />
+              </div>
+              <p className="result-legend">
+                {selected?.category === 'puzzle' ? (
+                  <>
+                    <span className="win">{t('profile.solved', { n: String(stats.wins) })}</span>
+                    <span className="loss">{t('profile.missed', { n: String(stats.losses) })}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="win">{t('profile.wins', { n: String(stats.wins) })}</span>
+                    <span className="draw">{t('profile.draws', { n: String(stats.draws) })}</span>
+                    <span className="loss">{t('profile.losses', { n: String(stats.losses) })}</span>
+                  </>
                 )}
-              </li>
-            );
-          })}
-        </ul>
-        {more && (
-          <button className="profile-more" onClick={() => void loadMore()}>
-            {t('profile.more')}
-          </button>
-        )}
-      </section>
+              </p>
+            </section>
+          )}
+
+          <ProfileStats username={profile.username} ratings={profile.ratings} onOpen={onOpen} />
+        </div>
+      ) : (
+        <section className="profile-tab" role="tabpanel" aria-label={t('profile.recent')}>
+          <ProfileGames
+            username={profile.username}
+            games={games}
+            more={more}
+            onMore={() => void loadMore()}
+            onOpen={onOpen}
+          />
+        </section>
+      )}
 
       {mine && (
         <footer className="profile-foot">
