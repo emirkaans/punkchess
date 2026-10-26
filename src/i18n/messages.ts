@@ -134,7 +134,8 @@ export const tr = {
   // Home page
   'home.lede1': 'Satranç Artık',
   'home.lede2': 'Kötü Yola Düştü.',
-  'home.pitch': 'Ücretsiz online satranç, tuhaf yeni varyantlar, çeteler, turnuvalar ve biraz da kaos. İndirme yok. Kıyafet zorunluluğu hiç yok.',
+  'home.pitch':
+    'Ücretsiz online satranç, tuhaf yeni varyantlar, çeteler, turnuvalar ve biraz da kaos. İndirme yok. Kıyafet zorunluluğu hiç yok.',
   'home.play': 'Hemen oyna',
   'home.explore': 'Varyantları gör',
   'home.slogan1': 'ŞAHLAR',
@@ -938,7 +939,8 @@ export const en: Record<MessageKey, string> = {
 
   'home.lede1': 'Chess Has',
   'home.lede2': 'Bad Friends Now.',
-  'home.pitch': 'Free online chess, weird new variants, gangs, tournaments, and a little chaos. No downloads. No dress code.',
+  'home.pitch':
+    'Free online chess, weird new variants, gangs, tournaments, and a little chaos. No downloads. No dress code.',
   'home.play': 'Play now',
   'home.explore': 'Explore variants',
   'home.slogan1': 'THE KINGS',

@@ -27,7 +27,8 @@ const STATIC: Readonly<Record<string, Preview>> = {
   },
   '/privacy': {
     title: 'Gizlilik Politikası · punkchess',
-    description: 'punkchess hangi kişisel verileri tutar, neden tutar ve hakların neler: gizlilik politikası ve KVKK aydınlatma metni.',
+    description:
+      'punkchess hangi kişisel verileri tutar, neden tutar ve hakların neler: gizlilik politikası ve KVKK aydınlatma metni.',
   },
   '/terms': {
     title: 'Kullanım Koşulları · punkchess',
