@@ -4,7 +4,8 @@
 // Pure: no React, no DOM.
 
 import { createGame, getVariant, listVariants, playSan, toFen } from '../engine/index.ts';
-import type { GameState } from '../engine/index.ts';
+import type { Color, GameState } from '../engine/index.ts';
+import { remainingMs } from '../clock/clock.ts';
 import { GAME_ID } from './protocol.ts';
 import { gameOf } from './room.ts';
 import type { Room } from './room.ts';
@@ -29,10 +30,40 @@ export interface GameRecord {
   readonly date: string;
 }
 
+/** An online game under way, for a player who left its page: whose move, and the clocks. */
+export interface LiveInfo {
+  readonly turn: Color;
+  /** Time left per side when the answer was made (null: no clock), and the side whose clock runs. */
+  readonly clock: { readonly w: number; readonly b: number; readonly running: Color | null } | null;
+}
+
 /** What GET /api/games/:id answers. */
 export type GameInfo =
-  | { readonly kind: 'online'; readonly phase: Room['phase']; readonly record: GameRecord | null }
+  | {
+      readonly kind: 'online';
+      readonly phase: Room['phase'];
+      readonly record: GameRecord | null;
+      /** Only while the game is being played. */
+      readonly live?: LiveInfo;
+    }
   | { readonly kind: 'local'; readonly record: GameRecord };
+
+/** The live part of a room's info (its phase is 'playing'). */
+export function liveOf(room: Room, now: number): LiveInfo | undefined {
+  const state = gameOf(room);
+  if (room.phase !== 'playing' || !state) return undefined;
+  const timed = Number.isFinite(room.clock.remaining.w);
+  return {
+    turn: state.position.turn,
+    clock: timed
+      ? {
+          w: remainingMs(room.clock, 'w', now),
+          b: remainingMs(room.clock, 'b', now),
+          running: room.clock.running,
+        }
+      : null,
+  };
+}
 
 /** PUT /api/games/:id/record answer: how many people follow the game right now. */
 export interface RecordSaved {

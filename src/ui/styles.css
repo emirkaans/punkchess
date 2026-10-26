@@ -7082,3 +7082,55 @@ a:focus-visible {
 .legal-page li + li {
   margin-top: 6px;
 }
+
+/* Back to a game under way: a strip under the top bar on every other page. */
+.back-to-game {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 6px 16px;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+  font: 500 15px/1.2 var(--ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.back-to-game strong {
+  color: var(--pink);
+  font-weight: 500;
+}
+.back-to-game.yours {
+  background: var(--pink);
+  color: var(--on-pink);
+}
+.back-to-game.yours strong {
+  color: var(--on-pink);
+}
+.back-to-game-clock {
+  font: 400 22px/1 var(--display);
+  letter-spacing: 0.03em;
+}
+.back-to-game-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--lime);
+  animation: back-to-game-blink 1s steps(2, start) infinite;
+}
+@keyframes back-to-game-blink {
+  to {
+    visibility: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .back-to-game-dot {
+    animation: none;
+  }
+}

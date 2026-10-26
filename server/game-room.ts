@@ -23,7 +23,7 @@ import {
   viewOf,
 } from '../src/online/room.ts';
 import type { Room, SeatAccount } from '../src/online/room.ts';
-import { randomGameId, recordOfRoom, validateRecord } from '../src/online/record.ts';
+import { liveOf, randomGameId, recordOfRoom, validateRecord } from '../src/online/record.ts';
 import type { GameInfo, GameRecord, RecordSaved, RecordUpload } from '../src/online/record.ts';
 import { previewVersion, renderPreview } from './og.ts';
 import type { Lobby } from './lobby.ts';
@@ -220,7 +220,13 @@ export class GameRoom extends DurableObject<Env> {
   /** The game behind a link: an online room, or a local game uploaded by its player. */
   private async info(): Promise<Response> {
     const room = await this.load();
-    if (room) return json({ kind: 'online', phase: room.phase, record: recordOfRoom(room) } satisfies GameInfo);
+    if (room)
+      return json({
+        kind: 'online',
+        phase: room.phase,
+        record: recordOfRoom(room),
+        live: liveOf(room, Date.now()),
+      } satisfies GameInfo);
     const stored = await this.ctx.storage.get<{ record: GameRecord }>('record');
     if (stored) return json({ kind: 'local', record: stored.record } satisfies GameInfo);
     return json({ error: 'not-found' }, 404);

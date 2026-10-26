@@ -58,6 +58,7 @@ import type { Prefs } from './prefs.ts';
 import { isClassic, isRuleCardHidden, loadSettings, saveSettings } from './settings.ts';
 import type { GameSettings } from './settings.ts';
 import { playSound } from './sound.ts';
+import { loadCurrent, useLiveGame } from './online/current.ts';
 import type { SoundKind } from './sound.ts';
 
 /** Pages loaded the first time they are opened (the home page and games come with the app). */
@@ -112,6 +113,31 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const [page, setPage] = useState<Page>(() => (parseRoute(location.pathname).kind === 'home' ? 'home' : 'loading'));
   /** Online game shown on the online page (null: its lobby). */
   const [onlineId, setOnlineId] = useState<string | null>(null);
+  // The online game this player is in, while they are elsewhere on the site (src/ui/online/current.ts).
+  const liveGame = useLiveGame(page === 'online' ? onlineId : null);
+  // Leaving the board of a game under way (by the menu) asks first: the clock keeps running.
+  const leaveGame = (go: () => void) => () => {
+    if (page === 'online' && onlineId && loadCurrent()?.gameId === onlineId && !window.confirm(t('game.leaveConfirm')))
+      return;
+    go();
+  };
+  // Opening the site at its home page while a game is under way goes back to the game.
+  const homeOnOpen = useRef(location.pathname === '/');
+  useEffect(() => {
+    if (!homeOnOpen.current) return;
+    if (page !== 'home' && page !== 'loading') {
+      homeOnOpen.current = false;
+      return;
+    }
+    if (!liveGame) return;
+    homeOnOpen.current = false;
+    setOnlineId(liveGame.gameId);
+    setPage('online');
+  }, [page, liveGame]);
+  useEffect(() => {
+    const id = setTimeout(() => (homeOnOpen.current = false), 10_000);
+    return () => clearTimeout(id);
+  }, []);
   /** Settings the new game dialog opens with (null: closed). */
   const [newGame, setNewGame] = useState<GameSettings | null>(null);
   const [showRules, setShowRules] = useState(false);
@@ -497,27 +523,33 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         page={page}
         prefs={prefs}
         onPrefs={setPrefs}
-        onHome={() => setPage('home')}
-        onPlay={() => {
+        onHome={leaveGame(() => setPage('home'))}
+        onPlay={leaveGame(() => {
           setOnlineId(null);
           setPage('online');
-        }}
-        onAnalysis={() => setPage('analysis')}
-        onPuzzles={() => {
+        })}
+        onAnalysis={leaveGame(() => setPage('analysis'))}
+        onPuzzles={leaveGame(() => {
           setPuzzleId(null);
           setPage('puzzles');
-        }}
-        onLeaderboard={() => setPage('leaderboard')}
-        onTv={() => setPage('tv')}
-        onGangs={() => {
+        })}
+        onLeaderboard={leaveGame(() => setPage('leaderboard'))}
+        onTv={leaveGame(() => setPage('tv'))}
+        onGangs={leaveGame(() => {
           setGangTag(null);
           setPage('gangs');
-        }}
-        onTournaments={() => {
+        })}
+        onTournaments={leaveGame(() => {
           setTournamentId(null);
           setPage('tournaments');
-        }}
+        })}
         onSettings={() => setShowSettings(true)}
+        liveGame={liveGame}
+        onBackToGame={() => {
+          if (!liveGame) return;
+          setOnlineId(liveGame.gameId);
+          setPage('online');
+        }}
       />
 
       {/* Notices outside the game page (e.g. a link to a game that does not exist). */}

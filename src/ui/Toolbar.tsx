@@ -4,6 +4,9 @@ import { PlayerSearch } from './PlayerSearch.tsx';
 import { useI18n } from './i18n.tsx';
 import { Crown } from './Punk.tsx';
 import type { Prefs } from './prefs.ts';
+import { formatClock } from '../clock/clock.ts';
+import { yourTime } from './online/current.ts';
+import type { LiveGame } from './online/current.ts';
 
 export type Page =
   | 'home'
@@ -40,6 +43,9 @@ interface Props {
   onGangs: () => void;
   onTournaments: () => void;
   onSettings: () => void;
+  /** The online game this player left (it goes on): a strip under the bar leads back to it. */
+  liveGame: LiveGame | null;
+  onBackToGame: () => void;
 }
 
 /** Top bar: logo, main menu, and the account menu (profile, language, settings). */
@@ -56,6 +62,8 @@ export function Toolbar({
   onGangs,
   onTournaments,
   onSettings,
+  liveGame,
+  onBackToGame,
 }: Props) {
   const { t } = useI18n();
   // Publishes the bar's height as --toolbar-h (the home hero slides under the bar by that much).
@@ -170,6 +178,28 @@ export function Toolbar({
           </button>
         </div>
       </div>
+      {liveGame && <BackToGame game={liveGame} onOpen={close(onBackToGame)} />}
     </header>
+  );
+}
+
+/** The strip back to a game under way: the player's clock (ticking) and whose move it is. */
+function BackToGame({ game, onOpen }: { game: LiveGame; onOpen: () => void }) {
+  const { t } = useI18n();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, []);
+  const time = yourTime(game, now);
+  const yours = game.live.turn === game.you;
+  return (
+    <button className={`back-to-game${yours ? ' yours' : ''}`} onClick={onOpen}>
+      <span className="back-to-game-dot" aria-hidden="true" />
+      <strong>{t('tournament.backToGame')}</strong>
+      {time !== null && <span className="back-to-game-clock">{formatClock(time)}</span>}
+      <span>{t(yours ? 'online.yourTurn' : 'online.theirTurn')}</span>
+      <span aria-hidden="true">→</span>
+    </button>
   );
 }

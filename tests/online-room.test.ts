@@ -26,6 +26,7 @@ import {
   viewOf,
 } from '../src/online/room.ts';
 import type { Room } from '../src/online/room.ts';
+import { liveOf } from '../src/online/record.ts';
 
 const mv = (from: string, to: string, promotion?: string): WireMove =>
   promotion
@@ -262,5 +263,23 @@ describe('gecikme telafisi', () => {
     expect(credited).toBeLessThanOrEqual(LAG.bank + 11 * LAG.refill);
     expect(credited).toBeLessThan(11 * 500);
     expect(gameOf(room)?.moves.length).toBe(plies.length);
+  });
+});
+
+describe('süren oyunun özeti (oyuna dön şeridi)', () => {
+  it('sırayı ve iki saati verir; oyun bitince vermez', () => {
+    let room = newGame();
+    room = playMove(room, 'w', mv('e2', 'e4'), 0, 1000);
+    const live = liveOf(room, 4000);
+    expect(live?.turn).toBe('b');
+    expect(live?.clock?.running).toBe('b');
+    expect(live?.clock?.w).toBe(300_000);
+    expect(live?.clock?.b).toBe(297_000);
+    expect(liveOf(resign(room, 'b', 5000), 5000)).toBeUndefined();
+  });
+
+  it('saatsiz oyunda saat yok', () => {
+    const room = newGame('standard', 'none');
+    expect(liveOf(room, 0)?.clock).toBeNull();
   });
 });

@@ -40,6 +40,7 @@ import { ApiError, joinOnlineGame, loadName, loadTicket, saveName, saveTicket, u
 import { LobbyPage } from './LobbyPage.tsx';
 import { ProfileLink } from '../ProfileLink.tsx';
 import { useAttention } from '../attention.ts';
+import { clearCurrent, saveCurrent } from './current.ts';
 
 const HUMAN = { kind: 'human' } as const;
 
@@ -171,6 +172,18 @@ function OnlineGame({
   useEffect(() => {
     sendNow.current = send;
   });
+  // The game this browser is playing (src/ui/online/current.ts): remembered while it is on,
+  // forgotten when it ends. Closing the tab mid-game asks first.
+  const phase = view?.phase;
+  const seat = view?.you ?? null;
+  useEffect(() => {
+    if (phase === 'playing' && seat) saveCurrent({ gameId, you: seat });
+    else if (phase === 'over') clearCurrent(gameId);
+    if (phase !== 'playing' || !seat) return;
+    const ask = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', ask);
+    return () => window.removeEventListener('beforeunload', ask);
+  }, [phase, seat, gameId]);
   const [stickerMenu, setStickerMenu] = useState(false);
   // The sticker on screen: the last one flashed, until its time is up.
   const [poppedSticker, setPoppedSticker] = useState(link.sticker);
