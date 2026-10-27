@@ -570,6 +570,7 @@ export const anarsi: VariantDefinition = defineVariant({
   afterApply,
   squareMarks,
   fast: FAST,
+  emblem: '<circle cx="24" cy="24" r="18"/><path d="M14 38L24 9l10 29M16 28h21"/>',
   rules: {
     title: 'Anarşi',
     summary: 'Standart satranç, artı bir numara ve bir kaos kartı. Kart oynamak hamle yerine geçer.',

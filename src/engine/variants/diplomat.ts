@@ -107,6 +107,7 @@ export const diplomat = defineVariant({
   promotionTypes: ['q', 'r', 'b', 'n'],
   pieceValues: { ...STANDARD_VALUES, d: 200 },
   evaluateExtra: zoneBonus,
+  emblem: '<path d="M15 6v32"/><path d="M15 8c6-3 10 3 18 0v13c-8 3-12-3-18 0"/><path d="M9 38h20v4H9z"/>',
   rules: {
     title: 'Diplomat',
     summary: "g1/g8'deki atların yerine Diplomat başlar. 4. veya 5. yataydayken çevresinde barış bölgesi kurar.",

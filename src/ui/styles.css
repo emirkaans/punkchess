@@ -985,6 +985,19 @@ button.primary:hover:not(:disabled) {
 .variant-icon .piece {
   cursor: inherit;
 }
+.variant-emblem {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  fill: none;
+  stroke: var(--pink);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.variant-card.lime .variant-emblem {
+  stroke: var(--lime);
+}
 .variant-name {
   font: 400 30px/1 var(--marker);
 }

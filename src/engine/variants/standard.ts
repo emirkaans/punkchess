@@ -134,6 +134,8 @@ export const standard: VariantDefinition = defineVariant({
   pieces: STANDARD_PIECES,
   promotionTypes: ['q', 'r', 'b', 'n'],
   pieceValues: STANDARD_VALUES,
+  emblem:
+    '<path d="M24 5v6M21 8h6"/><path d="M12 30c-5-3-6-11 0-13 4-1 8 2 12 8 4-6 8-9 12-8 6 2 5 10 0 13z"/><path d="M12 30h24v5H12zM10 40h28"/>',
   rules: {
     title: 'Standart satranç',
     summary: 'Klasik FIDE kuralları; amaç rakip şahı mat etmek.',

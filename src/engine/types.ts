@@ -298,6 +298,8 @@ export interface VariantDefinition {
   readonly evaluateExtra?: (pos: Position, color: Color) => number;
   /** Rule card shown before a game (see src/rules/cards.ts). */
   readonly rules: RuleCard;
+  /** Line drawing standing for the variant in menus: SVG markup in a 48×48 box, stroked in currentColor. */
+  readonly emblem?: string;
   /** Texts in other languages, by locale code (e.g. 'en'). */
   readonly translations?: Readonly<Record<string, VariantTexts>>;
   /** Hooks for the fast search board (src/engine/fast) for rules piece data can't express. */

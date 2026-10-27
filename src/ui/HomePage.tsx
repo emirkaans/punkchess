@@ -153,9 +153,18 @@ export function HomePage({ onPlay, onOnline, onDaily, onOpenGame }: Props) {
                 aria-label={`${texts.name}: ${texts.rules.summary}`}
                 onClick={() => setPicked(v)}
               >
-                <span className="variant-icon">
-                  <PieceView variant={v} piece={{ type: signature(v), color: i % 2 ? 'w' : 'b' }} />
-                </span>
+                {v.emblem ? (
+                  <svg
+                    className="variant-emblem"
+                    viewBox="0 0 48 48"
+                    aria-hidden="true"
+                    dangerouslySetInnerHTML={{ __html: v.emblem }}
+                  />
+                ) : (
+                  <span className="variant-icon">
+                    <PieceView variant={v} piece={{ type: signature(v), color: i % 2 ? 'w' : 'b' }} />
+                  </span>
+                )}
                 <span className="variant-name">{texts.name}</span>
                 <span className="variant-tag">{t(`home.variantTag.${v.id}` as MessageKey)}</span>
               </button>

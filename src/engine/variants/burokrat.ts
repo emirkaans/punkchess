@@ -71,6 +71,8 @@ export const burokrat = defineVariant({
       return bonus;
     },
   },
+  emblem:
+    '<path d="M14 30h20v8H14zM10 42h28M19 26h10v4H19z"/><path d="M23 25c1-9 6-15 15-18-2 8-7 14-14 18z"/><path d="M26 20l8-9"/>',
   rules: {
     title: 'Bürokrat',
     summary: "g1/g8'deki atların yerine Bürokrat başlar: kimseyi yemez, kimse onu yiyemez, ama yol keser.",

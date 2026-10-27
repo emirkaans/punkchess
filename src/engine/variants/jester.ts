@@ -218,6 +218,8 @@ export const jester = defineVariant({
   pieces: { ...STANDARD_PIECES, j: JESTER },
   promotionTypes: ['q', 'r', 'b', 'n'],
   pieceValues: { ...STANDARD_VALUES, j: 300 },
+  emblem:
+    '<path d="M13 34c1-10 5-18 11-25 6 7 10 15 11 25z"/><path d="M13 34C12 26 9 21 4 25c1-8 6-11 12-7M35 34c1-8 4-13 9-9-1-8-6-11-12-7"/><path d="M11 34h26v5H11z"/><circle cx="24" cy="7" r="2.4"/><circle cx="4" cy="27" r="2.4"/><circle cx="44" cy="27" r="2.4"/>',
   rules: {
     title: 'Jester',
     summary: 'Jester, rakibin en son oynattığı taşın türü gibi hareket eder ve yer.',
