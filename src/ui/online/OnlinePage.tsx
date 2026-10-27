@@ -36,7 +36,9 @@ import type { MessageKey } from '../../i18n/index.ts';
 import type { Prefs } from '../prefs.ts';
 import type { Mode } from '../settings.ts';
 import { moveSound, playSound } from '../sound.ts';
-import { ApiError, joinOnlineGame, loadName, loadTicket, saveName, saveTicket, useOnlineGame } from './connection.ts';
+import { ApiError, joinOnlineGame, loadTicket, saveTicket, useOnlineGame } from './connection.ts';
+import { playerIdentity } from './lobbyConnection.ts';
+import { useAccount } from '../account.ts';
 import { LobbyPage } from './LobbyPage.tsx';
 import { ProfileLink } from '../ProfileLink.tsx';
 import { useAttention } from '../attention.ts';
@@ -814,18 +816,32 @@ function JoinCard({
   onJoined: (t: ReturnType<typeof loadTicket>) => void;
 }) {
   const { t, vt } = useI18n();
-  const [name, setName] = useState(loadName);
+  const account = useAccount();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const creator = host.players.w ?? host.players.b;
+  // Signed-in players play signed-in players only, guests guests only.
+  const blocked: 'needs-account' | 'guests-only' | null = account.loading
+    ? null
+    : creator?.username && !account.user
+      ? 'needs-account'
+      : creator && !creator.username && account.user
+        ? 'guests-only'
+        : null;
   const join = async () => {
     setBusy(true);
     setError(null);
-    saveName(name.trim());
     try {
-      onJoined(await joinOnlineGame(gameId, name.trim() || t('online.anon')));
+      onJoined(await joinOnlineGame(gameId, playerIdentity().id));
     } catch (e) {
-      setError(t(e instanceof ApiError && e.code === 'full' ? 'online.error.full' : 'online.error.network'));
+      const code = e instanceof ApiError ? e.code : null;
+      setError(
+        t(
+          code === 'full' || code === 'needs-account' || code === 'guests-only'
+            ? `online.error.${code}`
+            : 'online.error.network',
+        ),
+      );
       setBusy(false);
     }
   };
@@ -845,14 +861,14 @@ function JoinCard({
           time: control.initialMs === null ? t('time.none') : control.label,
         })}
       </p>
-      <label className="analysis-field">
-        <span>{t('online.name')}</span>
-        <input value={name} maxLength={24} onChange={(e) => setName(e.target.value)} autoComplete="nickname" />
-      </label>
+      {!account.user && !blocked && <p className="muted">{t('online.joinAs', { name: playerIdentity().name })}</p>}
+      {blocked && <p className="error">{t(`online.error.${blocked}`)}</p>}
       {error && <p className="error">{error}</p>}
-      <button type="submit" className="primary analysis-go" disabled={busy}>
-        {t('online.join')}
-      </button>
+      {!blocked && (
+        <button type="submit" className="primary analysis-go" disabled={busy || account.loading}>
+          {t('online.join')}
+        </button>
+      )}
     </form>
   );
 }

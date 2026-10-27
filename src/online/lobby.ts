@@ -6,7 +6,7 @@
 import { timeControl } from '../clock/clock.ts';
 import { listVariants } from '../engine/index.ts';
 import type { Color } from '../engine/index.ts';
-import { cleanName } from './room.ts';
+import { guestName } from './room.ts';
 import { ratingCategory } from '../rating/categories.ts';
 import type { CreateRequest, SeatTicket } from './protocol.ts';
 
@@ -121,9 +121,10 @@ export const quickTimeControls = (ids: readonly string[]) => ids.filter((id) => 
 /** Player ids: 8 to 64 letters, digits, '-' or '_'. */
 export const PLAYER_ID = /^[A-Za-z0-9_-]{8,64}$/;
 
-export function cleanPlayer(id: unknown, name: unknown): LobbyPlayer | null {
+/** A guest in the lobby: the server names it from its id (Punk#1234). */
+export function cleanPlayer(id: unknown): LobbyPlayer | null {
   if (typeof id !== 'string' || !PLAYER_ID.test(id)) return null;
-  return { id, name: cleanName(name) || 'punk', rating: null };
+  return { id, name: guestName(id), rating: null };
 }
 
 /** A seek from a client's request, or null when the variant or time control is unknown. */
@@ -176,6 +177,7 @@ export function gameRequest(seek: Seek, random: () => number): CreateRequest & {
     variantId: seek.variantId,
     timeControlId: seek.timeControlId,
     color,
+    playerId: seek.player.id,
     name: seek.player.name,
     rated: seek.rated,
   };

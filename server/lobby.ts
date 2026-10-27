@@ -197,17 +197,24 @@ export class Lobby extends DurableObject<Env> {
   /** Sends every connection the seek list (and which one is its own). */
   private broadcast(closing?: WebSocket) {
     const sockets = this.ctx.getWebSockets().filter((ws) => ws !== closing);
-    const seeks: Seek[] = [];
+    // Signed-in players see only signed-in players' seeks, guests only guests'.
+    const seeks: Record<'account' | 'guest', Seek[]> = { account: [], guest: [] };
     const ids = new Set<string>();
     for (const ws of sockets) {
       const a = this.attachment(ws);
-      if (a.seek) seeks.push(a.seek);
+      if (a.seek) seeks[a.account ? 'account' : 'guest'].push(a.seek);
       if (a.player) ids.add(a.player.id);
     }
-    const sorted = sortSeeks(seeks);
+    const sorted = { account: sortSeeks(seeks.account), guest: sortSeeks(seeks.guest) };
     for (const ws of sockets) {
       const a = this.attachment(ws);
-      if (a.player) this.send(ws, { t: 'state', seeks: sorted, online: ids.size, mySeek: a.seek?.id ?? null });
+      if (a.player)
+        this.send(ws, {
+          t: 'state',
+          seeks: sorted[a.account ? 'account' : 'guest'],
+          online: ids.size,
+          mySeek: a.seek?.id ?? null,
+        });
     }
   }
 
@@ -230,7 +237,7 @@ export class Lobby extends DurableObject<Env> {
     if (msg.t === 'hello') {
       // A signed-in player keeps the account's id and username.
       if (this.attachment(ws).account) return this.broadcast();
-      const player = cleanPlayer(msg.playerId, msg.name);
+      const player = cleanPlayer(msg.playerId);
       if (!player) return this.send(ws, { t: 'error', code: 'bad-request' });
       ws.serializeAttachment({ player, seek: null, account: null } satisfies Attachment);
       return this.broadcast();
@@ -239,18 +246,9 @@ export class Lobby extends DurableObject<Env> {
     if (!me) return this.send(ws, { t: 'error', code: 'bad-request' });
 
     switch (msg.t) {
-      case 'name': {
-        if (this.attachment(ws).account) return;
-        const player = cleanPlayer(me.id, msg.name);
-        if (!player) return;
-        const seek = this.attachment(ws).seek;
-        ws.serializeAttachment({
-          ...this.attachment(ws),
-          player,
-          seek: seek && { ...seek, player },
-        } satisfies Attachment);
-        return this.broadcast();
-      }
+      // Guests no longer choose a name (the server gives one); an old page may still send it.
+      case 'name':
+        return;
       case 'seek': {
         const player = this.seekPlayer(ws, String(msg.variantId), String(msg.timeControlId)) ?? me;
         const seek = makeSeek(crypto.randomUUID(), player, msg, false, Date.now());
@@ -259,9 +257,12 @@ export class Lobby extends DurableObject<Env> {
         return this.broadcast();
       }
       case 'quick': {
-        const seeks = this.ctx.getWebSockets().flatMap((s) => this.attachment(s).seek ?? []);
-        // Signed-in players are paired rated among themselves; guests casual.
+        // Signed-in players are paired rated among themselves; guests casual, among themselves.
         const rated = !!this.attachment(ws).account;
+        const seeks = this.ctx
+          .getWebSockets()
+          .filter((s) => !!this.attachment(s).account === rated)
+          .flatMap((s) => this.attachment(s).seek ?? []);
         const match = quickMatch(seeks, msg.timeControlId, me.id, rated);
         if (match) return this.pair(match, ws);
         const player = this.seekPlayer(ws, QUICK_VARIANT(), String(msg.timeControlId)) ?? me;
@@ -283,6 +284,9 @@ export class Lobby extends DurableObject<Env> {
         const holder = typeof msg.seekId === 'string' ? this.holderOf(msg.seekId) : null;
         const seek = holder && this.attachment(holder).seek;
         if (!holder || !seek) return this.send(ws, { t: 'error', code: 'gone' });
+        // A guest's seek is hidden from signed-in players and the other way round.
+        if (!this.attachment(holder).account !== !this.attachment(ws).account)
+          return this.send(ws, { t: 'error', code: 'gone' });
         if (seek.player.id === me.id) return this.send(ws, { t: 'error', code: 'own-seek' });
         if (seek.rated && !this.attachment(ws).account)
           return this.send(ws, { t: 'error', code: 'rated-needs-account' });

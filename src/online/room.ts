@@ -116,6 +116,16 @@ const fail = (code: ErrorCode): never => {
 export const cleanName = (name: unknown): string =>
   typeof name === 'string' ? name.replace(/\s+/g, ' ').trim().slice(0, MAX_NAME) : '';
 
+/**
+ * A guest's name, given by the server: "Punk#" and four digits drawn from the player's id, the
+ * same for the whole visit. A '#' never appears in usernames, so it cannot pass for an account.
+ */
+export function guestName(id: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619) >>> 0;
+  return `Punk#${1000 + (h % 9000)}`;
+}
+
 /** Who answers a setup question: its colour, or White for questions tied to no side. */
 const answerer = (q: SetupQuestion): Color => q.color ?? 'w';
 
@@ -170,6 +180,9 @@ export function joinRoom(
   if (room.phase !== 'waiting') fail('full');
   const color: Color | null = room.seats.w === null ? 'w' : room.seats.b === null ? 'b' : null;
   if (!color) return fail('full');
+  // Like lichess and chess.com: signed-in players only play signed-in players, guests only guests.
+  const host = room.seats.w ?? room.seats.b;
+  if (host && !host.account !== !account) fail(account ? 'guests-only' : 'needs-account');
   const seat: Seat = { name: account ? account.username : cleanName(name), token, account };
   const seated: Room = { ...room, seats: { ...room.seats, [color]: seat } };
   // Rated only if both players turned out to be signed in.

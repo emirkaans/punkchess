@@ -44,13 +44,16 @@ export interface CreateRequest {
   readonly timeControlId: string;
   /** Colour the creator plays, or 'random'. */
   readonly color: Color | 'random';
-  readonly name: string;
+  /** A guest's browser id (the server names guests from it); signed-in players play under the username. */
+  readonly playerId?: string;
+  /** The guest's name, set by the server from `playerId` (a name sent by a browser is replaced). */
+  readonly name?: string;
   /** Asks for a rated game (it only is when both players are signed in and the game has a clock). */
   readonly rated?: boolean;
 }
 
 export interface JoinRequest {
-  readonly name: string;
+  readonly playerId?: string;
 }
 
 /** Answer to create / join: the seat and the secret that proves it. */
@@ -124,7 +127,17 @@ export type ClientMessage =
   | { readonly t: 'sticker'; readonly id: StickerId }
   | { readonly t: 'ping' };
 
-export type ErrorCode = 'illegal' | 'not-your-turn' | 'bad-request' | 'full' | 'not-found' | 'over' | 'rate-limited';
+export type ErrorCode =
+  | 'illegal'
+  | 'not-your-turn'
+  | 'bad-request'
+  | 'full'
+  | 'not-found'
+  | 'over'
+  | 'rate-limited'
+  /** A guest tried to join a signed-in player's game, or the other way round. */
+  | 'needs-account'
+  | 'guests-only';
 
 export type ServerMessage =
   | { readonly t: 'view'; readonly view: GameView }

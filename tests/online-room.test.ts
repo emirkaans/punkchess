@@ -15,6 +15,7 @@ import {
   createRoom,
   draw,
   gameOf,
+  guestName,
   joinRoom,
   nextDeadline,
   playMove,
@@ -27,6 +28,7 @@ import {
 } from '../src/online/room.ts';
 import type { Room } from '../src/online/room.ts';
 import { liveOf } from '../src/online/record.ts';
+import { usernameProblem } from '../src/online/account.ts';
 
 const mv = (from: string, to: string, promotion?: string): WireMove =>
   promotion
@@ -174,6 +176,25 @@ describe('online oda', () => {
   });
 });
 
+describe('misafir ve hesap', () => {
+  const ada = { id: 'u-ada', username: 'Ada' };
+  const req = { variantId: 'standard', timeControlId: '5+0', color: 'w' as const };
+
+  it('misafir adı Punk#1234: id başına sabit, kullanıcı adı olamaz', () => {
+    expect(guestName('player-0001')).toMatch(/^Punk#\d{4}$/);
+    expect(guestName('player-0001')).toBe(guestName('player-0001'));
+    expect(usernameProblem(guestName('player-0001'))).not.toBeNull();
+  });
+
+  it('hesaplı oyuncu misafirle oynayamaz, misafir de hesaplıyla', () => {
+    const accountGame = createRoom('Abcd1234', req, 't1', () => 0, ada).room;
+    expect(() => joinRoom(accountGame, 'Punk#1234', 't2')).toThrow('needs-account');
+    const guestGame = createRoom('Abcd1234', req, 't1', () => 0).room;
+    expect(() => joinRoom(guestGame, 'x', 't2', { id: 'u-bora', username: 'Bora' })).toThrow('guests-only');
+    expect(joinRoom(guestGame, 'Punk#1234', 't2').room.phase).toBe('playing');
+  });
+});
+
 describe('puanlı oyunlar', () => {
   const ada = { id: 'u-ada', username: 'Ada' };
   const bora = { id: 'u-bora', username: 'Bora' };
@@ -190,9 +211,6 @@ describe('puanlı oyunlar', () => {
     expect(both.rated).toBe(true);
     expect(both.seats.w?.name).toBe('Ada');
     expect(both.seats.b?.account).toEqual(bora);
-    expect(joinRoom(createRoom('Abcd1234', req(true), 't1', () => 0, ada).room, 'misafir', 't2').room.rated).toBe(
-      false,
-    );
     expect(joinRoom(createRoom('Abcd1234', req(false), 't1', () => 0, ada).room, 'x', 't2', bora).room.rated).toBe(
       false,
     );

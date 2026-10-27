@@ -4,10 +4,12 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import type { Color } from '../src/engine/index.ts';
+import { PLAYER_ID } from '../src/online/lobby.ts';
 import { GAME_ID } from '../src/online/protocol.ts';
 import type { ClientMessage, CreateRequest, ServerMessage } from '../src/online/protocol.ts';
 import {
   RoomError,
+  guestName,
   answerSetup,
   createRoom,
   draw,
@@ -64,6 +66,9 @@ const MAX_RECORD_BYTES = 32_000;
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
+
+/** The id a guest is named from: its browser id, or the seat token when an old page sends none. */
+const guestId = (id: unknown, token: string): string => (typeof id === 'string' && PLAYER_ID.test(id) ? id : token);
 
 export class GameRoom extends DurableObject<Env> {
   private room: Room | null = null;
@@ -287,7 +292,13 @@ export class GameRoom extends DurableObject<Env> {
     if ((await this.load()) || (await this.ctx.storage.get('record'))) return json({ error: 'bad-request' }, 409);
     const body = (await request.json()) as CreateRequest;
     const token = crypto.randomUUID();
-    const { room, color } = createRoom(id, body, token, Math.random, this.accountOf(request));
+    const { room, color } = createRoom(
+      id,
+      { ...body, name: guestName(guestId(body.playerId, token)) },
+      token,
+      Math.random,
+      this.accountOf(request),
+    );
     await this.save(room);
     return json({ gameId: id, color, token });
   }
@@ -295,9 +306,9 @@ export class GameRoom extends DurableObject<Env> {
   private async join(request: Request): Promise<Response> {
     const room = await this.load();
     if (!room) return json({ error: 'not-found' }, 404);
-    const body = (await request.json()) as { name?: unknown };
+    const body = (await request.json()) as { playerId?: unknown };
     const token = crypto.randomUUID();
-    const joined = joinRoom(room, typeof body.name === 'string' ? body.name : '', token, this.accountOf(request));
+    const joined = joinRoom(room, guestName(guestId(body.playerId, token)), token, this.accountOf(request));
     const saved = await this.save(await withTags(await withRatings(joined.room, this.env.DB, Date.now()), this.env.DB));
     this.broadcast(saved);
     return json({ gameId: room.id, color: joined.color, token });

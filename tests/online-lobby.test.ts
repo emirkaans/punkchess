@@ -10,7 +10,7 @@ import {
   sortSeeks,
 } from '../src/online/lobby.ts';
 import type { LobbyPlayer, Seek } from '../src/online/lobby.ts';
-import { createRoom, joinRoom } from '../src/online/room.ts';
+import { createRoom, guestName, joinRoom } from '../src/online/room.ts';
 
 const alice: LobbyPlayer = { id: 'alice-0001', name: 'Alice', rating: null };
 const bob: LobbyPlayer = { id: 'bob-000001', name: 'Bob', rating: null };
@@ -19,16 +19,14 @@ const seek = (id: string, player: LobbyPlayer, tc: string, quick: boolean, at: n
   makeSeek(id, player, { variantId: QUICK_VARIANT(), timeControlId: tc, color: 'random' }, quick, at)!;
 
 describe('lobi', () => {
-  it('oyuncu kimliği: geçerli id ve temizlenmiş ad; bozuk id reddedilir', () => {
-    expect(cleanPlayer('abcdefgh-1234', '  Punk   Kid ')).toEqual({
-      id: 'abcdefgh-1234',
-      name: 'Punk Kid',
-      rating: null,
-    });
-    expect(cleanPlayer('abcdefgh', '')?.name).toBe('punk');
-    expect(cleanPlayer('kısa', 'x')).toBeNull();
-    expect(cleanPlayer('bad id with spaces', 'x')).toBeNull();
-    expect(cleanPlayer(42, 'x')).toBeNull();
+  it('misafir kimliği: adı sunucu verir (Punk#1234), hep aynı; bozuk id reddedilir', () => {
+    const p = cleanPlayer('abcdefgh-1234');
+    expect(p).toEqual({ id: 'abcdefgh-1234', name: guestName('abcdefgh-1234'), rating: null });
+    expect(p?.name).toMatch(/^Punk#\d{4}$/);
+    expect(cleanPlayer('abcdefgh-1234')?.name).toBe(p?.name);
+    expect(cleanPlayer('kısa')).toBeNull();
+    expect(cleanPlayer('bad id with spaces')).toBeNull();
+    expect(cleanPlayer(42)).toBeNull();
   });
 
   it('ilan: bilinmeyen varyant veya süre reddedilir, renk yoksa rastgele', () => {

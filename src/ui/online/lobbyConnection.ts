@@ -8,11 +8,12 @@ import type { Color } from '../../engine/index.ts';
 import type { LobbyClientMessage, LobbyErrorCode, LobbyServerMessage, Seek } from '../../online/lobby.ts';
 import type { SeatTicket } from '../../online/protocol.ts';
 import { loadJSON, saveJSON } from '../../storage/local.ts';
-import { loadName, saveName, saveTicket } from './connection.ts';
+import { guestName } from '../../online/room.ts';
+import { saveTicket } from './connection.ts';
 
 /**
- * This browser's player: an anonymous id it keeps and a nickname (a random
- * "Punk#1234" until the player picks one). Accounts will replace both.
+ * This browser's guest player: an id it keeps and the name the server gives it from that id
+ * ("Punk#1234"; guests cannot choose one). Signed-in players play under their username.
  */
 export function playerIdentity(): { id: string; name: string } {
   let id = loadJSON<string>('player:id', '');
@@ -20,12 +21,7 @@ export function playerIdentity(): { id: string; name: string } {
     id = crypto.randomUUID();
     saveJSON('player:id', id);
   }
-  let name = loadName();
-  if (!name) {
-    name = `Punk#${String(Math.floor(1000 + Math.random() * 9000))}`;
-    saveName(name);
-  }
-  return { id, name };
+  return { id, name: guestName(id) };
 }
 
 export interface LobbyLink {
@@ -38,7 +34,6 @@ export interface LobbyLink {
   readonly quick: (timeControlId: string) => void;
   readonly cancel: () => void;
   readonly accept: (seekId: string) => void;
-  readonly rename: (name: string) => void;
 }
 
 const wsUrl = () => `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/lobby/ws`;
@@ -124,9 +119,5 @@ export function useLobby(onPaired: (ticket: SeatTicket) => void): LobbyLink {
     quick: (timeControlId) => send({ t: 'quick', timeControlId }),
     cancel: () => send({ t: 'cancel' }),
     accept: (seekId) => send({ t: 'accept', seekId }),
-    rename: (name) => {
-      saveName(name);
-      send({ t: 'name', name });
-    },
   };
 }

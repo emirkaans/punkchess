@@ -7,7 +7,7 @@ import type { Seek } from '../../online/lobby.ts';
 import type { MessageKey } from '../../i18n/index.ts';
 import { useI18n } from '../i18n.tsx';
 import type { Mode } from '../settings.ts';
-import { ApiError, createOnlineGame, loadName, saveName } from './connection.ts';
+import { ApiError, createOnlineGame } from './connection.ts';
 import { playerIdentity, useLobby } from './lobbyConnection.ts';
 import { useAccount } from '../account.ts';
 import type { ChallengeRequest } from '../../online/challenge.ts';
@@ -84,15 +84,8 @@ export function LobbyCard({
 }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>('quick');
-  const [name, setName] = useState(() => playerIdentity().name);
   const account = useAccount();
   const mine = lobby.seeks.find((s) => s.id === lobby.mySeek) ?? null;
-
-  const saveNickname = () => {
-    const clean = name.replace(/\s+/g, ' ').trim();
-    if (!clean) return setName(loadName());
-    if (clean !== loadName()) lobby.rename(clean);
-  };
 
   return (
     <section className="online-card lobby-card">
@@ -114,19 +107,11 @@ export function LobbyCard({
             <strong className="lobby-username">{account.user.username}</strong>
           </div>
         ) : (
-          <label className="analysis-field lobby-name">
+          <div className="analysis-field lobby-name">
             <span>{t('online.name')}</span>
-            <input
-              value={name}
-              maxLength={24}
-              onChange={(e) => setName(e.target.value)}
-              onBlur={saveNickname}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') e.currentTarget.blur();
-              }}
-              autoComplete="nickname"
-            />
-          </label>
+            <strong className="lobby-username">{playerIdentity().name}</strong>
+            <small className="muted">{t('online.guestNote')}</small>
+          </div>
         )}
       </div>
 
@@ -385,13 +370,11 @@ export function FriendGame({
     setBusy(true);
     setError(null);
     try {
-      const name = account.user?.username ?? (loadName() || t('online.anon'));
-      saveName(name);
       const ticket = await createOnlineGame({
         variantId,
         timeControlId,
         color,
-        name,
+        playerId: playerIdentity().id,
         rated: !!account.user && rated,
       });
       if (challenge) {

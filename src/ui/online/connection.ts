@@ -21,9 +21,6 @@ const ticketKey = (gameId: string) => `online:${gameId}`;
 export const loadTicket = (gameId: string): SeatTicket | null => loadJSON<SeatTicket | null>(ticketKey(gameId), null);
 export const saveTicket = (t: SeatTicket) => saveJSON(ticketKey(t.gameId), t);
 
-export const loadName = (): string => loadJSON<string>('online:name', '');
-export const saveName = (name: string) => saveJSON('online:name', name);
-
 export class ApiError extends Error {
   constructor(readonly code: ErrorCode | 'network') {
     super(code);
@@ -52,8 +49,8 @@ export async function createOnlineGame(req: CreateRequest): Promise<SeatTicket> 
   return ticket;
 }
 
-export async function joinOnlineGame(gameId: string, name: string): Promise<SeatTicket> {
-  const ticket = await post<SeatTicket>(`/api/games/${gameId}/join`, { name });
+export async function joinOnlineGame(gameId: string, playerId: string): Promise<SeatTicket> {
+  const ticket = await post<SeatTicket>(`/api/games/${gameId}/join`, { playerId });
   saveTicket(ticket);
   return ticket;
 }
