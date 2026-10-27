@@ -69,9 +69,17 @@ export function uciPosition(state: GameState): string {
   return `position fen ${toFen(v, root.position)}${moves.length ? ` moves ${moves.join(' ')}` : ''}`;
 }
 
+/** Stockfish played weaker (bots): its Skill Level and a depth limit. Analysis plays full strength. */
+export interface Strength {
+  readonly skill: number;
+  readonly depth: number | null;
+}
+const FULL: Strength = { skill: 20, depth: null };
+
 interface Pending {
   readonly state: GameState;
   readonly timeLimitMs: number;
+  readonly strength: Strength;
   readonly resolve: (m: BotMove) => void;
   readonly reject: (e: Error) => void;
   readonly onInfo?: ThinkOptions['onInfo'];
@@ -93,13 +101,16 @@ export class StockfishClient {
   private pending: Pending | null = null;
   private active: Pending | null = null;
   failed = false;
+  // The Skill Level the engine was last set to.
+  private skill = 20;
 
-  think(opts: ThinkOptions): Promise<BotMove> {
+  think(opts: ThinkOptions, strength: Strength = FULL): Promise<BotMove> {
     this.stop();
     return new Promise<BotMove>((resolve, reject) => {
       const p: Pending = {
         state: opts.state,
-        timeLimitMs: Math.max(50, opts.timeLimitMs ?? 1000),
+        timeLimitMs: Math.max(30, opts.timeLimitMs ?? 1000),
+        strength,
         resolve,
         reject,
         onInfo: opts.onInfo,
@@ -134,6 +145,7 @@ export class StockfishClient {
     this.worker = null;
     this.ready = null;
     this.active = null;
+    this.skill = 20;
   }
 
   private send(cmd: string): void {
@@ -145,8 +157,12 @@ export class StockfishClient {
     const p = this.pending;
     if (!p || this.active || !this.worker) return;
     this.active = p;
+    if (p.strength.skill !== this.skill) {
+      this.send(`setoption name Skill Level value ${p.strength.skill}`);
+      this.skill = p.strength.skill;
+    }
     this.send(uciPosition(p.state));
-    this.send(`go movetime ${p.timeLimitMs}`);
+    this.send(`go ${p.strength.depth ? `depth ${p.strength.depth} ` : ''}movetime ${p.timeLimitMs}`);
   }
 
   private start(): Promise<void> {

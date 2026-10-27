@@ -5,7 +5,8 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { Dispatch } from 'react';
 import { BotCancelled, BotClient } from '../../ai/client.ts';
-import { HINT, acceptsDraw, botTimeMs } from '../../ai/levels.ts';
+import { HINT, acceptsDraw, botMinThinkMs, botTimeMs } from '../../ai/levels.ts';
+import { PlayClient } from '../../ai/play.ts';
 import { LOW_TIME_MS, remainingMs } from '../../clock/clock.ts';
 import { isInCheck, opposite, toFen } from '../../engine/index.ts';
 import type { GameState, Square } from '../../engine/index.ts';
@@ -36,7 +37,7 @@ export function useGame(init: () => GameSession) {
 
 /** Two workers: one plays, the other answers hints and draw offers without cancelling the bot. */
 export function useBotClients() {
-  const [clients] = useState(() => ({ bot: new BotClient(), helper: new BotClient() }));
+  const [clients] = useState(() => ({ bot: new PlayClient(), helper: new BotClient() }));
   useEffect(
     () => () => {
       clients.bot.dispose();
@@ -55,7 +56,7 @@ export function useBotPlayer(
   session: GameSession,
   view: SessionView,
   dispatch: Dispatch<GameAction>,
-  bot: BotClient,
+  bot: PlayClient,
   paused: boolean,
   onError: (message: string) => void,
 ): boolean {
@@ -79,19 +80,19 @@ export function useBotPlayer(
     if (player.kind !== 'bot') return;
     let active = true;
     setThinking(true);
+    const clock = v.timed
+      ? { remainingMs: remainingMs(s.clock, v.turn, Date.now()), incrementMs: s.clock.control.incrementMs }
+      : undefined;
     bot
       .think({
         variantId: v.variant.id,
         state: game,
         level: player.level,
         seed: s.seed + game.moves.length,
-        timeLimitMs: v.timed
-          ? botTimeMs(player.level, {
-              remainingMs: remainingMs(s.clock, v.turn, Date.now()),
-              incrementMs: s.clock.control.incrementMs,
-            })
-          : undefined,
-        minThinkMs: s.settings.mode === 'botvbot' ? s.settings.delayMs : undefined,
+        timeLimitMs: clock ? botTimeMs(player.level, clock) : undefined,
+        clock,
+        // Bot against bot waits as chosen; against a person, less as the bot's clock runs down.
+        minThinkMs: s.settings.mode === 'botvbot' ? s.settings.delayMs : botMinThinkMs(clock),
       })
       .then((r) => dispatch({ type: 'move', move: r.move, key, now: Date.now() }))
       .catch((e) => {
@@ -274,7 +275,7 @@ export function useAssistant(
   session: GameSession,
   view: SessionView,
   dispatch: Dispatch<GameAction>,
-  clients: { bot: BotClient; helper: BotClient },
+  clients: { bot: PlayClient; helper: BotClient },
   setNotice: (n: string | null) => void,
 ) {
   const [hint, setHint] = useState<{ game: GameState; arrow: readonly [Square, Square] } | null>(null);

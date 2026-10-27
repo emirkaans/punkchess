@@ -17,6 +17,8 @@ export interface ThinkOptions {
   readonly onInfo?: (info: { depth: number; score: number; pv: readonly LineMove[] }) => void;
   /** Analysis instead of a bot move: positions with a single legal move are searched fully. */
   readonly analyse?: boolean;
+  /** The bot's clock in a timed game (Stockfish bots size their time from it). */
+  readonly clock?: { readonly remainingMs: number; readonly incrementMs: number };
 }
 
 /** Rejection reason when a request is superseded or stopped. */

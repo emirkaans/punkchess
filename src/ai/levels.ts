@@ -104,6 +104,47 @@ export function botTimeMs(level: number, clock?: { remainingMs: number; incremen
   return Math.max(1, Math.min(limit, clock.remainingMs / 30 + clock.incrementMs));
 }
 
+/**
+ * Standard chess bots are Stockfish, weakened as lichess weakens its levels: its Skill Level
+ * (0-20: low ones knowingly pick worse moves among the candidates), a depth limit (it cannot see
+ * deep tactics) and little time. Our Stockfish has no negative skill levels, so the easiest two
+ * also play a random legal move now and then. Levels 1-5 sit near lichess's levels 1, 3, 5, 7 and 8.
+ */
+export interface StockfishLevel {
+  readonly skill: number;
+  readonly depth: number;
+  /** The most time it takes for a move (less as its clock runs down). */
+  readonly maxMs: number;
+  /** Chance of a random legal move instead of Stockfish's. */
+  readonly randomMove: number;
+}
+
+export const STOCKFISH_LEVELS: Readonly<Record<number, StockfishLevel>> = {
+  1: { skill: 0, depth: 1, maxMs: 100, randomMove: 0.3 },
+  2: { skill: 2, depth: 3, maxMs: 300, randomMove: 0.1 },
+  3: { skill: 7, depth: 5, maxMs: 800, randomMove: 0 },
+  4: { skill: 16, depth: 13, maxMs: 1500, randomMove: 0 },
+  5: { skill: 20, depth: 22, maxMs: 3000, randomMove: 0 },
+};
+
+/** A level's Stockfish settings (unknown levels play as the strongest). */
+export const stockfishLevel = (level: number): StockfishLevel => STOCKFISH_LEVELS[level] ?? STOCKFISH_LEVELS[5];
+
+/**
+ * Stockfish's time for a bot move: its level's most, but a share of the clock left (and of the
+ * increment) once that is smaller, so it moves fast in bullet and may think longer in 15+10.
+ */
+export function stockfishTimeMs(level: number, clock?: { remainingMs: number; incrementMs: number }): number {
+  const max = stockfishLevel(level).maxMs;
+  if (!clock) return max;
+  return Math.round(Math.max(30, Math.min(max, clock.remainingMs / 60 + clock.incrementMs * 0.6)));
+}
+
+/** The least time a bot takes before answering (so it does not look instant): shorter as its clock runs down. */
+export function botMinThinkMs(clock?: { remainingMs: number }): number {
+  return clock ? Math.round(Math.min(MIN_THINK_MS, clock.remainingMs / 150)) : MIN_THINK_MS;
+}
+
 /** Draw offers: levels 3+ accept when their own evaluation is worse than -150; levels 1-2 always decline. */
 export function acceptsDraw(level: number, botScore: number): boolean {
   return level >= 3 && botScore < -150;

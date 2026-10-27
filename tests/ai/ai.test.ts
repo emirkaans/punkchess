@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { chooseMove } from '../../src/ai/search.ts';
-import { levelConfig, LEVELS, botTimeMs, acceptsDraw } from '../../src/ai/levels.ts';
+import {
+  levelConfig,
+  LEVELS,
+  botTimeMs,
+  acceptsDraw,
+  botMinThinkMs,
+  stockfishLevel,
+  stockfishTimeMs,
+} from '../../src/ai/levels.ts';
 import { createRng } from '../../src/ai/rng.ts';
 import { evaluate } from '../../src/ai/evaluate.ts';
 import { squareName } from '../../src/engine/board.ts';
@@ -46,6 +54,20 @@ describe('seviyeler', () => {
     expect(botTimeMs(5)).toBe(950);
     expect(botTimeMs(5, { remainingMs: 15_000, incrementMs: 0 })).toBe(500);
     expect(botTimeMs(3, { remainingMs: 600_000, incrementMs: 2000 })).toBe(700);
+  });
+
+  it('Stockfish botları: seviye arttıkça daha güçlü; süre saatle kısalır (bullet hızlı, 15+10 uzun)', () => {
+    const skills = [1, 2, 3, 4, 5].map((l) => stockfishLevel(l).skill);
+    expect(skills).toEqual([...skills].sort((a, b) => a - b));
+    expect(stockfishLevel(5)).toMatchObject({ skill: 20, randomMove: 0 });
+    // 1+0: a second at most at the start, less later; 15+10: the level's full time.
+    expect(stockfishTimeMs(5, { remainingMs: 60_000, incrementMs: 0 })).toBe(1000);
+    expect(stockfishTimeMs(5, { remainingMs: 6_000, incrementMs: 0 })).toBe(100);
+    expect(stockfishTimeMs(5, { remainingMs: 900_000, incrementMs: 10_000 })).toBe(3000);
+    expect(stockfishTimeMs(1, { remainingMs: 900_000, incrementMs: 10_000 })).toBe(100);
+    expect(stockfishTimeMs(5)).toBe(3000);
+    expect(botMinThinkMs()).toBe(400);
+    expect(botMinThinkMs({ remainingMs: 15_000 })).toBe(100);
   });
 
   it('beraberlik teklifi: seviye 3+ -150 altında kabul eder, 1-2 hep reddeder', () => {
