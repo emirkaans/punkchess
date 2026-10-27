@@ -18,9 +18,11 @@ export const PIECE_SETS = [
   'tup',
   'piksel',
   'firca',
+  'murekkep',
+  'zincir',
 ] as const;
 export type PieceSet = (typeof PIECE_SETS)[number];
-type Drawn = Exclude<PieceSet, 'glyph'>;
+type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir'>;
 type Kind = 'k' | 'q' | 'r' | 'b' | 'n' | 'p';
 
 const LINE = 'style="fill: var(--line); stroke: none"';
@@ -169,13 +171,129 @@ const DRAWINGS: Record<Drawn, Record<Kind, string>> = {
   },
 };
 
+/*
+ * Tattooed sets: classic outlines (each piece easy to tell apart) with a texture on the body,
+ * clipped to the piece. Drawn in three layers: the outline (the shapes in the line colour, a
+ * thick stroke), the body, then the texture in the line and accent colours.
+ */
+type Tattooed = 'murekkep' | 'zincir';
+const TATTOOED: readonly PieceSet[] = ['murekkep', 'zincir'];
+
+const PEDESTAL =
+  '<rect x="22" y="80" width="56" height="10" rx="3"/><rect x="28" y="73" width="44" height="9" rx="2"/>';
+const CLASSIC: Record<Kind, string> = {
+  p: '<rect x="26" y="80" width="48" height="10" rx="3"/><path d="M34 81 Q37 60 43 53 H57 Q63 60 66 81 Z"/><ellipse cx="50" cy="52" rx="13" ry="4"/><circle cx="50" cy="37" r="12"/>',
+  r: `${PEDESTAL}<path d="M34 74 L37 41 H63 L66 74 Z"/><rect x="32" y="38" width="36" height="6" rx="1"/><rect x="29" y="26" width="42" height="14" rx="1"/><rect x="29" y="15" width="10" height="13"/><rect x="45" y="15" width="10" height="13"/><rect x="61" y="15" width="10" height="13"/>`,
+  b: `${PEDESTAL}<path d="M38 74 Q40 61 44 56 H56 Q60 61 62 74 Z"/><ellipse cx="50" cy="55" rx="14" ry="4"/><path d="M50 18 Q67 32 61 47 Q57 52 50 52 Q43 52 39 47 Q33 32 50 18 Z"/><circle cx="50" cy="13" r="5"/>`,
+  n: `${PEDESTAL}<path d="M31 74 Q30 58 40 50 Q45 46 43 42 L29 48 Q22 47 24 40 Q33 25 45 19 L47 9 L54 17 Q71 20 75 40 Q78 58 70 74 Z"/>`,
+  q: `${PEDESTAL}<path d="M36 74 L40 47 H60 L64 74 Z"/><ellipse cx="50" cy="46" rx="15" ry="4"/><path d="M34 44 L27 19 L40 32 L50 13 L60 32 L73 19 L66 44 Z"/><circle cx="27" cy="16" r="4"/><circle cx="50" cy="10" r="4"/><circle cx="73" cy="16" r="4"/>`,
+  k: `${PEDESTAL}<path d="M36 74 L40 47 H60 L64 74 Z"/><ellipse cx="50" cy="46" rx="15" ry="4"/><path d="M34 44 Q29 30 38 26 H62 Q71 30 66 44 Z"/><rect x="46" y="4" width="8" height="23" rx="1"/><rect x="39" y="10" width="22" height="7" rx="1"/>`,
+};
+const ink = (width: number, extra = '') =>
+  `style="fill: none; stroke: var(--line); stroke-width: ${width}; stroke-linecap: round; stroke-linejoin: round${extra}"`;
+const red = (width: number, extra = '') =>
+  `style="fill: none; stroke: var(--accent); stroke-width: ${width}; stroke-linecap: round; stroke-linejoin: round${extra}"`;
+const INK_FILL = 'style="fill: var(--line); stroke: none"';
+const RED_FILL = 'style="fill: var(--accent); stroke: var(--line); stroke-width: 1"';
+// What every tattooed set keeps so the piece reads at a glance: the bishop's slit, the knight's eye and mane.
+const MARKS: Partial<Record<Kind, string>> = {
+  b: `<path d="M55 28 L45 40" ${ink(3)}/>`,
+  n: `<circle cx="45" cy="31" r="2.6" ${INK_FILL}/><path d="M52 20 Q64 30 66 48" ${ink(1.4, '; opacity: .6')}/>`,
+};
+// The middle of each body, where a tattoo sits.
+const CHEST: Record<Kind, [number, number]> = {
+  k: [50, 61],
+  q: [50, 61],
+  r: [50, 57],
+  b: [50, 66],
+  n: [57, 57],
+  p: [50, 68],
+};
+// The neck, where the barbed wire runs.
+const NECK: Record<Kind, number> = { k: 46, q: 46, r: 41, b: 55, n: 50, p: 52 };
+
+/** Each piece's flash tattoo: crossbones, rose, anchor, dagger, lightning, star. */
+const FLASH: Record<Kind, string> = {
+  k: `<path d="M-7 -7 L7 7 M7 -7 L-7 7" ${ink(2.2)}/>${[
+    [-7, -7],
+    [7, -7],
+    [-7, 7],
+    [7, 7],
+  ]
+    .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.8" ${INK_FILL}/>`)
+    .join('')}<circle cx="0" cy="-1" r="3.2" style="fill: var(--accent); stroke: none"/>`,
+  q: `<circle r="6" style="fill: var(--accent); stroke: none"/><path d="M0 -3 Q3 -3 3 0 Q3 3 0 3 Q-3 3 -3 0 Q-3 -1.5 -1.5 -1.5" ${ink(1.2)}/><path d="M-6 4 Q-10 9 -4 10 M6 4 Q10 9 4 10" ${ink(1.6)}/>`,
+  r: `<path d="M0 -8 V8 M-6 3 Q-6 9 0 9 Q6 9 6 3 M-4 -4 H4" ${ink(2)}/><circle cx="0" cy="-9.5" r="2" ${ink(1.4)}/><path d="M-6 3 l-2 -2 M6 3 l2 -2" ${red(1.6)}/>`,
+  b: `<path d="M0 -9 V7" ${ink(2.4)}/><path d="M-5 -3 H5" ${red(2.2)}/><path d="M0 7 L-1.5 11 H1.5 Z" ${INK_FILL}/>`,
+  n: `<path d="M2 -9 L-4 1 H2 L-2 10 L6 -2 H0 Z" ${RED_FILL}/>`,
+  p: `<path d="M0 -6 L1.8 -1.9 L6 -1.9 L2.6 0.8 L3.8 5 L0 2.5 L-3.8 5 L-2.6 0.8 L-6 -1.9 L-1.8 -1.9 Z" ${RED_FILL}/>`,
+};
+
+/** Dotwork around the tattoo, the same for every game (a fixed seed per piece). */
+function dotwork(kind: Kind): string {
+  let s = kind.charCodeAt(0) * 7919;
+  const next = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const [x, y] = CHEST[kind];
+  let dots = '';
+  for (let i = 0; i < 26; i++) {
+    const a = next() * Math.PI * 2;
+    const d = 9 + next() * 7;
+    const r = 0.5 + next() * 0.5;
+    dots += `<circle cx="${(x + Math.cos(a) * d).toFixed(1)}" cy="${(y + Math.sin(a) * d * 0.8).toFixed(1)}" r="${r.toFixed(2)}" style="fill: var(--line); stroke: none; opacity: .55"/>`;
+  }
+  return dots;
+}
+
+/** A chain across the body from the bottom left, barbed wire at the neck, rivets on the base. */
+function chain(kind: Kind): string {
+  const [x0, y0, x1, y1] = [22, 84, 80, 18];
+  const links = 13;
+  const angle = ((Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI).toFixed(1);
+  let s = '';
+  for (let i = 0; i <= links; i++) {
+    const x = (x0 + ((x1 - x0) * i) / links).toFixed(1);
+    const y = (y0 + ((y1 - y0) * i) / links).toFixed(1);
+    const at = `transform="translate(${x} ${y}) rotate(${angle})"`;
+    s +=
+      i % 2
+        ? `<rect x="-4.6" y="-1.3" width="9.2" height="2.6" rx="1.3" ${at} ${INK_FILL}/>`
+        : `<ellipse rx="5" ry="3" ${at} ${ink(1.8)}/>`;
+  }
+  const y = NECK[kind];
+  s += `<path d="M18 ${y} Q34 ${y - 3} 50 ${y} T82 ${y}" ${red(1.4)}/>`;
+  for (let x = 24; x <= 76; x += 9)
+    s += `<path d="M${x - 2} ${y - 3} L${x + 2} ${y + 3} M${x + 2} ${y - 3} L${x - 2} ${y + 3}" ${red(1.2)}/>`;
+  for (let x = 30; x <= 70; x += 10)
+    s += `<circle cx="${x}" cy="85" r="2" ${INK_FILL}/><circle cx="${x - 0.6}" cy="84.4" r=".7" style="stroke: none"/>`;
+  return s;
+}
+
+const TATTOOS: Record<Tattooed, (kind: Kind) => string> = {
+  murekkep: (kind) => {
+    const [x, y] = CHEST[kind];
+    return `${dotwork(kind)}<g transform="translate(${x} ${y})">${FLASH[kind]}</g><path d="M24 85 H76" ${ink(1.3, '; stroke-dasharray: 3 2.4')}/>`;
+  },
+  zincir: chain,
+};
+
+/** A tattooed piece; `id` names its clip path, so it must be unique on the page. */
+function tattooedSvg(set: Tattooed, kind: Kind, id: string): string {
+  const shapes = CLASSIC[kind];
+  return `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}">${shapes}</clipPath></defs><g class="ol">${shapes}</g><g class="bd">${shapes}</g><g clip-path="url(#${id})">${TATTOOS[set](kind)}${MARKS[kind] ?? ''}</g></svg>`;
+}
+
 const KIND_OF_GLYPH: Record<string, Kind> = { '♚': 'k', '♛': 'q', '♜': 'r', '♝': 'b', '♞': 'n', '♟': 'p' };
 
-/** The SVG of a standard piece in `set`, or null when the set (or the glyph) has no drawing. */
-export function pieceSvg(set: PieceSet, glyph: string): string | null {
+/**
+ * The SVG of a standard piece in `set`, or null when the set (or the glyph) has no drawing.
+ * `id` is unique on the page (the tattooed sets clip their texture with it).
+ */
+export function pieceSvg(set: PieceSet, glyph: string, id = `pc-${set}`): string | null {
   if (set === 'glyph') return null;
   const kind = KIND_OF_GLYPH[glyph.charAt(0)];
   if (!kind) return null;
+  if (TATTOOED.includes(set)) return tattooedSvg(set as Tattooed, kind, `${id}-${kind}`);
+  set = set as Drawn;
   const body = DRAWINGS[set][kind];
   const inner = set === 'firca' ? `<g class="o">${body}</g><g class="m">${body}</g>` : body;
   return `<svg viewBox="0 0 100 100" aria-hidden="true">${inner}</svg>`;

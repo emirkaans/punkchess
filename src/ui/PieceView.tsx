@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { Piece, Position, Square, VariantDefinition } from '../engine/index.ts';
 import { useI18n } from './i18n.tsx';
 import { pieceSvg, usePieceSet } from './pieceSets.ts';
@@ -41,7 +42,8 @@ export function PieceView({ variant, piece, position, square }: Props) {
 
 /** A standard piece: the font glyph, or its drawing in the chosen piece set. */
 function GlyphPiece({ set, glyph }: { set: PieceSet; glyph: string }) {
-  const svg = pieceSvg(set, glyph);
+  const id = `pc${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const svg = pieceSvg(set, glyph, id);
   if (!svg) return <span className="glyph">{glyph}</span>;
   return <span className={`set set-${set}`} dangerouslySetInnerHTML={{ __html: svg }} />;
 }

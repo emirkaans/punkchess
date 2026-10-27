@@ -1867,6 +1867,17 @@ button.primary:hover:not(:disabled) {
   filter: drop-shadow(2px 0 0 var(--pb-line)) drop-shadow(-2px 0 0 var(--pb-line)) drop-shadow(0 2px 0 var(--pb-line))
     drop-shadow(0 -2px 0 var(--pb-line));
 }
+/* Tattooed: a thick outline under the body, the tattoo on top (drawn with its own colours). */
+.piece .set-murekkep .ol,
+.piece .set-zincir .ol {
+  fill: var(--line);
+  stroke: var(--line);
+  stroke-width: 6;
+}
+.piece .set-murekkep .bd,
+.piece .set-zincir .bd {
+  stroke: none;
+}
 /* Brush: each stroke twice, a wide outline under the colour. */
 .piece .set-firca svg {
   fill: none;

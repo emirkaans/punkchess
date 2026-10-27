@@ -267,6 +267,8 @@ export const tr = {
   'pieceSet.tup': 'Neon Tüp',
   'pieceSet.piksel': 'Piksel',
   'pieceSet.firca': 'Fırça',
+  'pieceSet.murekkep': 'Mürekkep',
+  'pieceSet.zincir': 'Zincir',
 
   // Status line and announcements
   'status.setup': 'Oyun öncesi seçim bekleniyor…',
@@ -1161,6 +1163,8 @@ export const en: Record<MessageKey, string> = {
   'pieceSet.tup': 'Neon Tube',
   'pieceSet.piksel': 'Pixel',
   'pieceSet.firca': 'Brush',
+  'pieceSet.murekkep': 'Ink',
+  'pieceSet.zincir': 'Chain',
 
   'status.setup': 'Waiting for the pre-game choice…',
   'status.thinking': '{color} bot ({name}) is thinking…',
