@@ -725,7 +725,8 @@ export function staticExchange(v: VariantDefinition, pos: Position, move: Move):
  */
 export function search(v: VariantDefinition, state: GameState, params: SearchParams): SearchResult {
   const s = new Searcher(v, state.position, recentPositions(state), params);
-  const legal = legalMoves(v, state.position);
+  // Piece moves only: the fast board knows no cards.
+  const legal = legalMoves(v, state.position).filter((m) => !m.card);
   // Moves of the line after the first are legal in later positions, not at the root: look them up there.
   s.moveOf = (m) => {
     const promo = movePromo(m);

@@ -93,7 +93,11 @@ export function toFen(v: VariantDefinition, pos: Position): string {
 
 export function moveToSan(v: VariantDefinition, pos: Position, move: Move, legal: Move[] = legalMoves(v, pos)): string {
   let san: string;
-  if (move.castle) {
+  if (move.card) {
+    san = v.cards!.san(move);
+    // An unresolved chaos card does nothing yet: no check mark.
+    if (move.card.id === 'chaos' && !move.card.kind) return san;
+  } else if (move.castle) {
     san = move.castle === 'K' ? 'O-O' : 'O-O-O';
   } else {
     const letter = pieceDef(v, move.piece).sanLetter;

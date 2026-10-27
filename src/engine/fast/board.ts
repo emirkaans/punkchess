@@ -707,6 +707,7 @@ export class FastBoard {
     const startRank = side === 0 ? 1 : 6;
     const promos = this.promoTypes;
     const nTypes = this.types.length;
+    const frozen = this.hooks.frozen;
     for (let type = 0; type < nTypes; type++) {
       const slot = type * 2 + side;
       const count = this.listCount[slot];
@@ -718,6 +719,7 @@ export class FastBoard {
       for (let i = 0; i < count; i++) {
         const from = list[i];
         const me = sq[from];
+        if (frozen !== undefined && frozen(this, from)) continue;
         for (let pi = 0; pi < patterns.length; pi++) {
           const p = patterns[pi];
           if (p.kind === 2) {

@@ -30,6 +30,60 @@ export interface Move {
   readonly castle?: CastleSide;
   readonly enPassant?: boolean;
   readonly doublePush?: boolean;
+  /**
+   * A card played instead of moving a piece (variants with `cards`). `from` / `to` are then the
+   * card's first and last target squares (-1 when it has none) and `piece` is ''.
+   */
+  readonly card?: CardPlay;
+}
+
+/** A card played as a move: which card, on which squares. */
+export interface CardPlay {
+  /** Card id; a chaos card is 'chaos' (see `kind` once it is resolved). */
+  readonly id: string;
+  /** Target squares, in the order the card takes them. */
+  readonly squares: readonly Square[];
+  /** A resolved chaos card: which card it was. */
+  readonly kind?: string;
+  /** A resolved chaos card: '+' it helped the player, '-' it backfired. */
+  readonly outcome?: '+' | '-';
+}
+
+/** A card move's `from` / `to` / `piece` filled in from the card. */
+export function cardMove(card: CardPlay): Move {
+  const sq = card.squares;
+  return { from: sq.length ? sq[0] : -1, to: sq.length ? sq[sq.length - 1] : -1, piece: '', card };
+}
+
+/** Rules of a variant whose players hold cards (see `VariantDefinition.cards`). */
+export interface CardRules {
+  /** The chaos cards a player can be dealt. */
+  readonly chaosKinds: readonly string[];
+  /**
+   * Card moves of the side to move, pseudo-legal (the usual check filter applies). A chaos card
+   * appears unresolved (no `kind`): what it does is drawn when it is played (see `resolveChaos`).
+   */
+  readonly moves: (pos: Position) => Move[];
+  /** Position after a card move, before the variant's `afterApply`. */
+  readonly apply: (pos: Position, move: Move) => Position;
+  /**
+   * Every way the side to move's chaos card `kind` can turn out, per outcome, each a legal resolved
+   * card move. An outcome with nothing to act on has one move without squares (the card fizzles).
+   */
+  readonly resolveChaos: (pos: Position, kind: string) => { readonly '+': Move[]; readonly '-': Move[] };
+  /** Notation of a card move, without check marks. */
+  readonly san: (move: Move) => string;
+  /** Reads `san` (no check marks) back, or null if it is not a card move. */
+  readonly parseSan: (san: string) => CardPlay | null;
+}
+
+/** A mark the board draws on a square (a variant's lasting effects, e.g. a frozen piece). */
+export interface SquareMark {
+  readonly square: Square;
+  /** Style key: the board draws `mark-<kind>`. */
+  readonly kind: string;
+  /** Short text in the corner (e.g. turns left), or ''. */
+  readonly label: string;
 }
 
 export interface CastlingRights {
@@ -258,6 +312,12 @@ export interface VariantDefinition {
    * `base` is the default generator; return its result to keep default behavior.
    */
   readonly generateMoves?: (pos: Position, from: Square, base: (pos: Position, from: Square) => Move[]) => Move[];
+  /** Cards the players hold, played instead of a move (Anarşi). */
+  readonly cards?: CardRules;
+  /** Optional last step of every move (card moves too): e.g. effects that run out change the board. */
+  readonly afterApply?: (prev: Position, next: Position, move: Move) => Position;
+  /** Optional marks the board draws on squares (lasting effects). */
+  readonly squareMarks?: (pos: Position) => readonly SquareMark[];
   /**
    * Optional game-over override. Receives the default result (null = game continues)
    * and may replace it.

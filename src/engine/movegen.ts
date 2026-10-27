@@ -172,6 +172,7 @@ export function pseudoMoves(v: VariantDefinition, pos: Position): Move[] {
     const p = pos.board[sq];
     if (p && p.color === pos.turn) moves.push(...pseudoMovesFrom(v, pos, sq));
   }
+  if (v.cards) moves.push(...v.cards.moves(pos));
   return moves;
 }
 
@@ -285,6 +286,11 @@ const CORNER_RIGHTS: Readonly<Record<number, keyof CastlingRights>> = {
 };
 
 export function applyMove(v: VariantDefinition, pos: Position, move: Move): Position {
+  const next = move.card ? v.cards!.apply(pos, move) : applyPieceMove(v, pos, move);
+  return v.afterApply ? v.afterApply(pos, next, move) : next;
+}
+
+function applyPieceMove(v: VariantDefinition, pos: Position, move: Move): Position {
   const board = pos.board.slice();
   const mover = board[move.from];
   if (!mover) throw new Error('applyMove: no piece on from-square');

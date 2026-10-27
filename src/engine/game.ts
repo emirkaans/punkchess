@@ -2,6 +2,7 @@ import { squareName } from './board.ts';
 import { applyMove, pieceDef } from './movegen.ts';
 import { isInCheck, legalMoves } from './legality.ts';
 import { moveToSan, parseFen, toFen } from './notation.ts';
+import { cardMove } from './types.ts';
 import type { GameResult, GameState, Move, PieceType, Position, Square, VariantDefinition } from './types.ts';
 
 /**
@@ -74,15 +75,50 @@ export function createGame(v: VariantDefinition, fen: string = v.startPosition):
   return buildState(v, parseFen(v, fen), [], [], null);
 }
 
+const sameCard = (a: Move['card'], b: Move['card']) =>
+  a === b || (!!a && !!b && a.id === b.id && (a.id === CHAOS || a.squares.join() === b.squares.join()));
+
 const sameMove = (a: Move, b: Move) =>
-  a.from === b.from && a.to === b.to && a.promotion === b.promotion && a.castle === b.castle;
+  a.card || b.card
+    ? sameCard(a.card, b.card)
+    : a.from === b.from && a.to === b.to && a.promotion === b.promotion && a.castle === b.castle;
+
+/** Id of a chaos card in a variant's card moves: what it does is drawn when it is played. */
+export const CHAOS = 'chaos';
+
+/**
+ * Plays out the side to move's chaos card `kind` in `pos`: hit or backfire half and half, then
+ * one of the ways that outcome can go. `random` returns numbers in [0, 1).
+ */
+export function drawChaos(v: VariantDefinition, pos: Position, kind: string, random: () => number): Move {
+  const ways = v.cards!.resolveChaos(pos, kind)[random() < 0.5 ? '+' : '-'];
+  return ways[Math.min(ways.length - 1, Math.floor(random() * ways.length))];
+}
+
+/** Deals a chaos card: one of the variant's kinds, at random. */
+export function dealChaos(v: VariantDefinition, random: () => number): string {
+  const kinds = v.cards!.chaosKinds;
+  return kinds[Math.min(kinds.length - 1, Math.floor(random() * kinds.length))];
+}
+
+/** Is `move` one of the ways the chaos card it names can turn out in `pos`? */
+function isChaosResolution(v: VariantDefinition, pos: Position, move: Move): boolean {
+  const card = move.card!;
+  if (!card.kind || !card.outcome || !v.cards) return false;
+  return v.cards.resolveChaos(pos, card.kind)[card.outcome].some((m) => m.card!.squares.join() === card.squares.join());
+}
 
 /** Play a legal move. Throws if the move is illegal or the game is over. */
 export function makeMove(v: VariantDefinition, state: GameState, move: Move): GameState {
   if (state.result) throw new Error('Game is over');
   const legal = legalMoves(v, state.position);
-  const real = legal.find((m) => sameMove(m, move));
+  let real = legal.find((m) => sameMove(m, move));
   if (!real) throw new Error('Illegal move');
+  // A chaos card is played resolved (its card and outcome drawn by whoever runs the game).
+  if (real.card?.id === CHAOS) {
+    if (!isChaosResolution(v, state.position, move)) throw new Error('Illegal move');
+    real = move;
+  }
   const san = moveToSan(v, state.position, real, legal);
   const position = applyMove(v, state.position, real);
   return buildState(v, position, state.history, [...state.moves, { move: real, san }], state);
@@ -101,7 +137,7 @@ export function findMove(
   promotion?: PieceType,
 ): Move | undefined {
   return legalMoves(v, state.position).find(
-    (m) => m.from === from && m.to === to && (m.promotion === undefined || m.promotion === promotion),
+    (m) => !m.card && m.from === from && m.to === to && (m.promotion === undefined || m.promotion === promotion),
   );
 }
 
@@ -110,7 +146,10 @@ export function playSan(v: VariantDefinition, state: GameState, ...sans: string[
   for (const san of sans) {
     const legal = legalMoves(v, state.position);
     const strip = (s: string) => s.replace(/[+#]$/, '');
-    const move = legal.find((m) => strip(moveToSan(v, state.position, m, legal)) === strip(san));
+    const card = v.cards?.parseSan(san) ?? v.cards?.parseSan(strip(san));
+    const move = card
+      ? cardMove(card)
+      : legal.find((m) => strip(moveToSan(v, state.position, m, legal)) === strip(san));
     if (!move) throw new Error(`Illegal/unknown SAN '${san}' in ${toFen(v, state.position)}`);
     state = makeMove(v, state, move);
   }

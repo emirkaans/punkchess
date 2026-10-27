@@ -4,7 +4,10 @@ export * from './board.ts';
 export { applyMove, isSquareAttacked, pieceDef, pseudoMoves, pseudoMovesFrom } from './movegen.ts';
 export { isInCheck, isLegal, legalMoves, legalMovesFrom, perft, royalSquares } from './legality.ts';
 export {
+  CHAOS,
   createGame,
+  dealChaos,
+  drawChaos,
   findMove,
   isInsufficientMaterial,
   makeMove,

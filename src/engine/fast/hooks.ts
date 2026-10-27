@@ -20,6 +20,8 @@ export interface FastHooks {
    * engine's afterMove): may update `b.extra`.
    */
   readonly afterMove?: (b: FastBoard, movedType: PieceType, side: Side) => void;
+  /** Is the piece of the side to move on `from` unable to move (it still attacks)? */
+  readonly frozen?: (b: FastBoard, from: number) => boolean;
   /** Position-dependent capture rule, same meaning as VariantDefinition.captureAllowed. */
   readonly captureAllowed?: (b: FastBoard, from: number, victimSquare: number, victimCode: number) => boolean;
   /** Variant state that distinguishes positions (repetition / transposition table), as a 32-bit int. */
