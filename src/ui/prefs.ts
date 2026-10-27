@@ -39,11 +39,20 @@ export interface Prefs {
   readonly boardSize: number | null;
 }
 
-export const BOARD_THEMES: readonly BoardTheme[] = ['punk', 'klasik', 'koyu', 'dork', ...FADED_THEMES, ...PUNK_THEMES];
+// Denim first (the default), then Classic; the faded boards stay together.
+export const BOARD_THEMES: readonly BoardTheme[] = [
+  'kot',
+  'klasik',
+  'punk',
+  'koyu',
+  'dork',
+  ...FADED_THEMES.filter((t) => t !== 'kot'),
+  ...PUNK_THEMES,
+];
 export const PIECE_THEMES: readonly PieceTheme[] = ['punk', 'klasik', 'neon', ...PUNK_THEMES];
 
 const DEFAULT_PREFS: Omit<Prefs, 'locale'> = {
-  boardTheme: 'punk',
+  boardTheme: 'kot',
   pieceTheme: 'punk',
   pieceSet: 'glyph',
   sound: true,
