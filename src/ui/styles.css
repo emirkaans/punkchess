@@ -7785,3 +7785,17 @@ a:focus-visible {
   min-height: 48px;
   align-items: center;
 }
+
+/* The evaluation bar beside a watched (bot against bot) or finished bot game. */
+.board-frame.with-eval {
+  --bar: 26px;
+  display: flex;
+  gap: 8px;
+}
+@media (max-width: 760px) {
+  .layout .board-frame.with-eval {
+    --bar: 14px;
+    --board: calc(100vw - var(--bar) - 4px);
+    gap: 4px;
+  }
+}

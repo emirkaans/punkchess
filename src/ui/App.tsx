@@ -10,7 +10,8 @@ import { GameOverOverlay } from './GameOverOverlay.tsx';
 import { SprayTag } from './SprayTag.tsx';
 import { useAccount } from './account.ts';
 import { keepInviter } from './invite.ts';
-import { GameViewer } from './GameViewer.tsx';
+import { EvalBar, GameViewer } from './GameViewer.tsx';
+import { useWatchEval } from './analysis/watchEval.ts';
 import { HomePage } from './HomePage.tsx';
 import { Modal } from './Modal.tsx';
 import { MoveList } from './MoveList.tsx';
@@ -52,7 +53,7 @@ import { fetchGameInfo, useRecordFeed } from './online/connection.ts';
 import { parseRoute, pathOf } from './routes.ts';
 import type { Route } from './routes.ts';
 import type { GameState } from '../engine/index.ts';
-import { TIME_CONTROLS } from '../clock/clock.ts';
+import { TIME_CONTROLS, remainingMs } from '../clock/clock.ts';
 import { applyPrefs, loadPrefs, savePrefs } from './prefs.ts';
 import type { Prefs } from './prefs.ts';
 import { isClassic, isRuleCardHidden, loadSettings, saveSettings } from './settings.ts';
@@ -190,6 +191,11 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
 
   const { settings, players, timeline, setup } = session;
   const { variant, game, atEnd, outcome, turn, toMove, vsBot, watching, humanColor, timed } = view;
+  // The evaluation bar: while watching bot against bot, and against the bot once the game is over
+  // (never during a game a person plays: it would tell them the best side).
+  const showEval = page === 'game' && (watching || (vsBot && !!view.finalOutcome));
+  const lowClock = timed && !outcome && remainingMs(session.clock, turn, Date.now()) < 10_000;
+  const evalScore = useWatchEval(variant, game, showEval, lowClock);
   const now = () => Date.now();
   // Against the computer, a signed-in player plays under their username (and their spray tag goes with it).
   const playerName = (p: (typeof players)['w']) =>
@@ -715,7 +721,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                 />
               </aside>
               <div className="board-col">
-                <div className="board-frame">
+                <div className={showEval ? 'board-frame with-eval' : 'board-frame'}>
                   <Splatter className="splatter-tl" />
                   <Splatter className="splatter-br" />
                   {yourTurn && <div className="turn-tape">{t('game.yourTurn')}</div>}
@@ -774,6 +780,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                       />
                     )}
                   </div>
+                  {showEval && <EvalBar score={evalScore} flipped={flipped} />}
                   <BoardResizer
                     current={() => boardArea.current?.getBoundingClientRect().width ?? 0}
                     onResize={(boardSize) => setPrefs((p) => ({ ...p, boardSize }))}
