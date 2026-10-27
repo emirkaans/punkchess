@@ -5,7 +5,7 @@
 import { createClock, isTimed, stopClock, timeControl } from '../../clock/clock.ts';
 import type { ClockState } from '../../clock/clock.ts';
 import { randomGameId } from '../../online/record.ts';
-import { createGame, getVariant, opposite, playSan, setupStartPosition, toFen } from '../../engine/index.ts';
+import { createGame, dealChaos, getVariant, opposite, playSan, setupStartPosition, toFen } from '../../engine/index.ts';
 import type { Color, GameEndReason, GameState, SetupQuestion, Square, VariantDefinition } from '../../engine/index.ts';
 import type { MessageKey, Translate } from '../../i18n/index.ts';
 import type { ResultCode } from '../../storage/games.ts';
@@ -60,6 +60,8 @@ export interface GameSession {
   readonly clockAt: readonly ClockState[];
   readonly premove: Premove | null;
   readonly run: Run;
+  /** Each side's hidden chaos card (variants with cards), or null. */
+  readonly chaos: Readonly<Record<Color, string>> | null;
 }
 
 export function timelineFor(v: VariantDefinition, answers: Readonly<Record<string, string>> = {}): Timeline {
@@ -116,6 +118,7 @@ export function newSession(
     clockAt: [clock],
     premove: null,
     run: 'play',
+    chaos: v.cards ? { w: dealChaos(v, random), b: dealChaos(v, random) } : null,
   };
 }
 
@@ -201,6 +204,8 @@ export interface SavedSession {
   readonly clock: ClockState;
   /** When the clock above was read (the running side's time is counted up to here). */
   readonly savedAt: number;
+  /** The hidden chaos cards (variants with cards). */
+  readonly chaos?: Readonly<Record<Color, string>> | null;
 }
 
 /** A started game, ready to store (null before the first move or while setup questions are asked). */
@@ -217,6 +222,7 @@ export function saveSession(s: GameSession, now: number): SavedSession | null {
     outcome: s.outcome,
     clock: s.clock,
     savedAt: now,
+    chaos: s.chaos,
   };
 }
 
@@ -251,6 +257,7 @@ export function restoreSession(saved: SavedSession, key: number, now: number): G
       outcome: saved.outcome,
       clock,
       clockAt: states.map(() => clock),
+      chaos: saved.chaos ?? base.chaos,
     };
   } catch {
     return null;

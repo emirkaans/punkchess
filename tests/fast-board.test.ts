@@ -4,10 +4,11 @@
 
 import { describe, expect, it } from 'vitest';
 import { FastBoard } from '../src/engine/fast/board.ts';
-import { perft } from '../src/engine/legality.ts';
+import { legalMoves, perft } from '../src/engine/legality.ts';
+import { applyMove } from '../src/engine/movegen.ts';
 import { parseFen } from '../src/engine/notation.ts';
 import { getVariant, listVariants } from '../src/engine/variants/index.ts';
-import type { VariantDefinition } from '../src/engine/types.ts';
+import type { Position, VariantDefinition } from '../src/engine/types.ts';
 import { allStarts, compare, lockstep, positionsOf } from './engine-parity.ts';
 
 const KIWIPETE = 'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1';
@@ -118,10 +119,17 @@ describe.each(listVariants().map((v) => [v.id, v] as const))('hızlı tahta = mo
 
   it('perft(3) birebir aynı (örnek konumlarda)', () => {
     const b = new FastBoard(v);
-    const sample = [...targeted.slice(0, 6), ...run.positions.filter((_, i) => i % 97 === 0).slice(0, 10)];
+    // Cards: the fast board counts piece moves only, in positions without lasting effects
+    // (it does not let them run out).
+    const calm = (pos: Position) => !v.cards || !(pos.extra as { fx?: unknown[] }).fx?.length;
+    const piecePerft = (pos: Position, depth: number): number => {
+      const moves = legalMoves(v, pos).filter((m) => !m.card);
+      return depth === 1 ? moves.length : moves.reduce((n, m) => n + piecePerft(applyMove(v, pos, m), depth - 1), 0);
+    };
+    const sample = [...targeted.slice(0, 6), ...run.positions.filter((_, i) => i % 97 === 0).slice(0, 10)].filter(calm);
     for (const pos of sample) {
       b.load(pos);
-      expect(b.perft(3)).toBe(perft(v, pos, 3));
+      expect(b.perft(3)).toBe(v.cards ? piecePerft(pos, 3) : perft(v, pos, 3));
     }
   });
 

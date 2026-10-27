@@ -95,6 +95,14 @@ export function drawChaos(v: VariantDefinition, pos: Position, kind: string, ran
   return ways[Math.min(ways.length - 1, Math.floor(random() * ways.length))];
 }
 
+/**
+ * `move` ready for makeMove: an unresolved chaos card is dealt and played out at random (for
+ * self-play and tests, where nobody holds a secret card).
+ */
+export function playable(v: VariantDefinition, pos: Position, move: Move, random: () => number): Move {
+  return move.card?.id === CHAOS && !move.card.kind ? drawChaos(v, pos, dealChaos(v, random), random) : move;
+}
+
 /** Deals a chaos card: one of the variant's kinds, at random. */
 export function dealChaos(v: VariantDefinition, random: () => number): string {
   const kinds = v.cards!.chaosKinds;

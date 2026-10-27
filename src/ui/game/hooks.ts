@@ -89,6 +89,7 @@ export function useBotPlayer(
         state: game,
         level: player.level,
         seed: s.seed + game.moves.length,
+        chaos: s.chaos ? s.chaos[v.turn] : undefined,
         timeLimitMs: clock ? botTimeMs(player.level, clock) : undefined,
         clock,
         // Bot against bot waits as chosen; against a person, less as the bot's clock runs down.

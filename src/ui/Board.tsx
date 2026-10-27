@@ -14,6 +14,7 @@ import {
 import type { Color, Move, Position, Square, VariantDefinition } from '../engine/index.ts';
 import { PieceView } from './PieceView.tsx';
 import { useI18n } from './i18n.tsx';
+import type { MessageKey } from '../i18n/index.ts';
 import { keysTaken } from './stepKeys.ts';
 
 /** Colours of drawn shapes, as on lichess: plain right-drag green; Shift red, Alt blue, Ctrl yellow. */
@@ -57,6 +58,9 @@ interface Props {
   premove?: Premove | null;
   onPremove?: (p: Premove) => void;
   onCancelPremove?: () => void;
+  /** A card being played: clicks pick its targets instead of moving pieces. */
+  cardTargets?: { readonly squares: readonly Square[]; readonly picked: readonly Square[] } | null;
+  onCardTarget?: (sq: Square) => void;
 }
 
 interface Drag {
@@ -99,6 +103,8 @@ export function Board({
   premove = null,
   onPremove,
   onCancelPremove,
+  cardTargets = null,
+  onCardTarget,
 }: Props) {
   const { t, vt, locale } = useI18n();
   const texts = vt(variant);
@@ -180,6 +186,8 @@ export function Board({
   const dropsRef = useRef<Set<Square>>(new Set());
   dropsRef.current = new Set([...targets.map((m) => m.to), ...premoveDests]);
 
+  const marks = useMemo(() => variant.squareMarks?.(position) ?? [], [variant, position]);
+
   const checkSquares = useMemo(
     () => (isInCheck(variant, position) ? royalSquares(variant, position, position.turn) : []),
     [variant, position],
@@ -231,6 +239,10 @@ export function Board({
    * a piece got selected (the pointer handler then starts a drag).
    */
   const activate = (sq: Square): boolean => {
+    if (cardTargets) {
+      onCardTarget?.(sq);
+      return false;
+    }
     if (disabled && !premoving) return false;
     if (selected !== null && tryMove(selected, sq)) return false;
     const piece = position.board[sq];
@@ -352,8 +364,11 @@ export function Board({
       const sq = flipped ? makeSquare(7 - col, row) : makeSquare(col, 7 - row);
       const piece = position.board[sq];
       const light = (fileOf(sq) + rankOf(sq)) % 2 === 1;
-      const target = targets.find((m) => m.to === sq);
+      const target = cardTargets ? undefined : targets.find((m) => m.to === sq);
       const premoveDest = premoveDests.includes(sq);
+      const cardTarget = cardTargets?.squares.includes(sq) ?? false;
+      const cardPicked = cardTargets?.picked.includes(sq) ?? false;
+      const squareMarks = marks.filter((m) => m.square === sq);
       const classes = [
         'square',
         light ? 'light' : 'dark',
@@ -362,6 +377,8 @@ export function Board({
         premove && (premove.from === sq || premove.to === sq) ? 'premove' : '',
         checkSquares.includes(sq) ? 'check' : '',
         highlight.includes(sq) ? 'zone' : '',
+        cardPicked ? 'selected' : '',
+        ...squareMarks.map((m) => `mark-${m.kind}`),
         bandEdge(sq),
       ].join(' ');
       const dragging = drag?.moved && drag.from === sq;
@@ -375,7 +392,8 @@ export function Board({
             })
           : t('square.empty'),
         selected === sq ? t('square.selected') : '',
-        target || premoveDest ? t('square.reachable') : '',
+        target || premoveDest || cardTarget ? t('square.reachable') : '',
+        ...squareMarks.map((m) => t(`square.mark.${m.kind}` as MessageKey)),
         lastMove && (lastMove.from === sq || lastMove.to === sq) ? t('square.lastMove') : '',
         checkSquares.includes(sq) ? t('square.inCheck') : '',
         highlight.includes(sq) && texts.highlightLabel ? texts.highlightLabel.toLocaleLowerCase(locale) : '',
@@ -399,6 +417,15 @@ export function Board({
           {piece && !dragging && <PieceView variant={variant} piece={piece} position={position} square={sq} />}
           {target && <span className={target.captured ? 'hint capture' : 'hint'} />}
           {premoveDest && <span className={piece ? 'hint capture premove-hint' : 'hint premove-hint'} />}
+          {cardTarget && <span className={piece ? 'hint capture card-hint' : 'hint card-hint'} />}
+          {squareMarks.map(
+            (m) =>
+              m.label && (
+                <span key={m.kind} className={`mark-label mark-label-${m.kind}`}>
+                  {m.label}
+                </span>
+              ),
+          )}
           {col === 0 && <span className="coord rank">{rankOf(sq) + 1}</span>}
           {row === 7 && <span className="coord file">{FILES[fileOf(sq)]}</span>}
         </div>,

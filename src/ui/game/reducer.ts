@@ -1,8 +1,9 @@
 // All game-state changes as one pure reducer (no React, no timers: the current
 // time comes in with the actions that need it), so they can be unit-tested.
 
-import { flagged, isTimed, pressClock, stopClock, timeoutWinner } from '../../clock/clock.ts';
-import { getVariant, legalMoves, makeMove } from '../../engine/index.ts';
+import { createRng } from '../../ai/rng.ts';
+import { TIME_CARD_MS, addTime, flagged, isTimed, pressClock, stopClock, timeoutWinner } from '../../clock/clock.ts';
+import { CHAOS, drawChaos, getVariant, legalMoves, makeMove, opposite } from '../../engine/index.ts';
 import type { Move } from '../../engine/index.ts';
 import { endSession, timelineFor } from './session.ts';
 import type { GameSession, Outcome, Premove, Run } from './session.ts';
@@ -33,12 +34,23 @@ export type GameAction =
   /** Bot vs Bot playback control. */
   | { readonly type: 'run'; readonly run: Run };
 
-/** Plays one move at the cursor (clock pressed, stopped if the game ends). */
+/**
+ * Plays one move at the cursor (clock pressed, stopped if the game ends). A chaos card is played
+ * out here with the session's seed: which card the mover holds, hit or backfire, its target.
+ */
 function playMove(s: GameSession, move: Move, now: number): GameSession {
   const { states, cursor } = s.timeline;
   const v = getVariant(s.settings.variantId);
-  const next = makeMove(v, states[cursor], move);
-  let clock = pressClock(s.clock, states[cursor].position.turn, now);
+  const pos = states[cursor].position;
+  const mover = pos.turn;
+  const real =
+    move.card?.id === CHAOS && !move.card.kind && s.chaos
+      ? drawChaos(v, pos, s.chaos[mover], createRng((s.seed ^ Math.imul(cursor + 1, 0x9e3779b1)) >>> 0).next)
+      : move;
+  const next = makeMove(v, states[cursor], real);
+  let clock = pressClock(s.clock, mover, now);
+  const card = real.card;
+  if (card?.kind === 'time') clock = addTime(clock, card.outcome === '+' ? mover : opposite(mover), TIME_CARD_MS);
   if (next.result) clock = stopClock(clock, now);
   return {
     ...s,
@@ -60,7 +72,7 @@ function runPremove(s: GameSession, now: number): GameSession {
   const cleared = { ...s, premove: null };
   if (game.result || s.outcome) return cleared;
   const v = getVariant(s.settings.variantId);
-  const candidates = legalMoves(v, game.position).filter((m) => m.from === p.from && m.to === p.to);
+  const candidates = legalMoves(v, game.position).filter((m) => !m.card && m.from === p.from && m.to === p.to);
   if (!candidates.length) return cleared;
   const queen = candidates.find((m) => m.promotion === v.promotionTypes[0]);
   return playMove(cleared, queen ?? candidates[0], now);

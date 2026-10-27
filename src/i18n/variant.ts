@@ -48,7 +48,15 @@ export function variantTexts(v: VariantDefinition, locale: Locale): LocalizedVar
     question: (q) => {
       const qt = t.setup?.[q.id];
       if (!qt) return q;
-      return { ...q, title: qt.title, options: q.options.map((o) => ({ ...o, label: qt.options[o.id] ?? o.label })) };
+      return {
+        ...q,
+        title: qt.title,
+        options: q.options.map((o) => ({
+          ...o,
+          label: qt.options[o.id] ?? o.label,
+          detail: qt.details?.[o.id] ?? o.detail,
+        })),
+      };
     },
   };
 }

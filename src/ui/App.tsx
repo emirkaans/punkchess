@@ -1,9 +1,12 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
-import { getVariant, isInCheck, listVariants, opposite, toFen } from '../engine/index.ts';
+import { CHAOS, getVariant, isInCheck, legalMoves, listVariants, opposite, toFen } from '../engine/index.ts';
 import type { Color, Move, PieceType } from '../engine/index.ts';
 import type { AnalysisSeed } from './AnalysisPage.tsx';
 import { Board } from './Board.tsx';
+import { CardHand } from './CardHand.tsx';
+import { clickTarget, pickTargets } from './cardPick.ts';
+import type { CardPick } from './cardPick.ts';
 import { BoardResizer } from './BoardResizer.tsx';
 import { GameControls, GameTools } from './GameControls.tsx';
 import { GameOverOverlay } from './GameOverOverlay.tsx';
@@ -148,6 +151,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const [tab, setTab] = useState<Tab>('moves');
   const [flipped, setFlipped] = useState(false);
   const [promotion, setPromotion] = useState<Move[] | null>(null);
+  // A card being played (variants with cards): its targets are picked on the board.
+  const [cardPick, setCardPick] = useState<CardPick | null>(null);
   /** Game sent to the analysis board (from a viewer, the game page or an online game). */
   const [analysisSeed, setAnalysisSeed] = useState<AnalysisSeed | null>(null);
   /** A game opened from a shared link (shown in the viewer). */
@@ -481,6 +486,30 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const premoveColor: Color | null =
     vsBot && humanColor && !humanToMove && !outcome && !setup && atEnd && promotion === null ? humanColor : null;
 
+  // Cards: the side to move plays them when it may move pieces; a pick lasts for that one position.
+  const cardColor: Color | null = variant.cards && !boardDisabled && atEnd ? turn : null;
+  const [pickAt, setPickAt] = useState(game);
+  if (pickAt !== game) {
+    setPickAt(game);
+    if (cardPick) setCardPick(null);
+  }
+  const cardMoves = cardPick && cardColor ? legalMoves(variant, game.position).filter((m) => m.card) : [];
+  const onCardTarget = (sq: number) => {
+    if (!cardPick) return;
+    const r = clickTarget(cardMoves, cardPick, sq);
+    if (!r) setCardPick(null);
+    else if ('pick' in r) setCardPick(r.pick);
+    else {
+      setCardPick(null);
+      play(r.move);
+    }
+  };
+  const playChaos = () => {
+    const move = cardMoves.find((m) => m.card!.id === CHAOS);
+    setCardPick(null);
+    if (move) play(move);
+  };
+
   // Text for screen readers: who played what, then how the game ended.
   const lastPlayed = view.endState.moves.at(-1);
   const mover = view.endState.position.turn === 'w' ? 'b' : 'w';
@@ -740,6 +769,12 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                       onPremove={(p) => dispatch({ type: 'premove', premove: p, now: now() })}
                       onCancelPremove={() => dispatch({ type: 'premove', premove: null, now: now() })}
                       onMove={onMove}
+                      cardTargets={
+                        cardPick && cardPick.id !== CHAOS
+                          ? { squares: pickTargets(cardMoves, cardPick), picked: cardPick.picked }
+                          : null
+                      }
+                      onCardTarget={onCardTarget}
                     />
                     {setup && (
                       <SetupDialog
@@ -835,6 +870,22 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                 {notice && <div className="notice">{notice}</div>}
               </div>
 
+              {variant.cards && session.chaos && !setup && (
+                <CardHand
+                  variant={variant}
+                  game={game}
+                  // A bot's chaos card stays hidden from the person playing it.
+                  chaos={{
+                    w: players.w.kind === 'human' || watching ? session.chaos.w : null,
+                    b: players.b.kind === 'human' || watching ? session.chaos.b : null,
+                  }}
+                  colors={[top, bottom]}
+                  active={cardColor}
+                  pick={cardPick}
+                  onPick={setCardPick}
+                  onChaos={playChaos}
+                />
+              )}
               {view.finalOutcome && view.endState.moves.length > 0 && (
                 <button className="primary analyse-button" onClick={() => openReview(postGameReview(), 'game')}>
                   {t('analysis.button')}

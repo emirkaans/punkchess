@@ -193,6 +193,8 @@ export interface SetupOption {
   readonly label: string;
   /** Optional piece shown next to the label. */
   readonly icon?: Piece;
+  /** Optional line under the label (what the choice does). */
+  readonly detail?: string;
 }
 
 /** A choice made before the game starts (e.g. which piece becomes the Jester). */
@@ -224,6 +226,8 @@ export interface RuleCardTexts {
 export interface SetupQuestionTexts {
   readonly title: string;
   readonly options: Readonly<Record<string, string>>;
+  /** Option id -> detail line. */
+  readonly details?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -312,6 +316,8 @@ export interface VariantDefinition {
    * `base` is the default generator; return its result to keep default behavior.
    */
   readonly generateMoves?: (pos: Position, from: Square, base: (pos: Position, from: Square) => Move[]) => Move[];
+  /** Games of this variant never count for ratings (e.g. luck plays a part). */
+  readonly unrated?: boolean;
   /** Cards the players hold, played instead of a move (Anarşi). */
   readonly cards?: CardRules;
   /** Optional last step of every move (card moves too): e.g. effects that run out change the board. */

@@ -19,6 +19,8 @@ export interface ThinkOptions {
   readonly analyse?: boolean;
   /** The bot's clock in a timed game (Stockfish bots size their time from it). */
   readonly clock?: { readonly remainingMs: number; readonly incrementMs: number };
+  /** The bot's own chaos card (variants with cards): it may play its cards. */
+  readonly chaos?: string | null;
 }
 
 /** Rejection reason when a request is superseded or stopped. */
@@ -66,6 +68,7 @@ export class BotClient {
         timeLimitMs: opts.timeLimitMs,
         seed: opts.seed,
         analyse: opts.analyse,
+        chaos: opts.chaos,
       };
       worker.postMessage(msg);
     });

@@ -15,7 +15,8 @@ export function materialDiff(v: VariantDefinition, p: Position): MaterialDiff {
   const count: Record<Color, Map<PieceType, number>> = { w: new Map(), b: new Map() };
   const points: Record<Color, number> = { w: 0, b: 0 };
   for (const piece of p.board) {
-    if (!piece) continue;
+    // Pieces worth nothing (kings, the holes and walls of Anarşi's cards) are not material.
+    if (!piece || !v.pieceValues[piece.type]) continue;
     count[piece.color].set(piece.type, (count[piece.color].get(piece.type) ?? 0) + 1);
     points[piece.color] += v.pieceValues[piece.type];
   }

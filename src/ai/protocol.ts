@@ -22,6 +22,8 @@ export type WorkerRequest =
       readonly seed?: number;
       /** Analysis: score positions with a single legal move fully. */
       readonly analyse?: boolean;
+      /** The bot's own chaos card (variants with cards). */
+      readonly chaos?: string | null;
     }
   | { readonly t: 'stop'; readonly id: number };
 

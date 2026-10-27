@@ -26,7 +26,8 @@ export function speedOf(timeControlId: string): Speed | null {
 export function ratingCategory(variantId: string, timeControlId: string): RatingCategory | null {
   const speed = speedOf(timeControlId);
   const variants = listVariants();
-  if (!speed || !variants.some((v) => v.id === variantId)) return null;
+  const v = variants.find((x) => x.id === variantId);
+  if (!speed || !v || v.unrated) return null;
   return variantId === variants[0].id ? speed : `variant:${variantId}`;
 }
 
@@ -35,6 +36,7 @@ export const allCategories = (): RatingCategory[] => [
   ...SPEEDS,
   ...listVariants()
     .slice(1)
+    .filter((v) => !v.unrated)
     .map((v) => `variant:${v.id}` as const),
 ];
 

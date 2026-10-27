@@ -301,3 +301,54 @@ describe('süren oyunun özeti (oyuna dön şeridi)', () => {
     expect(liveOf(room, 0)?.clock).toBeNull();
   });
 });
+
+describe('kartlı varyant (Anarşi)', () => {
+  const both = { w: true, b: true };
+  function anarsiGame() {
+    const created = createRoom('Anar1234', { variantId: 'anarsi', timeControlId: '5+0', color: 'w' }, 'tw', () => 0.1);
+    let room = joinRoom(created.room, 'B', 'tb').room;
+    room = answerSetup(room, 'w', { w: 'void' });
+    room = answerSetup(room, 'b', { b: 'pawn' });
+    return room;
+  }
+  const card = (id: string, ...squares: string[]): WireMove => ({
+    from: -1,
+    to: -1,
+    card: { id, squares: squares.map(parseSquare) },
+  });
+
+  it('herkese gizli bir kaos kartı dağıtılır; görünümde yalnızca kendi kartın var', () => {
+    const room = anarsiGame();
+    expect(room.phase).toBe('playing');
+    expect(room.chaos?.w).toBeTruthy();
+    expect(viewOf(room, 'w', both, 0).chaos).toBe(room.chaos!.w);
+    expect(viewOf(room, 'b', both, 0).chaos).toBe(room.chaos!.b);
+    expect(viewOf(room, null, both, 0).chaos).toBeNull();
+  });
+
+  it('numara oynanır ve kaydedilir; yasadışı kart reddedilir', () => {
+    let room = anarsiGame();
+    expect(() => playMove(room, 'w', card('pawn', 'e7'), 0, 1000)).toThrow(RoomError);
+    room = playMove(room, 'w', card('void', 'e4'), 0, 1000);
+    expect(room.moves[0].card).toEqual({ id: 'void', squares: [parseSquare('e4')] });
+    expect(gameOf(room)!.moves[0].san).toBe('KD@e4');
+  });
+
+  it('kaos kartını sunucu oynar: kart, sonuç ve hedef kaydedilir', () => {
+    let room = anarsiGame();
+    const moves = ['e2e3', 'e7e6', 'd2d3', 'd7d6', 'g1f3', 'g8f6', 'b1c3', 'b8c6', 'f1e2', 'f8e7'];
+    moves.forEach((m, i) => {
+      room = playMove(room, i % 2 ? 'b' : 'w', mv(m.slice(0, 2), m.slice(2)), i, 1000 + i);
+    });
+    room = { ...room, chaos: { w: 'ambush', b: 'time' } };
+    room = playMove(room, 'w', card('chaos'), moves.length, 5000, 0, () => 0.1);
+    const played = room.moves.at(-1)!.card!;
+    expect(played).toMatchObject({ id: 'chaos', kind: 'ambush', outcome: '+' });
+    expect(gameOf(room)!.moves.at(-1)!.san).toMatch(/^PU\+@/);
+    // Zaman Hırsızı: geri teperse rakibin saatine 60 saniye.
+    const before = room.clock.remaining.w;
+    room = playMove(room, 'b', card('chaos'), moves.length + 1, 6000, 0, () => 0.9);
+    expect(room.moves.at(-1)!.card).toMatchObject({ kind: 'time', outcome: '-' });
+    expect(room.clock.remaining.w).toBe(before + 60_000);
+  });
+});

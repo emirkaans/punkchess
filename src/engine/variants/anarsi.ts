@@ -453,17 +453,36 @@ export const TRICK_NAMES_EN: Readonly<Record<Trick | ChaosCard, string>> = {
   nitro: 'Nitro',
 };
 
+const TRICK_DETAILS: Readonly<Record<Trick, string>> = {
+  void: 'Boş bir kare oyun sonuna kadar silinir.',
+  pawn: 'Rakibin bir piyonu tahtadan alınır.',
+  ice: 'Rakibin bir taşı 2 tur oynayamaz.',
+  swap: 'Kendi iki taşının yeri değişir.',
+  shield: 'Taşın bir tur yenemez.',
+  wall: '3 boş kare 3 tur kapanır.',
+};
+
+const TRICK_DETAILS_EN: Readonly<Record<Trick, string>> = {
+  void: 'An empty square leaves the board for good.',
+  pawn: 'One opponent pawn leaves the board.',
+  ice: 'An opponent piece cannot move for 2 turns.',
+  swap: 'Two of your pieces swap places.',
+  shield: 'Your piece cannot be taken for a turn.',
+  wall: '3 empty squares close for 3 turns.',
+};
+
 const question = (color: Color): SetupQuestion => ({
   id: color,
   color,
   title: `${color === 'w' ? 'Beyaz' : 'Siyah'}: numaranı seç`,
   defaultOption: color === 'w' ? 'void' : 'ice',
-  options: TRICKS.map((t) => ({ id: t, label: TRICK_NAMES[t] })),
+  options: TRICKS.map((t) => ({ id: t, label: TRICK_NAMES[t], detail: TRICK_DETAILS[t] })),
 });
 
 const questionEn = (color: Color): SetupQuestionTexts => ({
   title: `${color === 'w' ? 'White' : 'Black'}: pick your trick`,
   options: Object.fromEntries(TRICKS.map((t) => [t, TRICK_NAMES_EN[t]])),
+  details: TRICK_DETAILS_EN,
 });
 
 function startPosition(answers: Readonly<Record<string, string>>): string {
@@ -512,6 +531,8 @@ const FAST: FastHooks = {
 export const anarsi: VariantDefinition = defineVariant({
   id: 'anarsi',
   name: 'Anarşi',
+  // Chaos cards bring luck into it.
+  unrated: true,
   description: [
     'Standart satranç, artı kartlar. Her kart oyunda bir kez, o turun hamlesi yerine oynanır.',
     'Oyundan önce herkes bir numara seçer: Kara Delik, Piyon Avı, Buz, Işınlanma, Kalkan ya da Barikat. Numara hep sana yarar.',
@@ -552,13 +573,12 @@ export const anarsi: VariantDefinition = defineVariant({
     title: 'Anarşi',
     summary: 'Standart satranç, artı bir numara ve bir kaos kartı. Kart oynamak hamle yerine geçer.',
     bullets: [
-      'Kara Delik: boş bir kare oyun sonuna kadar silinir; hiçbir taş oraya giremez, üstünden geçemez.',
-      'Piyon Avı: rakibin bir piyonu tahtadan alınır.',
-      'Buz: rakibin şah dışındaki bir taşı 2 tur oynayamaz; yine de saldırır ve korur.',
-      'Işınlanma: kendi iki taşının yerini değiştirirsin (şah ve piyon olmaz).',
-      'Kalkan: taşın rakibin bir sonraki hamlesinde yenemez (şah olmaz).',
-      'Barikat: yan yana 3 boş kare 3 tur kapanır.',
-      `Kaos kartları (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı 60 saniye, Pusu bir hafif taş, Hain bir piyon, Nitro bir hafif taşa bir hamlelik vezir gücü. İsabet sana, geri tepme rakibe.`,
+      'Oyundan önce bir numara seçersin ve oyunda bir kez, hamle yerine oynarsın. Numara hep sana yarar.',
+      'Kara Delik boş bir kareyi oyun sonuna kadar siler; Barikat yan yana 3 boş kareyi 3 tur kapatır. Oralara hiçbir taş giremez, üstünden geçemez.',
+      'Piyon Avı rakibin bir piyonunu alır; Buz rakibin bir taşını 2 tur dondurur (donan taş yine saldırır ve korur).',
+      'Işınlanma kendi iki taşının yerini değiştirir (şah ve piyon olmaz); Kalkan taşını bir tur yenmez yapar.',
+      `Gizli kaos kartı (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı 60 saniye, Pusu bir hafif taş, Hain bir piyon, Nitro bir hamlelik vezir gücü. İsabet sana, geri tepme rakibe yarar.`,
+      'Şah çekiliyken kart oynanmaz. Geri tepen kart şahını açmaz, rakibe tek hamlede mat fırsatı vermez.',
     ],
     examples: [],
   },
@@ -576,13 +596,12 @@ export const anarsi: VariantDefinition = defineVariant({
         title: 'Anarchy',
         summary: 'Standard chess plus one trick and one chaos card. Playing a card takes your move.',
         bullets: [
-          'Black Hole: an empty square leaves the board for good; no piece enters or passes it.',
-          'Pawn Hunt: one of the opponent’s pawns leaves the board.',
-          'Ice: an opponent piece other than the king cannot move for 2 turns; it still attacks and defends.',
-          'Teleport: two of your pieces swap places (not the king, not pawns).',
-          'Shield: your piece cannot be taken on the opponent’s next move (not the king).',
-          'Barricade: 3 empty squares in a row close for 3 turns.',
-          `Chaos cards (from move ${CHAOS_FROM_MOVE}): Time Thief 60 seconds, Ambush a minor piece, Traitor a pawn, Nitro one queen move for a minor piece. A hit helps you, a backfire the opponent.`,
+          'Before the game you pick a trick and play it once, instead of a move. A trick always helps you.',
+          'Black Hole takes an empty square off the board for good; Barricade closes 3 empty squares in a row for 3 turns. No piece enters or passes them.',
+          'Pawn Hunt takes an opponent pawn; Ice freezes an opponent piece for 2 turns (it still attacks and defends).',
+          'Teleport swaps two of your pieces (not the king, not pawns); Shield keeps your piece from being taken for a turn.',
+          `Hidden chaos card (from move ${CHAOS_FROM_MOVE}): Time Thief 60 seconds, Ambush a minor piece, Traitor a pawn, Nitro one queen move. A hit helps you, a backfire the opponent.`,
+          'No card while in check. A backfire never leaves your king open or hands the opponent a mate in one.',
         ],
         captions: [],
       },

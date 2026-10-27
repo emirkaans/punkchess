@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '../src/ai/rng.ts';
-import { createGame, makeMove } from '../src/engine/game.ts';
+import { createGame, makeMove, playable } from '../src/engine/game.ts';
 import { legalMoves } from '../src/engine/legality.ts';
 import { toFen } from '../src/engine/notation.ts';
 import { getVariant, listVariants } from '../src/engine/variants/index.ts';
@@ -11,7 +11,9 @@ describe('paylaşım linkleri', () => {
     const v = getVariant(id);
     const rng = createRng(5);
     let state = createGame(v);
-    for (let i = 0; i < 40 && !state.result; i++) state = makeMove(v, state, rng.pick(legalMoves(v, state.position)));
+    for (let i = 0; i < 40 && !state.result; i++) {
+      state = makeMove(v, state, playable(v, state.position, rng.pick(legalMoves(v, state.position)), rng.next));
+    }
     const moves = state.moves.map((m) => m.san);
     const link = encodeGame({ variantId: id, startFen: v.startPosition, moves });
     expect(link).toMatch(/^#g=[A-Za-z0-9_-]+$/); // URL'de güvenli karakterler

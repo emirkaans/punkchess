@@ -5,7 +5,9 @@
 import { getVariant } from '../engine/index.ts';
 import type { GameState } from '../engine/index.ts';
 import type { WorkerRequest, WorkerResponse } from './protocol.ts';
+import { chooseWithCards } from './cards.ts';
 import { chooseMove } from './search.ts';
+import type { SearchInfo } from './search.ts';
 
 const ctx = self as unknown as {
   postMessage(message: WorkerResponse): void;
@@ -28,12 +30,18 @@ ctx.onmessage = ({ data: msg }) => {
     });
     const previous = msg.state.recent.reduce<GameState | null>((prev, pos) => node(pos, prev), null);
     const state: GameState = { ...node(msg.state.position, previous), history: msg.state.history };
-    const r = chooseMove(v, state, msg.level, {
+    const opts = {
       seed: msg.seed,
       timeLimitMs: msg.timeLimitMs,
       analyse: msg.analyse,
-      onInfo: (info) => ctx.postMessage({ t: 'info', id, depth: info.depth, score: info.score, pv: info.pv }),
-    });
+      onInfo: (info: SearchInfo) =>
+        ctx.postMessage({ t: 'info', id, depth: info.depth, score: info.score, pv: info.pv }),
+    };
+    // A playing bot of a variant with cards also weighs its cards; analysis looks at piece moves.
+    const r =
+      v.cards && msg.chaos !== undefined && !msg.analyse
+        ? chooseWithCards(v, state, msg.level, msg.chaos, opts)
+        : chooseMove(v, state, msg.level, opts);
     ctx.postMessage({ t: 'bestmove', id, move: r.move, score: r.score, depth: r.depth, nodes: r.nodes, pv: r.pv });
   } catch (e) {
     ctx.postMessage({ t: 'error', id, message: e instanceof Error ? e.message : String(e) });

@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { timeControl } from '../clock/clock.ts';
 import type { ClockState } from '../clock/clock.ts';
-import { createGame, findMove, getVariant, makeMove } from '../engine/index.ts';
+import { createGame, getVariant, makeMove } from '../engine/index.ts';
 import type { Color, GameState } from '../engine/index.ts';
 import type { LiveGame, TvResponse } from '../online/lobby.ts';
+import { moveOfWire } from '../online/protocol.ts';
 import type { GameView } from '../online/protocol.ts';
 import { Board } from './Board.tsx';
 import { useI18n } from './i18n.tsx';
@@ -23,7 +24,7 @@ function lastState(view: GameView): GameState | null {
   const v = getVariant(view.variantId);
   let s = createGame(v, view.startFen);
   for (const m of view.moves) {
-    const move = findMove(v, s, m.from, m.to, m.promotion);
+    const move = moveOfWire(v, s, m);
     if (!move) break;
     s = makeMove(v, s, move);
   }

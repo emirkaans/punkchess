@@ -48,7 +48,14 @@ export function SetupDialog({ variant, question: original, step, total, onPick }
                   <PieceView variant={variant} piece={o.icon} />
                 </span>
               )}
-              {o.label}
+              {o.detail ? (
+                <span className="setup-text">
+                  {o.label}
+                  <small>{o.detail}</small>
+                </span>
+              ) : (
+                o.label
+              )}
             </button>
           ))}
         </div>

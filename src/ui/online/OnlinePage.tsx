@@ -3,8 +3,8 @@ import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { LOW_TIME_MS, remainingMs, timeControl } from '../../clock/clock.ts';
 import type { ClockState } from '../../clock/clock.ts';
 import {
+  CHAOS,
   createGame,
-  findMove,
   getVariant,
   isInCheck,
   legalMoves,
@@ -13,7 +13,11 @@ import {
   opposite,
 } from '../../engine/index.ts';
 import type { Color, GameState, Move, PieceType, VariantDefinition } from '../../engine/index.ts';
+import { moveOfWire, wireOf } from '../../online/protocol.ts';
 import type { ClientMessage, GameView, OnlineOutcome, WireMove } from '../../online/protocol.ts';
+import { CardHand } from '../CardHand.tsx';
+import { clickTarget, pickTargets } from '../cardPick.ts';
+import type { CardPick } from '../cardPick.ts';
 import { Board } from '../Board.tsx';
 import type { Premove } from '../Board.tsx';
 import { BoardResizer } from '../BoardResizer.tsx';
@@ -96,26 +100,31 @@ function statesOf(v: VariantDefinition, view: GameView | null, cache: ReplayCach
     prev.moves.length <= view.moves.length &&
     prev.moves.every((m, i) => {
       const n = view.moves[i];
-      return m.from === n.from && m.to === n.to && m.promotion === n.promotion;
+      return (
+        m.from === n.from &&
+        m.to === n.to &&
+        m.promotion === n.promotion &&
+        JSON.stringify(m.card) === JSON.stringify(n.card)
+      );
     });
   const states = same ? prev.states.slice(0, prev.moves.length + 1) : [createGame(v, view.startFen)];
   for (let i = states.length - 1; i < view.moves.length; i++) {
     const m = view.moves[i];
     const last = states[states.length - 1];
-    const move = findMove(v, last, m.from, m.to, m.promotion);
+    const move = moveOfWire(v, last, m);
     if (!move) break;
-    states.push(makeMove(v, last, move));
+    try {
+      states.push(makeMove(v, last, move));
+    } catch {
+      break;
+    }
   }
   cache.current = { key, moves: view.moves.slice(0, states.length - 1), states };
   return states;
 }
 
 /** A move as sent to the server. */
-const toWire = (move: Move): WireMove => ({
-  from: move.from,
-  to: move.to,
-  ...(move.promotion ? { promotion: move.promotion } : {}),
-});
+const toWire = (move: Move): WireMove => wireOf(move);
 
 /** The server clock, re-based on local time so ClockView can run it. */
 function clockOf(view: GameView, offset: number): ClockState {
@@ -160,7 +169,7 @@ function OnlineGame({
     if (!st || st.position.turn !== v.you || st.result) return;
     premoveRef.current = null;
     setPremove(null);
-    const candidates = legalMoves(variant, st.position).filter((m) => m.from === pm.from && m.to === pm.to);
+    const candidates = legalMoves(variant, st.position).filter((m) => !m.card && m.from === pm.from && m.to === pm.to);
     if (!candidates.length) return;
     const move = candidates.find((m) => m.promotion === variant.promotionTypes[0]) ?? candidates[0];
     const ply = v.moves.length;
@@ -244,6 +253,13 @@ function OnlineGame({
   const [flipped, setFlipped] = useState<boolean | null>(null);
   const isFlipped = flipped ?? you === 'b';
   const [promotion, setPromotion] = useState<Move[] | null>(null);
+  const [cardPick, setCardPick] = useState<CardPick | null>(null);
+  // A card pick lasts for one position.
+  const [pickAt, setPickAt] = useState(state);
+  if (pickAt !== state) {
+    setPickAt(state);
+    if (cardPick) setCardPick(null);
+  }
   const [copied, setCopied] = useState(false);
   const boardArea = useRef<HTMLDivElement>(null);
 
@@ -384,6 +400,25 @@ function OnlineGame({
 
   const play = sendMove;
   const onMove = (candidates: Move[]) => (candidates.length > 1 ? setPromotion(candidates) : play(candidates[0]));
+
+  // Cards (variants with cards): played on your turn, targets picked on the board.
+  const cardColor: Color | null = variant.cards && yourTurn && atEnd && promotion === null ? you : null;
+  const cardMoves = cardPick && cardColor && state ? legalMoves(variant, state.position).filter((m) => m.card) : [];
+  const onCardTarget = (sq: number) => {
+    if (!cardPick) return;
+    const r = clickTarget(cardMoves, cardPick, sq);
+    if (!r) setCardPick(null);
+    else if ('pick' in r) setCardPick(r.pick);
+    else {
+      setCardPick(null);
+      play(r.move);
+    }
+  };
+  const playChaos = () => {
+    const move = cardMoves.find((m) => m.card!.id === CHAOS);
+    setCardPick(null);
+    if (move) play(move);
+  };
   const onPromote = (type: PieceType) => {
     const move = promotion?.find((m) => m.promotion === type);
     setPromotion(null);
@@ -508,6 +543,12 @@ function OnlineGame({
                 premove={premove}
                 onPremove={setPremove}
                 onCancelPremove={() => setPremove(null)}
+                cardTargets={
+                  cardPick && cardPick.id !== CHAOS
+                    ? { squares: pickTargets(cardMoves, cardPick), picked: cardPick.picked }
+                    : null
+                }
+                onCardTarget={onCardTarget}
               />
               {view.outcome && atEnd && (
                 <GameOverOverlay
@@ -593,6 +634,19 @@ function OnlineGame({
           {link.error && <div className="notice">{t(`online.error.${link.error}`)}</div>}
         </div>
 
+        {variant.cards && shown && view.phase !== 'waiting' && view.phase !== 'setup' && (
+          <CardHand
+            variant={variant}
+            game={shown}
+            // Only your own chaos card is known here.
+            chaos={{ w: you === 'w' ? (view.chaos ?? null) : null, b: you === 'b' ? (view.chaos ?? null) : null }}
+            colors={[top, bottom]}
+            active={cardColor}
+            pick={cardPick}
+            onPick={setCardPick}
+            onChaos={playChaos}
+          />
+        )}
         {view.phase === 'waiting' && you && (
           <div className="box online-invite">
             <p>{t('online.invite')}</p>

@@ -1,4 +1,5 @@
 import type { VariantDefinition } from '../types.ts';
+import { anarsi } from './anarsi.ts';
 import { burokrat } from './burokrat.ts';
 import { diplomat } from './diplomat.ts';
 import { jester } from './jester.ts';
@@ -25,5 +26,6 @@ registerVariant(standard);
 registerVariant(burokrat);
 registerVariant(jester);
 registerVariant(diplomat);
+registerVariant(anarsi);
 
-export { standard, burokrat, jester, diplomat };
+export { standard, burokrat, jester, diplomat, anarsi };

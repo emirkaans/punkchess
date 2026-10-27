@@ -8,6 +8,7 @@ export {
   createGame,
   dealChaos,
   drawChaos,
+  playable,
   findMove,
   isInsufficientMaterial,
   makeMove,

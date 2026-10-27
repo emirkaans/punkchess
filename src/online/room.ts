@@ -4,6 +4,8 @@
 // The Durable Object in server/ persists a Room and calls these functions.
 
 import {
+  TIME_CARD_MS,
+  addTime,
   createClock,
   flagged,
   pressClock,
@@ -14,16 +16,19 @@ import {
 } from '../clock/clock.ts';
 import type { ClockState } from '../clock/clock.ts';
 import {
+  CHAOS,
   createGame,
-  findMove,
+  dealChaos,
+  drawChaos,
   getVariant,
+  legalMoves,
   listVariants,
   makeMove,
   opposite,
   setupStartPosition,
 } from '../engine/index.ts';
 import type { Color, GameState, SetupQuestion, VariantDefinition } from '../engine/index.ts';
-import { MAX_NAME, reconnectMs } from './protocol.ts';
+import { MAX_NAME, moveOfWire, reconnectMs, wireOf } from './protocol.ts';
 import { ratingCategory } from '../rating/categories.ts';
 import type { CreateRequest, ErrorCode, GameView, OnlineOutcome, Phase, WireMove } from './protocol.ts';
 
@@ -79,6 +84,8 @@ export interface Room {
   readonly tags?: Readonly<Partial<Record<Color, string>>>;
   /** The arena tournament the game belongs to (server/tournament.ts): no rematch, the result is reported there. */
   readonly tournamentId?: string;
+  /** Each player's hidden chaos card (variants with cards), dealt when the game starts. */
+  readonly chaos?: Readonly<Record<Color, string>> | null;
 }
 
 /**
@@ -164,10 +171,11 @@ export function createRoom(
   return { room, color };
 }
 
-/** The game begins once all setup answers are in. */
-function start(room: Room): Room {
+/** The game begins once all setup answers are in; with cards, each player is dealt a chaos card. */
+function start(room: Room, random: () => number = Math.random): Room {
   const v = getVariant(room.variantId);
-  return { ...room, phase: 'playing', startFen: setupStartPosition(v, room.answers) };
+  const chaos = v.cards ? { w: dealChaos(v, random), b: dealChaos(v, random) } : null;
+  return { ...room, phase: 'playing', startFen: setupStartPosition(v, room.answers), chaos };
 }
 
 /** The second player takes the free seat; without setup questions the game starts right away. */
@@ -222,7 +230,13 @@ const replays = new Map<string, { startFen: string; moves: readonly WireMove[]; 
 /** Is `prefix` the start of `moves`? (Cheap: no move generation.) */
 const startsWith = (moves: readonly WireMove[], prefix: readonly WireMove[]) =>
   prefix.length <= moves.length &&
-  prefix.every((m, i) => m.from === moves[i].from && m.to === moves[i].to && m.promotion === moves[i].promotion);
+  prefix.every(
+    (m, i) =>
+      m.from === moves[i].from &&
+      m.to === moves[i].to &&
+      m.promotion === moves[i].promotion &&
+      JSON.stringify(m.card) === JSON.stringify(moves[i].card),
+  );
 
 export function gameOf(room: Room): GameState | null {
   if (!room.startFen) return null;
@@ -231,8 +245,7 @@ export function gameOf(room: Room): GameState | null {
   const usable = cached && cached.startFen === room.startFen && startsWith(room.moves, cached.moves);
   let state = usable ? cached.state : createGame(v, room.startFen);
   for (let i = usable ? cached.moves.length : 0; i < room.moves.length; i++) {
-    const m = room.moves[i];
-    state = makeMove(v, state, findMove(v, state, m.from, m.to, m.promotion)!);
+    state = makeMove(v, state, moveOfWire(v, state, room.moves[i])!);
   }
   if (replays.size > 500 && !replays.has(room.id)) replays.delete(replays.keys().next().value!);
   replays.set(room.id, { startFen: room.startFen, moves: room.moves, state });
@@ -271,31 +284,56 @@ export function tick(room: Room, now: number, state: GameState | null = gameOf(r
   return room;
 }
 
-/** `color` plays a move; `ply` is the number of moves the client saw (stale moves are refused). */
-export function playMove(room: Room, color: Color, move: WireMove, ply: number, now: number, lag = 0): Room {
+/**
+ * `color` plays a move; `ply` is the number of moves the client saw (stale moves are refused).
+ * A chaos card is played out here, with `random`: the card the player holds, hit or backfire.
+ */
+export function playMove(
+  room: Room,
+  color: Color,
+  move: WireMove,
+  ply: number,
+  now: number,
+  lag = 0,
+  random: () => number = Math.random,
+): Room {
   const state = gameOf(room);
   room = tick(room, now, state);
   if (room.phase === 'over') return room;
   if (room.phase !== 'playing' || !state) return fail('bad-request');
   if (state.position.turn !== color || ply !== room.moves.length) return fail('not-your-turn');
   const v = getVariant(room.variantId);
-  const legal = findMove(v, state, move.from, move.to, move.promotion);
+  let legal = move.card ? sentCard(state, move) : moveOfWire(v, state, move);
   if (!legal || (legal.promotion !== undefined && legal.promotion !== move.promotion)) return fail('illegal');
+  if (legal.card?.id === CHAOS) {
+    if (!room.chaos) return fail('illegal');
+    legal = drawChaos(v, state.position, room.chaos[color], random);
+  }
   const next = makeMove(v, state, legal);
-  const wire: WireMove = legal.promotion
-    ? { from: legal.from, to: legal.to, promotion: legal.promotion }
-    : { from: legal.from, to: legal.to };
+  const wire = wireOf(legal);
   const bank = room.lagBank?.[color] ?? LAG.bank;
   const credit = Number.isFinite(lag) ? Math.max(0, Math.min(lag, LAG.perMove, bank)) : 0;
+  let clock = pressClock(room.clock, color, now, credit);
+  const card = legal.card;
+  if (card?.kind === 'time') clock = addTime(clock, card.outcome === '+' ? color : opposite(color), TIME_CARD_MS);
   const played: Room = {
     ...room,
     moves: [...room.moves, wire],
-    clock: pressClock(room.clock, color, now, credit),
+    clock,
     lagBank: { ...room.lagBank, [color]: Math.min(LAG.bank, bank - credit + LAG.refill) },
     // A move answers a pending draw offer with no.
     drawOffer: null,
   };
   return next.result ? finish(played, next.result, now) : played;
+}
+
+/** The legal card move a player sent (a chaos card goes unresolved, so only its id counts). */
+function sentCard(state: GameState, move: WireMove) {
+  const sent = move.card!;
+  const squares = Array.isArray(sent.squares) ? sent.squares.join() : null;
+  return legalMoves(getVariant(state.variantId), state.position).find(
+    (m) => m.card && m.card.id === sent.id && (m.card.id === CHAOS || m.card.squares.join() === squares),
+  );
 }
 
 export function resign(room: Room, color: Color, now: number): Room {
@@ -405,6 +443,8 @@ export function viewOf(
     startFen: room.startFen,
     moves: room.moves,
     answered: Object.keys(room.answers),
+    // Only your own chaos card; spectators see none.
+    chaos: you && room.chaos ? room.chaos[you] : null,
     clock: {
       remaining: { w: finite(room.clock.remaining.w), b: finite(room.clock.remaining.b) },
       running: room.clock.running,

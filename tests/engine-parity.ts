@@ -4,7 +4,7 @@
 import { createRng } from '../src/ai/rng.ts';
 import { squareName } from '../src/engine/board.ts';
 import { FastBoard, moveFrom, movePromo, moveTo } from '../src/engine/fast/board.ts';
-import { createGame, isInsufficientMaterial, makeMove, setupStartPosition } from '../src/engine/game.ts';
+import { createGame, isInsufficientMaterial, makeMove, playable, setupStartPosition } from '../src/engine/game.ts';
 import { isInCheck, legalMoves } from '../src/engine/legality.ts';
 import { parseFen, toFen } from '../src/engine/notation.ts';
 import type { Move, Position, VariantDefinition } from '../src/engine/types.ts';
@@ -42,7 +42,11 @@ export function randomMove(moves: Move[], rng: ReturnType<typeof createRng>): Mo
 export function compare(v: VariantDefinition, b: FastBoard, pos: Position, fresh: FastBoard): string[] {
   const errors: string[] = [];
   const where = toFen(v, pos);
-  const ref = legalMoves(v, pos).map(refKey).sort();
+  // The fast board knows piece moves only (no cards).
+  const ref = legalMoves(v, pos)
+    .filter((m) => !m.card)
+    .map(refKey)
+    .sort();
   const fast = b
     .legalMoves()
     .map((m) => fastKey(b, m))
@@ -91,13 +95,27 @@ export function lockstep(
     for (let ply = 0; ply < maxPlies && !state.result && errors.length < 5; ply++) {
       positions.push(state.position);
       errors.push(...compare(v, b, state.position, fresh));
-      const m = randomMove(legalMoves(v, state.position), rng);
+      const m = playable(v, state.position, randomMove(legalMoves(v, state.position), rng), rng.next);
+      if (m.card) {
+        // A card: the fast board cannot play it, it starts again from the new position.
+        state = makeMove(v, state, m);
+        b.load(state.position);
+        continue;
+      }
       const fm = b.legalMoves().find((x) => fastKey(b, x) === refKey(m));
       if (fm === undefined || !b.make(fm)) {
         errors.push(`${toFen(v, state.position)}: ${refKey(m)} hızlı tahtada oynanamadı`);
         break;
       }
       state = makeMove(v, state, m);
+      // Card effects that run out (walls come down, nitro wears off) change the board after a
+      // move; the fast board does not follow them (its search ignores that): it starts again.
+      if (v.cards) {
+        fresh.load(state.position);
+        if (Array.from(b.sq).join() !== Array.from(fresh.sq).join() || b.extra.join() !== fresh.extra.join()) {
+          b.load(state.position);
+        }
+      }
     }
   }
   return { errors, positions };

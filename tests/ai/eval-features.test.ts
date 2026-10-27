@@ -4,7 +4,7 @@ import { EVAL_PARAMS } from '../../src/ai/eval-params.ts';
 import { evaluateBoard, phaseWeight } from '../../src/ai/evaluate.ts';
 import { createRng } from '../../src/ai/rng.ts';
 import { FastBoard } from '../../src/engine/fast/board.ts';
-import { createGame, makeMove } from '../../src/engine/game.ts';
+import { createGame, makeMove, playable } from '../../src/engine/game.ts';
 import { legalMoves } from '../../src/engine/legality.ts';
 import { listVariants } from '../../src/engine/variants/index.ts';
 
@@ -24,7 +24,7 @@ describe('değerlendirme özellikleri (tuner)', () => {
         const fast = evaluateBoard(b, { mobility: true });
         const white = b.side === 0 ? fast : -fast;
         expect(Math.abs(linearEval(features(b, EVAL_PARAMS, phaseWeight), vec) - white)).toBeLessThanOrEqual(1);
-        state = makeMove(v, state, rng.pick(legalMoves(v, state.position)));
+        state = makeMove(v, state, playable(v, state.position, rng.pick(legalMoves(v, state.position)), rng.next));
       }
     }
   });

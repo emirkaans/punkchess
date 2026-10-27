@@ -1,7 +1,17 @@
 // Messages between the browser and the online game server (a Cloudflare
 // Durable Object per game). Shared by both sides. No React / DOM imports.
 
-import type { Color, GameEndReason, PieceType, Square } from '../engine/index.ts';
+import { cardMove, findMove } from '../engine/index.ts';
+import type {
+  CardPlay,
+  Color,
+  GameEndReason,
+  GameState,
+  Move,
+  PieceType,
+  Square,
+  VariantDefinition,
+} from '../engine/index.ts';
 import type { GameRecord } from './record.ts';
 import type { StickerId } from './stickers.ts';
 
@@ -10,7 +20,25 @@ export interface WireMove {
   readonly from: Square;
   readonly to: Square;
   readonly promotion?: PieceType;
+  /**
+   * A card played instead (variants with cards). A player sends a chaos card unresolved; the
+   * server plays it out and the stored move says what it did.
+   */
+  readonly card?: CardPlay;
 }
+
+/** The engine move a wire move stands for in `state` (a card is checked when it is played). */
+export function moveOfWire(v: VariantDefinition, state: GameState, m: WireMove): Move | undefined {
+  return m.card ? cardMove(m.card) : findMove(v, state, m.from, m.to, m.promotion);
+}
+
+/** A move as sent and stored. */
+export const wireOf = (m: Move): WireMove =>
+  m.card
+    ? { from: m.from, to: m.to, card: m.card }
+    : m.promotion
+      ? { from: m.from, to: m.to, promotion: m.promotion }
+      : { from: m.from, to: m.to };
 
 /** How an online game ended: the engine's reasons plus those decided outside the rules. */
 export type OnlineEndReason = GameEndReason | 'resign' | 'agreement' | 'timeout' | 'abandon';
@@ -97,6 +125,8 @@ export interface GameView {
   readonly moves: readonly WireMove[];
   /** Setup question ids already answered (the answers stay secret until the game starts). */
   readonly answered: readonly string[];
+  /** The receiver's own hidden chaos card (variants with cards), or null. */
+  readonly chaos?: string | null;
   readonly clock: {
     readonly remaining: Readonly<Record<Color, number | null>>;
     readonly running: Color | null;
