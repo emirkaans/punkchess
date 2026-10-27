@@ -54,7 +54,7 @@ describe('varyant metinleri', () => {
   });
 
   it('Türkçede tanımdaki metinler, İngilizcede çeviriler kullanılır', () => {
-    const jester = listVariants().find((v) => v.setup)!;
+    const jester = listVariants().find((v) => v.id === 'jester')!;
     const question = jester.setup!.questions[0];
     const tr = variantTexts(jester, 'tr');
     const en = variantTexts(jester, 'en');

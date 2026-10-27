@@ -60,8 +60,8 @@ describe('puan kategorileri', () => {
       'blitz',
       'rapid',
       'classical',
-      'variant:burokrat',
       'variant:jester',
+      'variant:burokrat',
       'variant:diplomat',
     ]);
   });

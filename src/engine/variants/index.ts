@@ -22,10 +22,11 @@ export function listVariants(): VariantDefinition[] {
   return [...registry.values()];
 }
 
+// Lists (home page, dialogs) show the variants in this order.
 registerVariant(standard);
-registerVariant(burokrat);
-registerVariant(jester);
-registerVariant(diplomat);
 registerVariant(anarsi);
+registerVariant(jester);
+registerVariant(burokrat);
+registerVariant(diplomat);
 
 export { standard, burokrat, jester, diplomat, anarsi };

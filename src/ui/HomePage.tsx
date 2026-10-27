@@ -5,6 +5,7 @@ import { dailyDay, dailyNumber, gridEmoji } from '../online/daily.ts';
 import { dailyResults, localStreak } from './dailyStore.ts';
 import type { PieceType, VariantDefinition } from '../engine/index.ts';
 import { useI18n } from './i18n.tsx';
+import type { MessageKey } from '../i18n/index.ts';
 import { PieceView } from './PieceView.tsx';
 import { Crown } from './Punk.tsx';
 import { LobbyCard } from './online/LobbyPage.tsx';
@@ -141,21 +142,26 @@ export function HomePage({ onPlay, onOnline, onDaily, onOpenGame }: Props) {
       </section>
 
       <section className="home-cards" id="variants" aria-label={t('home.variants')}>
-        {listVariants().map((v, i) => {
-          const texts = vt(v);
-          return (
-            <button key={v.id} className={`variant-card${i % 2 ? ' lime' : ''}`} onClick={() => setPicked(v)}>
-              <span className="variant-icon">
-                <PieceView variant={v} piece={{ type: signature(v), color: i % 2 ? 'w' : 'b' }} />
-              </span>
-              <span className="variant-text">
+        <div className="variant-grid">
+          {listVariants().map((v, i) => {
+            const texts = vt(v);
+            return (
+              <button
+                key={v.id}
+                className={`variant-card${i % 2 ? ' lime' : ''}`}
+                title={texts.rules.summary}
+                aria-label={`${texts.name}: ${texts.rules.summary}`}
+                onClick={() => setPicked(v)}
+              >
+                <span className="variant-icon">
+                  <PieceView variant={v} piece={{ type: signature(v), color: i % 2 ? 'w' : 'b' }} />
+                </span>
                 <span className="variant-name">{texts.name}</span>
-                <span className="variant-summary">{texts.rules.summary}</span>
-              </span>
-              <Arrow />
-            </button>
-          );
-        })}
+                <span className="variant-tag">{t(`home.variantTag.${v.id}` as MessageKey)}</span>
+              </button>
+            );
+          })}
+        </div>
         <div className="opponents">
           <h2>
             <Crown />
