@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import type { Piece, Position, Square, VariantDefinition } from '../engine/index.ts';
 import { useI18n } from './i18n.tsx';
-import { pieceSvg, usePieceSet } from './pieceSets.ts';
+import { pieceSvg, usePieceSet, variantPieceSvg } from './pieceSets.ts';
 import type { PieceSet } from './pieceSets.ts';
 
 interface Props {
@@ -29,7 +29,7 @@ export function PieceView({ variant, piece, position, square }: Props) {
       {def.icon.kind === 'glyph' ? (
         <GlyphPiece set={set} glyph={def.icon.glyph} />
       ) : (
-        <span className="svg" dangerouslySetInnerHTML={{ __html: def.icon.svg(piece.color) }} />
+        <SvgPiece set={set} type={piece.type} svg={def.icon.svg(piece.color)} />
       )}
       {badge && (
         <span className="badge" title={badge.title}>
@@ -46,6 +46,14 @@ function GlyphPiece({ set, glyph }: { set: PieceSet; glyph: string }) {
   const svg = pieceSvg(set, glyph, id);
   if (!svg) return <span className="glyph">{glyph}</span>;
   return <span className={`set set-${set}`} dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+
+/** A variant piece: drawn in the chosen piece set when the set has it, else its own drawing. */
+function SvgPiece({ set, type, svg }: { set: PieceSet; type: string; svg: string }) {
+  const id = `pc${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const drawn = variantPieceSvg(set, type, id);
+  if (!drawn) return <span className="svg" dangerouslySetInnerHTML={{ __html: svg }} />;
+  return <span className={`set set-${set}`} dangerouslySetInnerHTML={{ __html: drawn }} />;
 }
 
 /** A knight drawn in a given piece set, for the settings previews. */

@@ -23,7 +23,11 @@ export const PIECE_SETS = [
 ] as const;
 export type PieceSet = (typeof PIECE_SETS)[number];
 type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir'>;
-type Kind = 'k' | 'q' | 'r' | 'b' | 'n' | 'p';
+type StandardKind = 'k' | 'q' | 'r' | 'b' | 'n' | 'p';
+/** The variants' own pieces: Bürokrat, Diplomat, Jester (by piece type). */
+type VariantKind = 'u' | 'd' | 'j';
+type Kind = StandardKind | VariantKind;
+const VARIANT_KINDS: readonly string[] = ['u', 'd', 'j'];
 
 const LINE = 'style="fill: var(--line); stroke: none"';
 const ACCENT = 'style="fill: var(--accent)"';
@@ -48,7 +52,7 @@ const inBadge = (inner: string) =>
 const skull = `<rect x="26" y="80" width="48" height="10" rx="2"/><rect x="42" y="68" width="16" height="12"/><path d="M30 48 Q30 22 50 22 Q70 22 70 48 Q70 57 62 59 L62 70 L38 70 L38 59 Q30 57 30 48 Z"/><circle cx="42" cy="45" r="5.5" ${LINE}/><circle cx="58" cy="45" r="5.5" ${LINE}/><polygon points="50,51 46.5,58 53.5,58" ${LINE}/><path d="M44 63 V70 M50 63 V70 M56 63 V70" style="fill: none; stroke: var(--line); stroke-width: 1.6"/>`;
 const hat = (shape: string) => skull + shape.replace('/>', ` ${ACCENT}/>`);
 
-const DRAWINGS: Record<Drawn, Record<Kind, string>> = {
+const DRAWINGS: Record<Drawn, Record<StandardKind, string>> = {
   // Cut like a spray stencil: the parts stand apart.
   sablon: {
     k: '<rect x="24" y="80" width="52" height="10"/><polygon points="32,76 36,42 64,42 68,76"/><rect x="30" y="32" width="40" height="6"/><polygon points="30,28 30,10 40,18 50,6 60,18 70,10 70,28"/>',
@@ -171,6 +175,88 @@ const DRAWINGS: Record<Drawn, Record<Kind, string>> = {
   },
 };
 
+/**
+ * The variant pieces in each drawn set, in the set's own style: the Bürokrat as a briefcase,
+ * the Diplomat as a flag on a pole, the Jester as a three-pointed cap with bells.
+ */
+const VARIANT_DRAWINGS: Record<Drawn, Record<VariantKind, string>> = {
+  sablon: {
+    u: '<rect x="24" y="80" width="52" height="10"/><rect x="28" y="48" width="44" height="28"/><rect x="40" y="36" width="20" height="4"/><rect x="40" y="40" width="4" height="5"/><rect x="56" y="40" width="4" height="5"/><polygon points="62,30 80,6 72,30"/>',
+    d: '<rect x="24" y="80" width="52" height="10"/><rect x="34" y="20" width="6" height="56"/><circle cx="37" cy="12" r="5"/><polygon points="44,18 78,22 70,31 78,40 44,40"/>',
+    j: '<rect x="24" y="80" width="52" height="10"/><rect x="30" y="64" width="40" height="12"/><polygon points="36,60 50,18 64,60"/><polygon points="31,60 14,38 34,46"/><polygon points="69,60 86,38 66,46"/><circle cx="11" cy="33" r="5"/><circle cx="50" cy="10" r="5"/><circle cx="89" cy="33" r="5"/>',
+  },
+  mohawk: {
+    u: `<polygon points="40,40 42,22 46,32 50,18 54,32 58,22 60,40" ${ACCENT}/><rect x="24" y="80" width="52" height="10" rx="4"/><rect x="38" y="36" width="24" height="12" rx="6"/><rect x="28" y="44" width="44" height="36" rx="8"/><rect x="46" y="56" width="8" height="7" ${LINE}/>`,
+    d: `<polygon points="31,12 33,0 37,8 39,-2 41,8 45,0 46,12" ${ACCENT}/><rect x="24" y="80" width="52" height="10" rx="4"/><rect x="34" y="14" width="8" height="66" rx="4"/><circle cx="38" cy="14" r="6"/><path d="M42 20 Q60 10 78 22 V46 Q60 36 42 46 Z"/>`,
+    j: `<rect x="24" y="80" width="52" height="10" rx="4"/><rect x="34" y="54" width="32" height="26" rx="8"/><path d="M32 58 Q20 32 10 42 Q14 22 34 36 Q40 16 50 10 Q60 16 66 36 Q86 22 90 42 Q80 32 68 58 Z"/><circle cx="10" cy="43" r="5" ${ACCENT}/><circle cx="50" cy="9" r="5" ${ACCENT}/><circle cx="90" cy="43" r="5" ${ACCENT}/>`,
+  },
+  zimbali: {
+    u: `${studBase}<rect x="38" y="32" width="24" height="12"/><rect x="28" y="42" width="44" height="36" rx="2"/><rect x="44" y="36" width="12" height="6" ${LINE}/><circle cx="50" cy="58" r="4.5" ${ACCENT}/>${studs(
+      [
+        [34, 48],
+        [66, 48],
+        [34, 72],
+        [66, 72],
+      ],
+    )}`,
+    d: `${studBase}<rect x="34" y="14" width="8" height="64"/><circle cx="38" cy="10" r="5" ${ACCENT}/><rect x="42" y="16" width="36" height="28"/>${studs(
+      [
+        [52, 30],
+        [62, 30],
+        [72, 30],
+      ],
+    )}`,
+    j: `${studBase}<polygon points="32,78 36,52 64,52 68,78"/><polygon points="30,52 18,24 38,38 50,10 62,38 82,24 70,52"/><circle cx="18" cy="21" r="4.5" ${ACCENT}/><circle cx="50" cy="8" r="4.5" ${ACCENT}/><circle cx="82" cy="21" r="4.5" ${ACCENT}/>${studs(
+      [
+        [40, 64],
+        [50, 64],
+        [60, 64],
+      ],
+    )}`,
+  },
+  damla: {
+    u: `${dripBase}<path d="M30 72 V46 H70 V72 Z"/><path d="M40 46 V36 H60 V46 H55 V41 H45 V46 Z"/><path d="M60 46 V56 Q60 59 62.5 59 Q65 59 65 56 V46"/>`,
+    d: `${dripBase}<rect x="34" y="14" width="6" height="58"/><circle cx="37" cy="10" r="5"/><path d="M40 16 H76 V40 H68 V48 Q68 51 65.5 51 Q63 51 63 48 V40 H52 V44 Q52 47 49.5 47 Q47 47 47 44 V40 H40 Z"/>`,
+    j: `${dripBase}<path d="M36 72 L40 52 H60 L64 72 Z"/><path d="M34 54 L22 28 L40 40 L50 14 L60 40 L78 28 L66 54 Z"/><path d="M22 12 Q27 20 27 23 Q27 27 22 27 Q17 27 17 23 Q17 20 22 12 Z"/><path d="M50 0 Q55 8 55 11 Q55 15 50 15 Q45 15 45 11 Q45 8 50 0 Z"/><path d="M78 12 Q83 20 83 23 Q83 27 78 27 Q73 27 73 23 Q73 20 78 12 Z"/>`,
+  },
+  rozet: {
+    u: inBadge(
+      '<rect x="24" y="80" width="52" height="10"/><rect x="24" y="42" width="52" height="34" rx="3"/><path d="M38 42 V30 H62 V42 H56 V36 H44 V42 Z"/>',
+    ),
+    d: inBadge(
+      '<rect x="24" y="80" width="52" height="10"/><rect x="28" y="10" width="8" height="70"/><path d="M36 12 Q56 2 78 14 V46 Q56 34 36 44 Z"/>',
+    ),
+    j: inBadge(
+      '<rect x="24" y="80" width="52" height="10"/><polygon points="34,76 38,56 62,56 66,76"/><path d="M32 58 Q18 30 6 40 Q10 16 34 32 Q40 12 50 2 Q60 12 66 32 Q90 16 94 40 Q82 30 68 58 Z"/>',
+    ),
+  },
+  kirik: {
+    u: `<polygon points="24,90 30,78 26,46 40,44 42,32 58,32 60,44 74,46 70,78 76,90"/><path d="M26,46 50,60 74,46 M50,60 44,90 M42,32 50,44 58,32" ${FACET}/>`,
+    d: `<polygon points="32,90 34,14 30,8 38,2 42,12 76,18 66,30 78,42 42,46 40,90"/><path d="M42,12 56,30 42,46 M56,30 76,18 M36,60 40,72" ${FACET}/>`,
+    j: `<polygon points="26,90 32,78 36,56 20,24 40,40 50,4 60,40 80,24 64,56 68,78 74,90"/><path d="M40,40 50,56 60,40 M36,56 64,56 M50,56 46,90" ${FACET}/>`,
+  },
+  kafatasi: {
+    u: hat('<path d="M24 30 H76 V25 H68 Q68 6 50 6 Q32 6 32 25 H24 Z"/>'),
+    d: hat('<path d="M38 26 V2 H42 V4 H64 L58 10 L64 16 H42 V26 Z"/>'),
+    j: `${hat('<path d="M32 30 Q22 16 12 22 Q16 6 36 16 Q42 4 50 0 Q58 4 64 16 Q84 6 88 22 Q78 16 68 30 Z"/>')}<circle cx="12" cy="23" r="3.5" ${LINE}/><circle cx="50" cy="2" r="3.5" ${LINE}/><circle cx="88" cy="23" r="3.5" ${LINE}/>`,
+  },
+  tup: {
+    u: '<path d="M28 88 H72 M30 80 V48 H70 V80 Z M42 48 V40 H58 V48 M30 62 H70"/><circle cx="50" cy="62" r="3"/>',
+    d: '<path d="M28 88 H72 M38 88 V12 M38 16 Q56 8 72 18 V42 Q56 34 38 42"/><circle cx="38" cy="8" r="3"/>',
+    j: '<path d="M28 88 H72 M36 88 L40 60 H60 L64 88 M38 60 L24 32 L42 42 L50 16 L58 42 L76 32 L62 60"/><circle cx="22" cy="28" r="3"/><circle cx="50" cy="12" r="3"/><circle cx="78" cy="28" r="3"/>',
+  },
+  piksel: {
+    u: `<path d="M34 26h32v8h-32z M34 34h8v8h-8z M58 34h8v8h-8z M26 42h48v32h-48z M18 74h64v16h-64z"/><rect x="42" y="50" width="16" height="8" ${ACCENT}/>`,
+    d: `<path d="M26 2h24v8h-24z M34 10h8v64h-8z M42 18h32v8h-32z M42 26h40v8h-40z M42 34h32v8h-32z M26 74h48v8h-48z M18 82h64v8h-64z"/><rect x="50" y="26" width="16" height="8" ${ACCENT}/>`,
+    j: `<path d="M42 18h16v8h-16z M18 26h8v8h-8z M34 26h32v8h-32z M74 26h8v8h-8z M18 34h64v8h-64z M26 42h48v8h-48z M34 50h32v16h-32z M26 66h48v8h-48z M18 74h64v16h-64z"/><rect x="10" y="18" width="8" height="8" ${ACCENT}/><rect x="82" y="18" width="8" height="8" ${ACCENT}/><rect x="42" y="10" width="16" height="8" ${ACCENT}/>`,
+  },
+  firca: {
+    u: '<path d="M30 86 H70 M32 74 H68 V48 H32 Z M42 46 V38 H58 V46"/>',
+    d: '<path d="M30 86 H70 M38 78 V14 M40 18 Q56 10 70 20 Q60 30 70 40 Q56 32 40 40"/>',
+    j: '<path d="M30 86 H70 M40 76 V60 H60 V76 M36 58 L22 30 M36 58 L50 16 L64 58 L78 30"/><circle cx="20" cy="26" r="3"/><circle cx="50" cy="12" r="3"/><circle cx="80" cy="26" r="3"/>',
+  },
+};
+
 /*
  * Tattooed sets: classic outlines (each piece easy to tell apart) with a texture on the body,
  * clipped to the piece. Drawn in three layers: the outline (the shapes in the line colour, a
@@ -182,6 +268,9 @@ const TATTOOED: readonly PieceSet[] = ['murekkep', 'zincir'];
 const PEDESTAL =
   '<rect x="22" y="80" width="56" height="10" rx="3"/><rect x="28" y="73" width="44" height="9" rx="2"/>';
 const CLASSIC: Record<Kind, string> = {
+  u: `${PEDESTAL}<rect x="28" y="44" width="44" height="30" rx="3"/><path d="M40 46 V36 Q40 32 44 32 H56 Q60 32 60 36 V46 H55 V38 H45 V46 Z"/>`,
+  d: `${PEDESTAL}<rect x="33" y="12" width="7" height="62" rx="1"/><circle cx="36.5" cy="9" r="5"/><path d="M40 16 Q56 8 74 18 V44 Q56 36 40 42 Z"/>`,
+  j: `${PEDESTAL}<path d="M36 74 L40 56 H60 L64 74 Z"/><ellipse cx="50" cy="56" rx="16" ry="4"/><path d="M34 54 Q22 32 12 40 Q14 20 36 34 Q42 16 50 8 Q58 16 64 34 Q86 20 88 40 Q78 32 66 54 Z"/><circle cx="12" cy="42" r="4"/><circle cx="50" cy="7" r="4"/><circle cx="88" cy="42" r="4"/>`,
   p: '<rect x="26" y="80" width="48" height="10" rx="3"/><path d="M34 81 Q37 60 43 53 H57 Q63 60 66 81 Z"/><ellipse cx="50" cy="52" rx="13" ry="4"/><circle cx="50" cy="37" r="12"/>',
   r: `${PEDESTAL}<path d="M34 74 L37 41 H63 L66 74 Z"/><rect x="32" y="38" width="36" height="6" rx="1"/><rect x="29" y="26" width="42" height="14" rx="1"/><rect x="29" y="15" width="10" height="13"/><rect x="45" y="15" width="10" height="13"/><rect x="61" y="15" width="10" height="13"/>`,
   b: `${PEDESTAL}<path d="M38 74 Q40 61 44 56 H56 Q60 61 62 74 Z"/><ellipse cx="50" cy="55" rx="14" ry="4"/><path d="M50 18 Q67 32 61 47 Q57 52 50 52 Q43 52 39 47 Q33 32 50 18 Z"/><circle cx="50" cy="13" r="5"/>`,
@@ -197,11 +286,15 @@ const INK_FILL = 'style="fill: var(--line); stroke: none"';
 const RED_FILL = 'style="fill: var(--accent); stroke: var(--line); stroke-width: 1"';
 // What every tattooed set keeps so the piece reads at a glance: the bishop's slit, the knight's eye and mane.
 const MARKS: Partial<Record<Kind, string>> = {
+  u: `<path d="M28 58 H72" ${ink(1.4, '; opacity: .6')}/>`,
   b: `<path d="M55 28 L45 40" ${ink(3)}/>`,
   n: `<circle cx="45" cy="31" r="2.6" ${INK_FILL}/><path d="M52 20 Q64 30 66 48" ${ink(1.4, '; opacity: .6')}/>`,
 };
 // The middle of each body, where a tattoo sits.
 const CHEST: Record<Kind, [number, number]> = {
+  u: [50, 61],
+  d: [58, 29],
+  j: [50, 67],
   k: [50, 61],
   q: [50, 61],
   r: [50, 57],
@@ -210,10 +303,14 @@ const CHEST: Record<Kind, [number, number]> = {
   p: [50, 68],
 };
 // The neck, where the barbed wire runs.
-const NECK: Record<Kind, number> = { k: 46, q: 46, r: 41, b: 55, n: 50, p: 52 };
+const NECK: Record<Kind, number> = { k: 46, q: 46, r: 41, b: 55, n: 50, p: 52, u: 44, d: 30, j: 56 };
 
 /** Each piece's flash tattoo: crossbones, rose, anchor, dagger, lightning, star. */
 const FLASH: Record<Kind, string> = {
+  // Bürokrat: a wax seal; Diplomat: a peace sign; Jester: a card diamond.
+  u: `<circle r="5.5" ${RED_FILL}/><path d="M-2.5 0 H2.5 M0 -2.5 V2.5" ${ink(1.2)}/>`,
+  d: `<circle r="6" ${ink(1.6)}/><path d="M0 -6 V6 M0 1 L-4.2 4.2 M0 1 L4.2 4.2" ${ink(1.6)}/>`,
+  j: `<path d="M0 -7 L5 0 L0 7 L-5 0 Z" ${RED_FILL}/>`,
   k: `<path d="M-7 -7 L7 7 M7 -7 L-7 7" ${ink(2.2)}/>${[
     [-7, -7],
     [7, -7],
@@ -289,13 +386,21 @@ const KIND_OF_GLYPH: Record<string, Kind> = { '♚': 'k', '♛': 'q', '♜': 'r'
  * `id` is unique on the page (the tattooed sets clip their texture with it).
  */
 export function pieceSvg(set: PieceSet, glyph: string, id = `pc-${set}`): string | null {
-  if (set === 'glyph') return null;
   const kind = KIND_OF_GLYPH[glyph.charAt(0)];
-  if (!kind) return null;
+  return kind ? drawing(set, kind, id) : null;
+}
+
+/** A variant piece (Bürokrat, Diplomat, Jester; by piece type) in `set`, or null for the font set or other pieces. */
+export function variantPieceSvg(set: PieceSet, type: string, id = `pc-${set}`): string | null {
+  return VARIANT_KINDS.includes(type) ? drawing(set, type as VariantKind, id) : null;
+}
+
+function drawing(set: PieceSet, kind: Kind, id: string): string | null {
+  if (set === 'glyph') return null;
   if (TATTOOED.includes(set)) return tattooedSvg(set as Tattooed, kind, `${id}-${kind}`);
-  set = set as Drawn;
-  const body = DRAWINGS[set][kind];
-  const inner = set === 'firca' ? `<g class="o">${body}</g><g class="m">${body}</g>` : body;
+  const drawn = set as Drawn;
+  const body = kind === 'u' || kind === 'd' || kind === 'j' ? VARIANT_DRAWINGS[drawn][kind] : DRAWINGS[drawn][kind];
+  const inner = drawn === 'firca' ? `<g class="o">${body}</g><g class="m">${body}</g>` : body;
   return `<svg viewBox="0 0 100 100" aria-hidden="true">${inner}</svg>`;
 }
 
