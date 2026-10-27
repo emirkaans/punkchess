@@ -54,16 +54,25 @@ describe('Anarşi: numaralar', () => {
     expect(g.moves[0].san).toBe('PA@d7');
   });
 
-  it('Buz: donan taş 2 tur oynayamaz ama şah çeker', () => {
+  it('Buz: donan taş 3 tur oynayamaz ama şah çeker; sayaç tam hamle sayar', () => {
     let g = createGame(v, fen('4k3/8/8/8/8/8/1r6/4K3', 'w', 'ice.-.0000'));
+    const left = () => v.squareMarks!(g.position).find((m) => m.kind === 'ice')?.label;
     g = makeMove(v, g, card('ice', 'b2'));
     expect(targets(g, 'b2')).toEqual([]);
+    expect(left()).toBe('3');
     g = playSan(v, g, 'Kd8');
+    // Rakip oynadı ama tam hamle bitmedi: sayaç düşmez.
+    expect(left()).toBe('3');
     // Kale donuk ama 2. yatayı tutuyor: beyaz şah 2. yataya çıkamaz.
     expect(targets(g, 'e1').some((s) => s.endsWith('2'))).toBe(false);
     g = playSan(v, g, 'Kf1');
+    expect(left()).toBe('2');
     expect(targets(g, 'b2')).toEqual([]);
     g = playSan(v, g, 'Ke8', 'Kg1');
+    expect(left()).toBe('1');
+    expect(targets(g, 'b2')).toEqual([]);
+    g = playSan(v, g, 'Kd8', 'Kh1');
+    expect(left()).toBeUndefined();
     expect(targets(g, 'b2').length).toBeGreaterThan(0);
   });
 

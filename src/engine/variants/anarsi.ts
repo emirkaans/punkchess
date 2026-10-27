@@ -217,7 +217,7 @@ function applyCard(pos: Position, move: Move): Position {
       removed = true;
       break;
     case 'ice':
-      fx.push({ k: 'ice', c: them, exp: ply + 4, sq });
+      fx.push({ k: 'ice', c: them, exp: ply + 6, sq });
       break;
     case 'shield':
       fx.push({ k: 'shield', c: me, exp: ply + 2, sq });
@@ -375,8 +375,9 @@ function squareMarks(pos: Position): SquareMark[] {
   const ply = plyOf(pos);
   const marks: SquareMark[] = [];
   for (const e of extraOf(pos).fx) {
-    // Turns left for the side the effect hits.
-    const left = String(Math.ceil((e.exp - ply) / 2));
+    // Moves left, counted like move numbers: one White and one Black half-move make a move, so
+    // the count drops when the card's player has moved again (3, 3, 2, 2, 1 for a 3-move effect).
+    const left = String(Math.floor((e.exp - ply) / 2) + 1);
     if (e.k === 'ice') marks.push({ square: e.sq[0], kind: 'ice', label: left });
     if (e.k === 'shield') marks.push({ square: e.sq[0], kind: 'shield', label: '' });
     if (e.k === 'wall') e.sq.forEach((s, i) => marks.push({ square: s, kind: 'wall', label: i === 0 ? left : '' }));
@@ -456,7 +457,7 @@ export const TRICK_NAMES_EN: Readonly<Record<Trick | ChaosCard, string>> = {
 const TRICK_DETAILS: Readonly<Record<Trick, string>> = {
   void: 'Boş bir kare oyun sonuna kadar silinir.',
   pawn: 'Rakibin bir piyonu tahtadan alınır.',
-  ice: 'Rakibin bir taşı 2 tur oynayamaz.',
+  ice: 'Rakibin bir taşı 3 tur oynayamaz.',
   swap: 'Kendi iki taşının yeri değişir.',
   shield: 'Taşın bir tur yenemez.',
   wall: '3 boş kare 3 tur kapanır.',
@@ -465,7 +466,7 @@ const TRICK_DETAILS: Readonly<Record<Trick, string>> = {
 const TRICK_DETAILS_EN: Readonly<Record<Trick, string>> = {
   void: 'An empty square leaves the board for good.',
   pawn: 'One opponent pawn leaves the board.',
-  ice: 'An opponent piece cannot move for 2 turns.',
+  ice: 'An opponent piece cannot move for 3 turns.',
   swap: 'Two of your pieces swap places.',
   shield: 'Your piece cannot be taken for a turn.',
   wall: '3 empty squares close for 3 turns.',
@@ -575,7 +576,7 @@ export const anarsi: VariantDefinition = defineVariant({
     bullets: [
       'Oyundan önce bir numara seçersin ve oyunda bir kez, hamle yerine oynarsın. Numara hep sana yarar.',
       'Kara Delik boş bir kareyi oyun sonuna kadar siler; Barikat yan yana 3 boş kareyi 3 tur kapatır. Oralara hiçbir taş giremez, üstünden geçemez.',
-      'Piyon Avı rakibin bir piyonunu alır; Buz rakibin bir taşını 2 tur dondurur (donan taş yine saldırır ve korur).',
+      'Piyon Avı rakibin bir piyonunu alır; Buz rakibin bir taşını 3 tur dondurur (donan taş yine saldırır ve korur).',
       'Işınlanma kendi iki taşının yerini değiştirir (şah ve piyon olmaz); Kalkan taşını bir tur yenmez yapar.',
       `Gizli kaos kartı (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı 60 saniye, Pusu bir hafif taş, Hain bir piyon, Nitro bir hamlelik vezir gücü. İsabet sana, geri tepme rakibe yarar.`,
       'Şah çekiliyken kart oynanmaz. Geri tepen kart şahını açmaz, rakibe tek hamlede mat fırsatı vermez.',
@@ -598,7 +599,7 @@ export const anarsi: VariantDefinition = defineVariant({
         bullets: [
           'Before the game you pick a trick and play it once, instead of a move. A trick always helps you.',
           'Black Hole takes an empty square off the board for good; Barricade closes 3 empty squares in a row for 3 turns. No piece enters or passes them.',
-          'Pawn Hunt takes an opponent pawn; Ice freezes an opponent piece for 2 turns (it still attacks and defends).',
+          'Pawn Hunt takes an opponent pawn; Ice freezes an opponent piece for 3 turns (it still attacks and defends).',
           'Teleport swaps two of your pieces (not the king, not pawns); Shield keeps your piece from being taken for a turn.',
           `Hidden chaos card (from move ${CHAOS_FROM_MOVE}): Time Thief 60 seconds, Ambush a minor piece, Traitor a pawn, Nitro one queen move. A hit helps you, a backfire the opponent.`,
           'No card while in check. A backfire never leaves your king open or hands the opponent a mate in one.',
