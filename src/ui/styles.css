@@ -2204,14 +2204,12 @@ button.primary:hover:not(:disabled) {
 }
 /* Cubist: its own palette; the base and the contrasting facets swap per colour. */
 .piece.white .set-kubist {
-  --kb: #e9dfcb;
-  --kb-alt: #1b1a1d;
-  --kb-crack: #111;
+  --kb: #ece3cf;
+  --kb-crack: #8a8172;
 }
 .piece.black .set-kubist {
-  --kb: #1b1a1d;
-  --kb-alt: #e9dfcb;
-  --kb-crack: #e9dfcb;
+  --kb: #151417;
+  --kb-crack: #4d4852;
 }
 .piece .set-kubist svg {
   stroke: none;
@@ -2229,9 +2227,6 @@ button.primary:hover:not(:disabled) {
 }
 .piece .set-kubist .nv {
   fill: #2d4566;
-}
-.piece .set-kubist .al {
-  fill: var(--kb-alt);
 }
 .piece .set-kubist .ck {
   fill: none;

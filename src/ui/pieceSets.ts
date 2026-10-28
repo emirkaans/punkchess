@@ -1009,8 +1009,8 @@ function chromeSvg(kind: Kind, id: string): string {
 
 /*
  * Cubist (after Picasso): angular pieces cut into cream, black, red and navy facets, brush
- * strokes and cracks, one-eyed faces. Its own palette; CSS swaps the base and the
- * contrasting facets per colour (--kb, --kb-alt, --kb-crack).
+ * strokes and cracks, one-eyed faces. Its own palette; the body is cream or black and the
+ * lines on it stay in a muted tone of the same, so the two sides never blur (--kb, --kb-crack).
  */
 const K_BASE = 'M20 90V83H80V90Z' + 'M26 83L30 77H70L74 83Z';
 const almond = (x: number, y: number, w: number) =>
@@ -1100,11 +1100,9 @@ function cubistFacets(seed: number): [string, string, string] {
     const dx = next() < 0.5 ? -1 : 1;
     const dy = next() < 0.5 ? -1 : 1;
     const [ax, ay, bx, cy] = [GX[x], GY[y], GX[clamp(x + dx, GX.length)], GY[clamp(y + dy, GY.length)]];
-    // Red and navy twice as often as the contrasting colour.
-    out[i % 5 === 4 ? 2 : i % 2].push(`M${ax} ${ay}L${bx} ${ay}L${ax} ${cy}Z`);
+    // Red and navy only: a facet in the other side's colour would blur black and white together.
+    out[i % 2].push(`M${ax} ${ay}L${bx} ${ay}L${ax} ${cy}Z`);
   }
-  // A split down the middle of the base, as on a cut stone.
-  out[2].push('M50 77H80V90H50Z');
   return [out[0].join(''), out[1].join(''), out[2].join('')];
 }
 function cubistCracks(seed: number): string {
