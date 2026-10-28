@@ -2119,6 +2119,16 @@ button.primary:hover:not(:disabled) {
 .piece.black .set-chrome {
   --rim: var(--pb-line);
 }
+/* Classic: the white pieces get a plain dark rim, no glow and grey glass (pink tires the eyes). */
+:root[data-pieces='klasik'] .piece.white .set-chrome {
+  --rim: #222;
+}
+:root[data-pieces='klasik'] .piece.white .set-chrome .rm {
+  display: none;
+}
+:root[data-pieces='klasik'] .piece.white .set-chrome :is(.mn, .gm) {
+  fill: #8d8d99;
+}
 .piece .set-chrome svg {
   stroke: var(--rim);
   stroke-width: 1.4;
