@@ -21,9 +21,10 @@ export const PIECE_SETS = [
   'murekkep',
   'zincir',
   'sprey',
+  'brutal',
 ] as const;
 export type PieceSet = (typeof PIECE_SETS)[number];
-type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir' | 'sprey'>;
+type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir' | 'sprey' | 'brutal'>;
 type StandardKind = 'k' | 'q' | 'r' | 'b' | 'n' | 'p';
 /** The variants' own pieces: Bürokrat, Diplomat, Jester (by piece type). */
 type VariantKind = 'u' | 'd' | 'j';
@@ -575,6 +576,104 @@ function spraySvg(kind: Kind): string {
   );
 }
 
+/*
+ * Brutal: chunky faceted pieces, straight lines only. A hard pink slab behind each piece,
+ * one side shaded with halftone grain, and pink slashes and doodles (CSS: --slab, --shade).
+ */
+const B_BASE = 'M20 90L22 82H78L80 90Z' + 'M27 82L30 76H70L73 82Z';
+interface Brutal {
+  /** The piece's shapes (SVG elements). */
+  shapes: string;
+  lines?: string;
+  doodle?: string;
+  drips?: [number, number, number][];
+  mane?: boolean;
+}
+const BRUTAL: Record<Kind, Brutal> = {
+  p: {
+    shapes: p(
+      B_BASE +
+        'M34 76L38 66L44 58H56L62 66L66 76Z' +
+        'M38 58L40 53H60L62 58Z' +
+        'M44 29H56L61 34V46L56 51H44L39 46V34Z',
+    ),
+    doodle: 'M40 23L38 11L45 17L50 8L55 17L62 11L60 23Z',
+  },
+  r: {
+    shapes: p(B_BASE + 'M34 76L36 44H64L66 76Z' + 'M30 44V22H39V29H46V22H54V29H61V22H70V44Z'),
+    lines: 'M35 49H65',
+    doodle: 'M44 71L43 60L48 64L52 57L56 64L61 60L60 71Z',
+    drips: [[64, 76, 9]],
+  },
+  n: {
+    shapes: p(B_BASE + 'M30 76L34 62L44 55L26 54L20 46L36 30L44 18L50 26L62 22L74 36L76 58L72 76Z'),
+    mane: true,
+    lines: 'M38 37L45 35L42 40Z' + 'M24 47L28 46',
+    doodle: 'M53 54L66 69M66 54L53 69',
+    drips: [[31, 62, 7]],
+  },
+  b: {
+    shapes: p(
+      B_BASE + 'M36 76L42 62L44 55H56L58 62L64 76Z' + 'M40 55L42 50H58L60 55Z' + 'M50 12L62 32L56 50H44L38 32Z',
+    ),
+    lines: 'M50 18V40',
+    doodle: 'M58 64L66 46',
+  },
+  q: {
+    shapes: p(
+      B_BASE +
+        'M33 76L40 58L42 47H58L60 58L67 76Z' +
+        'M36 47L38 42H62L64 47Z' +
+        'M34 42L28 14L40 28L44 8L50 24L56 8L60 28L72 14L66 42Z',
+    ),
+    doodle: 'M39 73L56 54M46 75L60 59',
+  },
+  // The king's crown: two broad arches and a middle peak (the queen's is all spikes), a knob on top.
+  k: {
+    shapes: p(
+      B_BASE +
+        'M35 69L36 76H64L65 69Z' +
+        'M33 62H67V69H33Z' +
+        'M33 62L22 52V40L30 34L40 36L50 48L60 36L70 34L78 40V52L67 62Z' +
+        'M50 48L44 37L50 25L56 37Z' +
+        'M50 14L55 19.5L50 25L45 19.5Z',
+    ),
+    lines: 'M36 65.5H64',
+    doodle: 'M40 75L62 56',
+    drips: [[66, 69, 6]],
+  },
+  u: { shapes: CLASSIC.u },
+  d: { shapes: CLASSIC.d },
+  j: { shapes: CLASSIC.j },
+};
+
+/** Halftone grain for the shaded side, the same every game (a fixed seed per piece). */
+function grain(kind: Kind): string {
+  let s = kind.charCodeAt(0) * 104729;
+  const next = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
+  let d = '';
+  for (let i = 0; i < 70; i++) d += ring(52 + next() * 30, 8 + next() * 84, 0.35 + next() * 0.75);
+  return d;
+}
+
+/** A brutal piece; `id` names its clip path, so it must be unique on the page. */
+function brutalSvg(kind: Kind, id: string): string {
+  const b = BRUTAL[kind];
+  const path = (cls: string, d: string | undefined) => (d ? `<path class="${cls}" d="${d}"/>` : '');
+  return (
+    `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}">${b.shapes}</clipPath></defs>` +
+    `<g class="sl" transform="translate(-4 3)">${b.shapes}${path('', b.mane ? sprayMane() : undefined)}</g>` +
+    path('mn', b.mane ? sprayMane() : undefined) +
+    `<g class="bd">${b.shapes}</g>` +
+    `<g clip-path="url(#${id})"><rect class="fl" x="0" y="0" width="50" height="100"/><rect class="fr" x="50" y="0" width="50" height="100"/>` +
+    `${path('gr', grain(kind))}</g>` +
+    path('ln', b.lines) +
+    path('dd', b.doodle) +
+    path('dr', b.drips?.map(drip).join('')) +
+    '</svg>'
+  );
+}
+
 const KIND_OF_GLYPH: Record<string, Kind> = { '♚': 'k', '♛': 'q', '♜': 'r', '♝': 'b', '♞': 'n', '♟': 'p' };
 
 /**
@@ -595,6 +694,7 @@ function drawing(set: PieceSet, kind: Kind, id: string): string | null {
   if (set === 'glyph') return null;
   if (TATTOOED.includes(set)) return tattooedSvg(set as Tattooed, kind, `${id}-${kind}`);
   if (set === 'sprey') return spraySvg(kind);
+  if (set === 'brutal') return brutalSvg(kind, `${id}-${kind}`);
   const drawn = set as Drawn;
   const body = kind === 'u' || kind === 'd' || kind === 'j' ? VARIANT_DRAWINGS[drawn][kind] : DRAWINGS[drawn][kind];
   const inner = drawn === 'firca' ? `<g class="o">${body}</g><g class="m">${body}</g>` : body;

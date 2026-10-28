@@ -1996,6 +1996,60 @@ button.primary:hover:not(:disabled) {
   stroke: none;
   opacity: 0.7;
 }
+/* Brutal: a pink slab behind, one shaded side with grain, pink slashes. */
+.piece.white .set-brutal {
+  --slab: var(--pw-accent);
+}
+.piece.black .set-brutal {
+  --slab: var(--pb-line);
+}
+.piece .set-brutal svg {
+  stroke-width: 2.4;
+  stroke-linejoin: miter;
+}
+.piece .set-brutal .sl {
+  fill: var(--slab);
+  stroke: none;
+}
+.piece .set-brutal .mn {
+  fill: var(--line);
+  stroke-width: 1.4;
+}
+.piece .set-brutal :is(.fl, .fr, .gr) {
+  stroke: none;
+}
+/* White pieces shade their right side and get the grain; black ones light their left side. */
+.piece.white .set-brutal .fl,
+.piece.black .set-brutal .fr,
+.piece.black .set-brutal .gr {
+  display: none;
+}
+.piece.white .set-brutal .fr {
+  fill: var(--pw-line);
+  opacity: 0.16;
+}
+.piece.white .set-brutal .gr {
+  fill: var(--pw-line);
+  opacity: 0.55;
+}
+.piece.black .set-brutal .fl {
+  fill: #fff;
+  opacity: 0.13;
+}
+.piece .set-brutal .ln {
+  fill: none;
+  stroke-width: 2;
+}
+.piece .set-brutal .dd {
+  fill: none;
+  stroke: var(--slab);
+  stroke-width: 3.4;
+  stroke-linecap: square;
+}
+.piece .set-brutal .dr {
+  fill: var(--slab);
+  stroke: none;
+}
 /* Brush: each stroke twice, a wide outline under the colour. */
 .piece .set-firca svg {
   fill: none;
