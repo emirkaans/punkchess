@@ -2202,6 +2202,70 @@ button.primary:hover:not(:disabled) {
 .piece.black .set-chrome .s5 {
   stop-color: #111114;
 }
+/* Cubist: its own palette; the base and the contrasting facets swap per colour. */
+.piece.white .set-kubist {
+  --kb: #e9dfcb;
+  --kb-alt: #1b1a1d;
+  --kb-crack: #111;
+}
+.piece.black .set-kubist {
+  --kb: #1b1a1d;
+  --kb-alt: #e9dfcb;
+  --kb-crack: #e9dfcb;
+}
+.piece .set-kubist svg {
+  stroke: none;
+  stroke-linejoin: miter;
+}
+.piece .set-kubist .bs {
+  fill: var(--kb);
+}
+.piece .set-kubist :is(.rd, .nv, .al) {
+  stroke: var(--kb-crack);
+  stroke-width: 0.8;
+}
+.piece .set-kubist .rd {
+  fill: #b5332a;
+}
+.piece .set-kubist .nv {
+  fill: #2d4566;
+}
+.piece .set-kubist .al {
+  fill: var(--kb-alt);
+}
+.piece .set-kubist .ck {
+  fill: none;
+  stroke: var(--kb-crack);
+  stroke-width: 1;
+}
+.piece .set-kubist .ol {
+  fill: none;
+  stroke: #111;
+  stroke-width: 2;
+}
+.piece .set-kubist .cp {
+  fill: #b5332a;
+  stroke: #111;
+  stroke-width: 1.6;
+}
+.piece .set-kubist .br {
+  fill: none;
+  stroke: var(--kb-crack);
+  stroke-width: 2.4;
+}
+.piece .set-kubist .ew {
+  fill: #e9dfcb;
+  stroke: #111;
+  stroke-width: 1.6;
+}
+.piece .set-kubist .pu {
+  fill: #111;
+}
+.piece .set-kubist .fc {
+  fill: none;
+  stroke: #111;
+  stroke-width: 1.6;
+}
 /* Brush: each stroke twice, a wide outline under the colour. */
 .piece .set-firca svg {
   fill: none;

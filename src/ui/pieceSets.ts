@@ -24,9 +24,10 @@ export const PIECE_SETS = [
   'brutal',
   'metal',
   'chrome',
+  'kubist',
 ] as const;
 export type PieceSet = (typeof PIECE_SETS)[number];
-type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir' | 'sprey' | 'brutal' | 'metal' | 'chrome'>;
+type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir' | 'sprey' | 'brutal' | 'metal' | 'chrome' | 'kubist'>;
 type StandardKind = 'k' | 'q' | 'r' | 'b' | 'n' | 'p';
 /** The variants' own pieces: Bürokrat, Diplomat, Jester (by piece type). */
 type VariantKind = 'u' | 'd' | 'j';
@@ -1006,6 +1007,145 @@ function chromeSvg(kind: Kind, id: string): string {
   );
 }
 
+/*
+ * Cubist (after Picasso): angular pieces cut into cream, black, red and navy facets, brush
+ * strokes and cracks, one-eyed faces. Its own palette; CSS swaps the base and the
+ * contrasting facets per colour (--kb, --kb-alt, --kb-crack).
+ */
+const K_BASE = 'M20 90V83H80V90Z' + 'M26 83L30 77H70L74 83Z';
+const almond = (x: number, y: number, w: number) =>
+  `M${x - w} ${y}Q${x} ${y - w * 0.75} ${x + w} ${y}Q${x} ${y + w * 0.75} ${x - w} ${y}Z`;
+interface Cubist {
+  /** The outline, one path. */
+  body: string;
+  eye?: [x: number, y: number, w: number];
+  face?: string;
+  brush?: string;
+  /** The king's red cap. */
+  cap?: string;
+}
+const KING_CAP = 'M36 18L38 6L46 12L52 2L56 12L64 6L66 18Z';
+const CUBIST: Record<Kind, Cubist> = {
+  p: {
+    body: K_BASE + 'M33 77L42 55L46 50H54L58 55L67 77Z' + 'M41 50L43 46H57L59 50Z' + ring(50, 32, 12),
+    eye: [46, 31, 6],
+    face: 'M51 20Q57 32 51 44M44 39Q48 41 52 39',
+    brush: 'M38 74Q46 64 60 58',
+  },
+  r: {
+    body: K_BASE + 'M34 77L38 42H62L67 77Z' + 'M30 42L32 20H41L40 27H47L46 18H55L56 27H61L62 20H71L69 42Z',
+    face: 'M44 42L47 77M58 50L55 66',
+    brush: 'M36 70Q50 56 64 50',
+  },
+  n: {
+    body: K_BASE + 'M34 77L38 60L30 58L18 52L19 45L34 32L40 24L38 12L46 20L50 12L54 22L66 28L74 42L76 60L70 77Z',
+    eye: [43, 32, 6],
+    face: 'M20 52L27 55M38 12L42 26',
+    brush: 'M54 22L74 38M60 27L77 45M66 35L78 54M44 44Q52 60 46 74',
+  },
+  b: {
+    body: K_BASE + 'M37 77L45 58L44 52H56L55 58L63 77Z' + 'M38 52L40 48H60L62 52Z' + 'M50 4Q66 24 58 48H42Q34 24 50 4Z',
+    eye: [50, 27, 7],
+    face: 'M50 6V18M50 36V48',
+    brush: 'M40 74Q50 62 60 72',
+  },
+  // A face under a jester's crown of ball-tipped prongs.
+  q: {
+    body:
+      K_BASE +
+      'M35 77L42 52H58L65 77Z' +
+      'M38 52V47H62V52Z' +
+      'M38 47L36 26H62L64 47Z' +
+      'M36 28L22 10L40 22L42 8L48 22L52 3L56 22L60 8L62 22L78 10L64 28Z' +
+      ring(22, 9, 2.6) +
+      ring(42, 7, 2.6) +
+      ring(52, 2.5, 2.6) +
+      ring(60, 7, 2.6) +
+      ring(78, 9, 2.6),
+    eye: [46, 34, 6],
+    face: 'M50 26V47M55 31L59 40L54 41M50 44H56',
+    brush: 'M38 74Q48 60 62 62',
+  },
+  // A blocky face in profile under a red zigzag cap (the queen's crown has balls), no cross.
+  k: {
+    body:
+      K_BASE +
+      'M34 77L41 54H59L66 77Z' +
+      'M35 54L37 49H63L65 54Z' +
+      'M36 49L34 18H66L64 49Z' +
+      'M66 24L74 32L65 38Z' +
+      KING_CAP,
+    cap: KING_CAP,
+    eye: [45, 30, 6],
+    face: 'M50 18V49M56 27L60 37L55 38M49 43H57',
+    brush: 'M38 74Q50 62 62 66',
+  },
+  u: { body: '' },
+  d: { body: '' },
+  j: { body: '' },
+};
+
+/** Cubist facets: triangles on a coarse grid, the same every game (a fixed seed per piece). */
+function cubistFacets(seed: number): [string, string, string] {
+  let s = seed;
+  const next = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  const GX = [20, 34, 50, 66, 80];
+  const GY = [4, 20, 36, 52, 68, 84];
+  const clamp = (i: number, n: number) => Math.max(0, Math.min(n - 1, i));
+  const out: string[][] = [[], [], []];
+  // Small triangles: a grid point and its neighbours across and down, so no colour swamps the piece.
+  for (let i = 0; i < 20; i++) {
+    const x = Math.floor(next() * GX.length);
+    const y = Math.floor(next() * GY.length);
+    const dx = next() < 0.5 ? -1 : 1;
+    const dy = next() < 0.5 ? -1 : 1;
+    const [ax, ay, bx, cy] = [GX[x], GY[y], GX[clamp(x + dx, GX.length)], GY[clamp(y + dy, GY.length)]];
+    // Red and navy twice as often as the contrasting colour.
+    out[i % 5 === 4 ? 2 : i % 2].push(`M${ax} ${ay}L${bx} ${ay}L${ax} ${cy}Z`);
+  }
+  // A split down the middle of the base, as on a cut stone.
+  out[2].push('M50 77H80V90H50Z');
+  return [out[0].join(''), out[1].join(''), out[2].join('')];
+}
+function cubistCracks(seed: number): string {
+  let s = seed + 7;
+  const next = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  let d = '';
+  for (let i = 0; i < 5; i++) {
+    let x = 30 + next() * 40;
+    let y = 10 + next() * 70;
+    d += `M${f1(x)} ${f1(y)}`;
+    for (let j = 0; j < 3; j++) {
+      x += (next() - 0.5) * 14;
+      y += 4 + next() * 8;
+      d += `L${f1(x)} ${f1(y)}`;
+    }
+  }
+  return d;
+}
+
+/** A cubist piece; `id` names its clip path, so it must be unique on the page. */
+function kubistSvg(kind: Kind, id: string): string {
+  const c = CUBIST[kind];
+  const path = (cls: string, d: string | undefined) => (d ? `<path class="${cls}" d="${d}"/>` : '');
+  // The variant pieces keep their classic outlines.
+  const shapes = c.body ? `<path d="${c.body}"/>` : CLASSIC[kind];
+  const seed = (Object.keys(CUBIST).indexOf(kind) + 1) * 977;
+  const [red, navy, alt] = cubistFacets(seed);
+  return (
+    `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}">${shapes}</clipPath></defs>` +
+    `<g class="bs">${shapes}</g>` +
+    `<g clip-path="url(#${id})">${path('rd', red)}${path('nv', navy)}${path('al', alt)}${path('ck', cubistCracks(seed))}</g>` +
+    `<g class="ol">${shapes}</g>` +
+    path('cp', c.cap) +
+    path('br', c.brush) +
+    path('ew', c.eye ? almond(...c.eye) : undefined) +
+    path('pu', c.eye ? ring(c.eye[0] + 1, c.eye[1], 2.3) : undefined) +
+    path('fc', c.face) +
+    '</svg>'
+  );
+}
+
 const KIND_OF_GLYPH: Record<string, Kind> = { '♚': 'k', '♛': 'q', '♜': 'r', '♝': 'b', '♞': 'n', '♟': 'p' };
 
 /**
@@ -1029,6 +1169,7 @@ function drawing(set: PieceSet, kind: Kind, id: string): string | null {
   if (set === 'brutal') return brutalSvg(kind, `${id}-${kind}`);
   if (set === 'metal') return metalSvg(kind, `${id}-${kind}`);
   if (set === 'chrome') return chromeSvg(kind, `${id}-${kind}`);
+  if (set === 'kubist') return kubistSvg(kind, `${id}-${kind}`);
   const drawn = set as Drawn;
   const body = kind === 'u' || kind === 'd' || kind === 'j' ? VARIANT_DRAWINGS[drawn][kind] : DRAWINGS[drawn][kind];
   const inner = drawn === 'firca' ? `<g class="o">${body}</g><g class="m">${body}</g>` : body;
