@@ -2050,6 +2050,57 @@ button.primary:hover:not(:disabled) {
   fill: var(--slab);
   stroke: none;
 }
+/* Black metal: black pieces in the black outline colour (pink on Punk), white ones in bone;
+   dark ink for the outlines, cracks and holes. */
+.piece .set-metal {
+  --ink: #0b0a0c;
+}
+.piece.white .set-metal {
+  --metal: var(--pw);
+  --wire: #8f8798;
+}
+.piece.black .set-metal {
+  --metal: var(--pb-line);
+  --wire: var(--pw);
+}
+.piece .set-metal svg {
+  fill: var(--metal);
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linejoin: miter;
+}
+.piece .set-metal .th {
+  stroke-width: 1;
+}
+.piece .set-metal .sd {
+  fill: var(--ink);
+  stroke: none;
+  opacity: 0.28;
+}
+.piece .set-metal :is(.ck, .ln, .wu, .wr) {
+  fill: none;
+}
+.piece .set-metal .ck {
+  stroke-width: 1.3;
+  opacity: 0.85;
+}
+.piece .set-metal .in {
+  fill: var(--ink);
+  stroke: none;
+}
+.piece .set-metal .ln {
+  stroke-width: 1.8;
+}
+.piece .set-metal .wu {
+  stroke-width: 3.6;
+}
+.piece .set-metal .wr {
+  stroke: var(--wire);
+  stroke-width: 1.5;
+}
+.piece .set-metal .dr {
+  stroke: none;
+}
 /* Brush: each stroke twice, a wide outline under the colour. */
 .piece .set-firca svg {
   fill: none;

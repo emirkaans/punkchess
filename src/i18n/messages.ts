@@ -285,6 +285,7 @@ export const tr = {
   'pieceSet.zincir': 'Zincir',
   'pieceSet.sprey': 'Sprey',
   'pieceSet.brutal': 'Brutal',
+  'pieceSet.metal': 'Black Metal',
 
   // Status line and announcements
   'status.setup': 'Oyun öncesi seçim bekleniyor…',
@@ -1244,6 +1245,7 @@ export const en: Record<MessageKey, string> = {
   'pieceSet.zincir': 'Chain',
   'pieceSet.sprey': 'Spray',
   'pieceSet.brutal': 'Brutal',
+  'pieceSet.metal': 'Black Metal',
 
   'status.setup': 'Waiting for the pre-game choice…',
   'status.thinking': '{color} bot ({name}) is thinking…',

@@ -22,9 +22,10 @@ export const PIECE_SETS = [
   'zincir',
   'sprey',
   'brutal',
+  'metal',
 ] as const;
 export type PieceSet = (typeof PIECE_SETS)[number];
-type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir' | 'sprey' | 'brutal'>;
+type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir' | 'sprey' | 'brutal' | 'metal'>;
 type StandardKind = 'k' | 'q' | 'r' | 'b' | 'n' | 'p';
 /** The variants' own pieces: Bürokrat, Diplomat, Jester (by piece type). */
 type VariantKind = 'u' | 'd' | 'j';
@@ -674,6 +675,243 @@ function brutalSvg(kind: Kind, id: string): string {
   );
 }
 
+/*
+ * Black metal: thorns growing out of the silhouette, cracked bodies shaded on one side,
+ * barbed wire and paint running off the base (CSS: --metal, --ink, --wire).
+ */
+type Thorn = [x: number, y: number, deg: number, len: number, w?: number];
+/** A thorn at (x, y), pointing `deg` degrees clockwise from straight up. */
+const thorn = ([x, y, deg, len, w = 3]: Thorn) => {
+  const a = (deg * Math.PI) / 180;
+  const [ux, uy, px, py] = [Math.sin(a), -Math.cos(a), Math.cos(a), Math.sin(a)];
+  return `M${f1(x + px * w)} ${f1(y + py * w)}L${f1(x + ux * len)} ${f1(y + uy * len)}L${f1(x - px * w)} ${f1(y - py * w)}Z`;
+};
+const thinDrip = ([x, y, len]: [number, number, number]) => `M${f1(x - 1.6)} ${y}h3.2v${len}a1.6 1.6 0 0 1-3.2 0Z`;
+const M_BASE = 'M20 90H80V85L77 81H23L20 85Z' + 'M26 81L29 75H71L74 81Z';
+const M_BASE_THORNS: Thorn[] = [
+  [21, 87, -75, 10],
+  [79, 87, 75, 10],
+  [26, 80, -45, 8],
+  [74, 80, 45, 8],
+  [36, 90, -160, 6, 2],
+  [62, 90, 160, 6, 2],
+];
+const M_BASE_DRIPS: [number, number, number][] = [
+  [25, 90, 6],
+  [41, 90, 9],
+  [57, 90, 4],
+  [72, 90, 8],
+];
+
+/** The knight's mane: long spikes along the back of the neck. */
+function metalMane(): string {
+  let d = '';
+  for (let i = 0; i < 11; i++) {
+    const t = i / 10;
+    const x = (1 - t) * (1 - t) * 50 + 2 * (1 - t) * t * 80 + t * t * 74;
+    const y = (1 - t) * (1 - t) * 20 + 2 * (1 - t) * t * 26 + t * t * 64;
+    const dx = 2 * (1 - t) * 30 - 12 * t;
+    const dy = 2 * (1 - t) * 6 + 76 * t;
+    const len = Math.hypot(dx, dy);
+    const [nx, ny, tx, ty] = [dy / len, -dx / len, dx / len, dy / len];
+    const h = 12 + 9 * Math.sin(t * Math.PI) + (i % 2) * 4;
+    d += `M${f1(x - tx * 3 - nx * 3)} ${f1(y - ty * 3 - ny * 3)}L${f1(x + nx * h)} ${f1(y + ny * h)}L${f1(x + tx * 3 - nx * 3)} ${f1(y + ty * 3 - ny * 3)}Z`;
+  }
+  return d;
+}
+/** Thorns all round a ball (the pawn's head). */
+const ringThorns = (cx: number, cy: number, r: number, n: number, len: number): Thorn[] =>
+  Array.from({ length: n }, (_, i) => {
+    const deg = (360 * i) / n + 15;
+    const a = (deg * Math.PI) / 180;
+    return [cx + Math.sin(a) * r, cy - Math.cos(a) * r, deg, len, 2.2];
+  });
+
+interface Metal {
+  /** The piece's shapes (SVG elements). */
+  shapes: string;
+  thorns?: Thorn[];
+  cracks?: string;
+  /** Holes cut into the body (the bishop's slit, the knight's eye), in the ink colour. */
+  inner?: string;
+  lines?: string;
+  wire?: string;
+  drips?: [number, number, number][];
+  mane?: boolean;
+}
+const METAL: Record<Kind, Metal> = {
+  p: {
+    shapes: p(
+      M_BASE + 'M33 75Q36 64 44 59Q39 57 39 54H61Q61 57 56 59Q64 64 67 75Z' + 'M37 54H63V50H37Z' + ring(50, 38, 11),
+    ),
+    thorns: [...ringThorns(50, 38, 10, 9, 18), [37, 52, -80, 7], [63, 52, 80, 7], [35, 70, -110, 6], [65, 70, 110, 6]],
+    cracks: 'M45 32L48 37L46 41M53 62L56 67L54 72M44 68L46 73',
+    drips: [
+      [40, 54, 6],
+      [60, 54, 4],
+    ],
+  },
+  r: {
+    shapes: p(M_BASE + 'M34 75L36 42H64L66 75Z' + 'M30 42V20H38V27H45V20H55V27H62V20H70V42Z'),
+    thorns: [
+      [30, 21, -35, 11],
+      [70, 21, 35, 11],
+      [50, 21, 0, 8, 2],
+      [34, 44, -100, 8],
+      [66, 44, 100, 8],
+      [35, 62, -95, 6],
+      [65, 62, 95, 6],
+    ],
+    cracks: 'M40 48L43 54L41 60L44 66M58 30L60 36M52 58L55 63L53 70',
+    lines: 'M35 45H65',
+    wire:
+      'M33 70L67 56M33 60L67 47' +
+      barbs([
+        [40, 67],
+        [50, 63],
+        [60, 59],
+        [40, 57],
+        [50, 53],
+        [60, 49],
+      ]),
+    drips: [
+      [36, 42, 6],
+      [63, 42, 9],
+    ],
+  },
+  n: {
+    shapes: p(M_BASE + 'M30 75Q32 66 40 60Q30 60 24 54Q20 48 26 43L42 28Q50 20 60 22Q76 28 74 54L72 75Z'),
+    mane: true,
+    thorns: [
+      [23, 50, -100, 7, 2],
+      [33, 70, -110, 7],
+    ],
+    cracks: 'M48 34L52 40L50 46L54 52M38 62L42 66M60 58L58 64L61 70',
+    lines: 'M27 49L30 48',
+    inner: 'M42 34L48 35L44 39Z',
+    drips: [
+      [27, 54, 8],
+      [36, 60, 5],
+    ],
+  },
+  b: {
+    shapes: p(
+      M_BASE +
+        'M36 75Q39 66 45 62L44 54H56L55 62Q61 66 64 75Z' +
+        'M41 54L42 50H58L59 54Z' +
+        'M50 6L64 30L56 50H44L36 30Z',
+    ),
+    thorns: [
+      [37, 30, -95, 9],
+      [63, 30, 95, 9],
+      [50, 6, 0, 8, 1.8],
+      [42, 52, -100, 6],
+      [58, 52, 100, 6],
+      [38, 70, -110, 6],
+      [62, 70, 110, 6],
+    ],
+    cracks: 'M44 36L46 42M56 22L57 28M52 64L54 70',
+    inner: 'M50 18L53 30L50 42L47 30Z',
+    wire:
+      'M40 70L60 62M40 62L60 70' +
+      barbs([
+        [45, 68],
+        [55, 64],
+        [45, 64],
+        [55, 68],
+      ]),
+    drips: [
+      [45, 50, 7],
+      [56, 50, 4],
+    ],
+  },
+  q: {
+    shapes: p(
+      M_BASE +
+        'M31 75Q35 68 41 64L38 44H62L59 64Q65 68 69 75Z' +
+        'M34 44H66V39H34Z' +
+        'M35 39L26 10L40 28L44 1L50 24L56 1L60 28L74 10L65 39Z',
+    ),
+    thorns: [
+      [34, 41, -100, 8],
+      [66, 41, 100, 8],
+      [38, 60, -105, 6],
+      [62, 60, 105, 6],
+      [31, 72, -120, 6],
+    ],
+    cracks: 'M45 48L48 54L46 60L49 66M55 50L57 56M48 30L50 36',
+    wire:
+      'M33 41.5Q50 37 67 41.5' +
+      barbs([
+        [40, 39.6],
+        [50, 38.3],
+        [60, 39.6],
+      ]),
+    drips: [
+      [38, 44, 10],
+      [47, 44, 5],
+      [61, 44, 8],
+    ],
+  },
+  // As tall as the queen: two thorned arches (the queen's crown is all spikes) and one long spike, no cross.
+  k: {
+    shapes: p(
+      M_BASE +
+        'M37 75L39 57H61L63 75Z' +
+        'M33 50H67V57H33Z' +
+        'M33 50C20 42 18 24 32 22C40 21 46 28 50 36C54 28 60 21 68 22C82 24 80 42 67 50Z' +
+        'M47 34L50 1L53 34Z',
+    ),
+    thorns: [
+      [23, 28, -60, 9],
+      [77, 28, 60, 9],
+      [20, 38, -95, 7],
+      [80, 38, 95, 7],
+      [32, 23, -20, 8, 2.2],
+      [68, 23, 20, 8, 2.2],
+      [38, 64, -100, 6],
+      [62, 64, 100, 6],
+    ],
+    cracks: 'M30 30L34 35L31 40M66 28L69 34M45 60L47 66L45 71',
+    lines: 'M36 53.5H64',
+    wire:
+      'M28 44Q50 37 72 44' +
+      barbs([
+        [34, 41.6],
+        [42, 39.6],
+        [50, 39],
+        [58, 39.6],
+        [66, 41.6],
+      ]),
+    drips: [
+      [36, 57, 7],
+      [63, 57, 5],
+    ],
+  },
+  u: { shapes: CLASSIC.u, cracks: 'M36 50L40 56L38 62M60 60L63 66' },
+  d: { shapes: CLASSIC.d, thorns: [[37, 4, 0, 8, 2]], cracks: 'M48 22L52 28L50 34' },
+  j: { shapes: CLASSIC.j, cracks: 'M44 40L48 46L46 52M56 62L58 68' },
+};
+
+/** A black metal piece; `id` names its clip path, so it must be unique on the page. */
+function metalSvg(kind: Kind, id: string): string {
+  const m = METAL[kind];
+  const path = (cls: string, d: string | undefined) => (d ? `<path class="${cls}" d="${d}"/>` : '');
+  return (
+    `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}">${m.shapes}</clipPath></defs>` +
+    path('th', [...M_BASE_THORNS, ...(m.thorns ?? [])].map(thorn).join('')) +
+    path('th', m.mane ? metalMane() : undefined) +
+    `<g class="bd">${m.shapes}</g>` +
+    `<g clip-path="url(#${id})"><rect class="sd" x="56" y="0" width="44" height="100"/>${path('ck', m.cracks)}</g>` +
+    path('in', m.inner) +
+    path('ln', m.lines) +
+    path('wu', m.wire) +
+    path('wr', m.wire) +
+    path('dr', [...M_BASE_DRIPS, ...(m.drips ?? [])].map(thinDrip).join('')) +
+    '</svg>'
+  );
+}
+
 const KIND_OF_GLYPH: Record<string, Kind> = { '♚': 'k', '♛': 'q', '♜': 'r', '♝': 'b', '♞': 'n', '♟': 'p' };
 
 /**
@@ -695,6 +933,7 @@ function drawing(set: PieceSet, kind: Kind, id: string): string | null {
   if (TATTOOED.includes(set)) return tattooedSvg(set as Tattooed, kind, `${id}-${kind}`);
   if (set === 'sprey') return spraySvg(kind);
   if (set === 'brutal') return brutalSvg(kind, `${id}-${kind}`);
+  if (set === 'metal') return metalSvg(kind, `${id}-${kind}`);
   const drawn = set as Drawn;
   const body = kind === 'u' || kind === 'd' || kind === 'j' ? VARIANT_DRAWINGS[drawn][kind] : DRAWINGS[drawn][kind];
   const inner = drawn === 'firca' ? `<g class="o">${body}</g><g class="m">${body}</g>` : body;
