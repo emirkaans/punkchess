@@ -2063,6 +2063,15 @@ button.primary:hover:not(:disabled) {
   --metal: var(--pb-line);
   --wire: var(--pw);
 }
+/* Classic's black outline is a faint white: there the black pieces are the black body colour instead. */
+:root[data-pieces='klasik'] .piece.black .set-metal {
+  --metal: var(--pb);
+  --ink: #000;
+  --wire: #8f8798;
+}
+:root[data-pieces='klasik'] .piece.black .set-metal svg {
+  stroke: var(--pb-line);
+}
 .piece .set-metal svg {
   fill: var(--metal);
   stroke: var(--ink);
