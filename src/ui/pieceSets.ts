@@ -23,9 +23,10 @@ export const PIECE_SETS = [
   'sprey',
   'brutal',
   'metal',
+  'chrome',
 ] as const;
 export type PieceSet = (typeof PIECE_SETS)[number];
-type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir' | 'sprey' | 'brutal' | 'metal'>;
+type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir' | 'sprey' | 'brutal' | 'metal' | 'chrome'>;
 type StandardKind = 'k' | 'q' | 'r' | 'b' | 'n' | 'p';
 /** The variants' own pieces: Bürokrat, Diplomat, Jester (by piece type). */
 type VariantKind = 'u' | 'd' | 'j';
@@ -908,6 +909,99 @@ function metalSvg(kind: Kind, id: string): string {
   );
 }
 
+/*
+ * Y2K chrome: smooth classic pieces filled with a banded metal gradient, a glowing rim,
+ * white highlights and pink glass (the knight's mane, the bishop's gem). CSS: --rim, the
+ * stop colours (.s0 to .s5) for silver and black chrome.
+ */
+const C_BASE = 'M20 90Q20 82 30 81H70Q80 82 80 90Z' + 'M27 81Q28 75 36 74H64Q72 75 73 81Z';
+const COLLAR = 'M37 50Q37 46 41 46H59Q63 46 63 50Z';
+interface Chrome {
+  /** The piece's shapes (SVG elements). */
+  shapes: string;
+  /** Pink glass. */
+  gem?: string;
+  highlight?: string;
+  mane?: boolean;
+}
+const CHROME: Record<Kind, Chrome> = {
+  p: {
+    shapes: p(
+      C_BASE +
+        'M36 74Q38 64 44 58Q40 56 40 53H60Q60 56 56 58Q62 64 64 74Z' +
+        'M38 53Q38 49 42 49H58Q62 49 62 53Z' +
+        ring(50, 37, 11),
+    ),
+    highlight: 'M44 32Q45 29 48 28M43 62Q42 68 41 72',
+  },
+  r: {
+    shapes: p(
+      C_BASE +
+        'M35 74Q38 60 38 44H62Q62 60 65 74Z' +
+        'M34 44Q34 40 38 40H62Q66 40 66 44Z' +
+        'M33 40V22H40V28H46V22H54V28H60V22H67V40Z',
+    ),
+    highlight: 'M41 47Q42 60 40 72M36 25V37',
+  },
+  n: {
+    shapes: p(C_BASE + 'M32 74Q32 62 42 56Q34 58 26 54Q20 50 24 44L40 26L44 16L50 24Q66 22 74 40Q78 58 70 74Z'),
+    mane: true,
+    gem: ring(41, 35, 1.8),
+    highlight: 'M45 29Q51 25 58 27M38 64Q36 68 36 72',
+  },
+  b: {
+    shapes: p(
+      C_BASE +
+        'M37 74Q40 64 45 60L44 52H56L55 60Q60 64 63 74Z' +
+        'M40 52Q40 48 44 48H56Q60 48 60 52Z' +
+        'M50 8L63 28L56 46H44L37 28Z',
+    ),
+    gem: 'M50 20L54 29L50 40L46 29Z',
+    highlight: 'M43 28L48 16M43 62Q42 68 41 72',
+  },
+  q: {
+    shapes: p(
+      C_BASE +
+        'M34 74Q38 62 41 50H59Q62 62 66 74Z' +
+        COLLAR +
+        'M38 46L28 18L40 32L44 10L50 26L56 10L60 32L72 18L62 46Z',
+    ),
+    highlight: 'M43 54Q42 64 40 72M41 40L35 26',
+  },
+  // A crown flaring upwards with a gem on top (the queen's crown is spikes), no cross.
+  k: {
+    shapes: p(
+      C_BASE +
+        'M34 74Q38 62 41 50H59Q62 62 66 74Z' +
+        COLLAR +
+        'M39 46V42H61V46Z' +
+        'M39 42L32 18H68L61 42Z' +
+        'M31 18V14H69V18Z',
+    ),
+    gem: 'M50 2L55.5 8L50 14L44.5 8Z',
+    highlight: 'M37 21L42 40M43 54Q42 64 40 72',
+  },
+  u: { shapes: CLASSIC.u },
+  d: { shapes: CLASSIC.d },
+  j: { shapes: CLASSIC.j },
+};
+
+/** A chrome piece; `id` names its gradient, so it must be unique on the page. */
+function chromeSvg(kind: Kind, id: string): string {
+  const c = CHROME[kind];
+  const path = (cls: string, d: string | undefined) => (d ? `<path class="${cls}" d="${d}"/>` : '');
+  const stops = [0, 0.22, 0.45, 0.62, 0.8, 1].map((o, i) => `<stop offset="${o}" class="s${i}"/>`).join('');
+  return (
+    `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0.3">${stops}</linearGradient></defs>` +
+    `<g class="rm">${c.shapes}</g>` +
+    path('mn', c.mane ? sprayMane() : undefined) +
+    `<g class="bd" fill="url(#${id})">${c.shapes}</g>` +
+    path('gm', c.gem) +
+    path('hl', `${c.highlight ?? ''}M30 85.5H52`) +
+    '</svg>'
+  );
+}
+
 const KIND_OF_GLYPH: Record<string, Kind> = { '♚': 'k', '♛': 'q', '♜': 'r', '♝': 'b', '♞': 'n', '♟': 'p' };
 
 /**
@@ -930,6 +1024,7 @@ function drawing(set: PieceSet, kind: Kind, id: string): string | null {
   if (set === 'sprey') return spraySvg(kind);
   if (set === 'brutal') return brutalSvg(kind, `${id}-${kind}`);
   if (set === 'metal') return metalSvg(kind, `${id}-${kind}`);
+  if (set === 'chrome') return chromeSvg(kind, `${id}-${kind}`);
   const drawn = set as Drawn;
   const body = kind === 'u' || kind === 'd' || kind === 'j' ? VARIANT_DRAWINGS[drawn][kind] : DRAWINGS[drawn][kind];
   const inner = drawn === 'firca' ? `<g class="o">${body}</g><g class="m">${body}</g>` : body;

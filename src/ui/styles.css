@@ -1749,7 +1749,9 @@ button.primary:hover:not(:disabled) {
 }
 .prefs-group {
   margin: 14px 0 4px;
-  font: 700 11px/1.3 'Space Mono', monospace;
+  font:
+    700 11px/1.3 'Space Mono',
+    monospace;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
@@ -2109,6 +2111,78 @@ button.primary:hover:not(:disabled) {
 }
 .piece .set-metal .dr {
   stroke: none;
+}
+/* Y2K chrome: banded metal (silver or black chrome), a glowing rim in the outline colour. */
+.piece.white .set-chrome {
+  --rim: var(--pw-accent);
+}
+.piece.black .set-chrome {
+  --rim: var(--pb-line);
+}
+.piece .set-chrome svg {
+  stroke: var(--rim);
+  stroke-width: 1.4;
+}
+.piece .set-chrome .rm {
+  fill: none;
+  stroke-width: 5;
+  opacity: 0.6;
+  filter: blur(2px);
+}
+.piece .set-chrome .mn {
+  fill: var(--rim);
+  stroke: #0b0b0e;
+  stroke-width: 1;
+}
+.piece .set-chrome .gm {
+  fill: var(--rim);
+  stroke: #fff;
+  stroke-width: 0.8;
+}
+.piece .set-chrome .hl {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.6;
+  opacity: 0.75;
+}
+.piece.black .set-chrome .hl {
+  opacity: 0.45;
+}
+.piece.white .set-chrome .s0 {
+  stop-color: #ffffff;
+}
+.piece.white .set-chrome .s1 {
+  stop-color: #9a9aa6;
+}
+.piece.white .set-chrome .s2 {
+  stop-color: #f2f2f7;
+}
+.piece.white .set-chrome .s3 {
+  stop-color: #4b4b55;
+}
+.piece.white .set-chrome .s4 {
+  stop-color: #e6e6ee;
+}
+.piece.white .set-chrome .s5 {
+  stop-color: #7d7d88;
+}
+.piece.black .set-chrome .s0 {
+  stop-color: #6a6a74;
+}
+.piece.black .set-chrome .s1 {
+  stop-color: #0b0b0e;
+}
+.piece.black .set-chrome .s2 {
+  stop-color: #5c5c66;
+}
+.piece.black .set-chrome .s3 {
+  stop-color: #050507;
+}
+.piece.black .set-chrome .s4 {
+  stop-color: #3c3c44;
+}
+.piece.black .set-chrome .s5 {
+  stop-color: #111114;
 }
 /* Brush: each stroke twice, a wide outline under the colour. */
 .piece .set-firca svg {
