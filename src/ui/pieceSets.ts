@@ -911,8 +911,9 @@ function metalSvg(kind: Kind, id: string): string {
 
 /*
  * Y2K chrome: smooth classic pieces filled with a banded metal gradient, a glowing rim,
- * white highlights and pink glass (the knight's mane, the bishop's gem). CSS: --rim, the
- * stop colours (.s0 to .s5) for silver and black chrome.
+ * white highlights and pink glass (the knight's mane, the bishop's gem). White pieces are a
+ * frosted mirror (one soft sweep from the top), black ones banded black chrome. CSS: --rim,
+ * the stop colours (.s0 to .s5).
  */
 const C_BASE = 'M20 90Q20 82 30 81H70Q80 82 80 90Z' + 'M27 81Q28 75 36 74H64Q72 75 73 81Z';
 const COLLAR = 'M37 50Q37 46 41 46H59Q63 46 63 50Z';
@@ -992,10 +993,13 @@ function chromeSvg(kind: Kind, id: string): string {
   const path = (cls: string, d: string | undefined) => (d ? `<path class="${cls}" d="${d}"/>` : '');
   const stops = [0, 0.22, 0.45, 0.62, 0.8, 1].map((o, i) => `<stop offset="${o}" class="s${i}"/>`).join('');
   return (
-    `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0.3">${stops}</linearGradient></defs>` +
+    `<svg viewBox="0 0 100 100" aria-hidden="true"><defs>` +
+    `<linearGradient id="${id}-w" x1="0" y1="0" x2="0.2" y2="1">${stops}</linearGradient>` +
+    `<linearGradient id="${id}-b" x1="0" y1="0" x2="1" y2="0.3">${stops}</linearGradient></defs>` +
     `<g class="rm">${c.shapes}</g>` +
     path('mn', c.mane ? sprayMane() : undefined) +
-    `<g class="bd" fill="url(#${id})">${c.shapes}</g>` +
+    `<g class="bd bw" fill="url(#${id}-w)">${c.shapes}</g>` +
+    `<g class="bd bb" fill="url(#${id}-b)">${c.shapes}</g>` +
     path('gm', c.gem) +
     path('hl', `${c.highlight ?? ''}M30 85.5H52`) +
     '</svg>'

@@ -2158,23 +2158,31 @@ button.primary:hover:not(:disabled) {
 .piece.black .set-chrome .hl {
   opacity: 0.45;
 }
+/* Each colour shows its own gradient: frosted mirror for white, banded chrome for black. */
+.piece.white .set-chrome .bb,
+.piece.black .set-chrome .bw {
+  display: none;
+}
+.piece.white .set-chrome .hl {
+  opacity: 0.95;
+}
 .piece.white .set-chrome .s0 {
   stop-color: #ffffff;
 }
 .piece.white .set-chrome .s1 {
-  stop-color: #9a9aa6;
+  stop-color: #f4f5f9;
 }
 .piece.white .set-chrome .s2 {
-  stop-color: #f2f2f7;
+  stop-color: #e2e4eb;
 }
 .piece.white .set-chrome .s3 {
-  stop-color: #4b4b55;
+  stop-color: #cfd2db;
 }
 .piece.white .set-chrome .s4 {
-  stop-color: #e6e6ee;
+  stop-color: #bfc2cc;
 }
 .piece.white .set-chrome .s5 {
-  stop-color: #7d7d88;
+  stop-color: #aeb1bc;
 }
 .piece.black .set-chrome .s0 {
   stop-color: #6a6a74;
