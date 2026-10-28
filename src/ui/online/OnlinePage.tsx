@@ -37,6 +37,7 @@ import { outcomeText } from '../game/session.ts';
 import type { Outcome } from '../game/session.ts';
 import { useI18n } from '../i18n.tsx';
 import type { MessageKey } from '../../i18n/index.ts';
+import { directMove } from '../prefs.ts';
 import type { Prefs } from '../prefs.ts';
 import type { Mode } from '../settings.ts';
 import { moveSound, playSound } from '../sound.ts';
@@ -399,7 +400,11 @@ function OnlineGame({
   const control = timeControl(view.timeControlId);
 
   const play = sendMove;
-  const onMove = (candidates: Move[]) => (candidates.length > 1 ? setPromotion(candidates) : play(candidates[0]));
+  const onMove = (candidates: Move[]) => {
+    const move = directMove(variant, candidates, prefs.autoQueen);
+    if (move) play(move);
+    else setPromotion(candidates);
+  };
 
   // Cards (variants with cards): played on your turn, targets picked on the board.
   const cardColor: Color | null = variant.cards && yourTurn && atEnd && promotion === null ? you : null;
@@ -539,7 +544,7 @@ function OnlineGame({
                 bandRanks={variant.highlight?.ranks ?? []}
                 disabled={!yourTurn || !atEnd || promotion !== null}
                 onMove={onMove}
-                premoveColor={playing && you && !yourTurn && atEnd && promotion === null ? you : null}
+                premoveColor={prefs.premoves && playing && you && !yourTurn && atEnd && promotion === null ? you : null}
                 premove={premove}
                 onPremove={setPremove}
                 onCancelPremove={() => setPremove(null)}

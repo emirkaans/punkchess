@@ -43,6 +43,7 @@ interface Props {
   onGangs: () => void;
   onTournaments: () => void;
   onSettings: () => void;
+  onPreferences: () => void;
   /** The online game this player left (it goes on): a strip under the bar leads back to it. */
   liveGame: LiveGame | null;
   onBackToGame: () => void;
@@ -62,6 +63,7 @@ export function Toolbar({
   onGangs,
   onTournaments,
   onSettings,
+  onPreferences,
   liveGame,
   onBackToGame,
 }: Props) {
@@ -164,6 +166,7 @@ export function Toolbar({
             locale={prefs.locale}
             onLocale={(locale) => onPrefs((p) => ({ ...p, locale }))}
             onSettings={onSettings}
+            onPreferences={onPreferences}
           />
           <button
             className="icon-button menu-toggle"

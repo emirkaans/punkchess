@@ -29,6 +29,7 @@ import { recordTexts } from '../i18n/records.ts';
 import { loadGames, replay } from '../storage/games.ts';
 import type { SavedGame } from '../storage/games.ts';
 import { RuleCardModal } from './RuleCardModal.tsx';
+import { PreferencesDialog } from './PreferencesDialog.tsx';
 import { SettingsDialog } from './SettingsDialog.tsx';
 import { ChallengeInbox } from './ChallengeInbox.tsx';
 import { SetupDialog } from './SetupDialog.tsx';
@@ -57,7 +58,7 @@ import { parseRoute, pathOf } from './routes.ts';
 import type { Route } from './routes.ts';
 import type { GameState } from '../engine/index.ts';
 import { TIME_CONTROLS, remainingMs } from '../clock/clock.ts';
-import { applyPrefs, loadPrefs, savePrefs } from './prefs.ts';
+import { applyPrefs, directMove, loadPrefs, savePrefs } from './prefs.ts';
 import type { Prefs } from './prefs.ts';
 import { isClassic, isRuleCardHidden, loadSettings, saveSettings } from './settings.ts';
 import type { GameSettings } from './settings.ts';
@@ -146,6 +147,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const [newGame, setNewGame] = useState<GameSettings | null>(null);
   const [showRules, setShowRules] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPreferences, setShowPreferences] = useState(false);
   /** Finished game shown on the review (post-game analysis) page, and the page to go back to. */
   const [review, setReview] = useState<{ review: Review; back: Page } | null>(null);
   const [tab, setTab] = useState<Tab>('moves');
@@ -254,7 +256,11 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   };
 
   const play = (move: Move) => dispatch({ type: 'move', move, key: session.key, now: now() });
-  const onMove = (candidates: Move[]) => (candidates.length > 1 ? setPromotion(candidates) : play(candidates[0]));
+  const onMove = (candidates: Move[]) => {
+    const move = directMove(variant, candidates, prefs.autoQueen);
+    if (move) play(move);
+    else setPromotion(candidates);
+  };
   const onPromote = (type: PieceType) => {
     const move = promotion?.find((m) => m.promotion === type);
     setPromotion(null);
@@ -484,7 +490,9 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
     !!outcome || promotion !== null || setup !== null || !humanToMove || (!atEnd && (vsBot || timed));
   // Premoves: against the bot, while it is the bot's turn and the game is on.
   const premoveColor: Color | null =
-    vsBot && humanColor && !humanToMove && !outcome && !setup && atEnd && promotion === null ? humanColor : null;
+    prefs.premoves && vsBot && humanColor && !humanToMove && !outcome && !setup && atEnd && promotion === null
+      ? humanColor
+      : null;
 
   // Cards: the side to move plays them when it may move pieces; a pick lasts for that one position.
   const cardColor: Color | null = variant.cards && !boardDisabled && atEnd ? turn : null;
@@ -579,6 +587,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           setPage('tournaments');
         })}
         onSettings={() => setShowSettings(true)}
+        onPreferences={() => setShowPreferences(true)}
         liveGame={liveGame}
         onBackToGame={() => {
           if (!liveGame) return;
@@ -985,6 +994,9 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
       </Suspense>
 
       {showSettings && <SettingsDialog prefs={prefs} onPrefs={setPrefs} onClose={() => setShowSettings(false)} />}
+      {showPreferences && (
+        <PreferencesDialog prefs={prefs} onPrefs={setPrefs} onClose={() => setShowPreferences(false)} />
+      )}
       {sharedGame && (
         <Modal label={t('analysis.shared')} className="viewer-modal" onClose={() => setSharedGame(null)}>
           <GameViewer

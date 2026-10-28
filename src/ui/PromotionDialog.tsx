@@ -16,8 +16,20 @@ export function PromotionDialog({ variant, color, options, onPick, onCancel }: P
   const { t, vt } = useI18n();
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocus(dialogRef, onCancel);
+  // The tap or drop that made the move opens this dialog under the pointer, and its click
+  // lands on the backdrop: only a press that starts on the backdrop cancels.
+  const pressed = useRef(false);
   return (
-    <div className="modal-backdrop" onClick={onCancel}>
+    <div
+      className="modal-backdrop"
+      onPointerDown={(e) => {
+        pressed.current = e.target === e.currentTarget;
+      }}
+      onClick={(e) => {
+        if (pressed.current && e.target === e.currentTarget) onCancel();
+        pressed.current = false;
+      }}
+    >
       <div
         className="modal"
         onClick={(e) => e.stopPropagation()}

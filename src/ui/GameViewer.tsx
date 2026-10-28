@@ -8,6 +8,7 @@ import { HINT } from '../ai/levels.ts';
 import { moveToSan } from '../engine/index.ts';
 import type { GameState, Move, PieceType, VariantDefinition } from '../engine/index.ts';
 import { Board } from './Board.tsx';
+import { directMove, loadPrefs } from './prefs.ts';
 import { PromotionDialog } from './PromotionDialog.tsx';
 import { MoveTreeView } from './analysis/MoveTreeView.tsx';
 import { TreeNav, useTreeKeys } from './analysis/TreeNav.tsx';
@@ -229,7 +230,11 @@ export function GameViewer({
     setTree(r.tree);
     setCurrent(r.id);
   };
-  const onMove = (candidates: Move[]) => (candidates.length > 1 ? setPromotion(candidates) : play(candidates[0]));
+  const onMove = (candidates: Move[]) => {
+    const move = directMove(variant, candidates, loadPrefs().autoQueen);
+    if (move) play(move);
+    else setPromotion(candidates);
+  };
   const onPromote = (type: PieceType) => {
     const move = promotion?.find((m) => m.promotion === type);
     setPromotion(null);

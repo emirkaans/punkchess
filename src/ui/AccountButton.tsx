@@ -27,6 +27,8 @@ interface Props {
   onLocale: (locale: Locale) => void;
   /** Opens the settings dialog (board, pieces, sound). */
   onSettings: () => void;
+  /** Opens the preferences dialog (how the game behaves). */
+  onPreferences: () => void;
 }
 
 /**
@@ -34,7 +36,7 @@ interface Props {
  * guests) opens a menu with the profile, the language, the settings and
  * signing out. Deleting the account is in the profile's account settings.
  */
-export function AccountButton({ locale, onLocale, onSettings }: Props) {
+export function AccountButton({ locale, onLocale, onSettings, onPreferences }: Props) {
   const { t } = useI18n();
   const account = useAccount();
   const [open, setOpen] = useState(false);
@@ -140,6 +142,17 @@ export function AccountButton({ locale, onLocale, onSettings }: Props) {
             }}
           >
             <span>{t('toolbar.settings')}</span>
+            <Chevron />
+          </button>
+          <button
+            role="menuitem"
+            className="account-row"
+            onClick={() => {
+              setOpen(false);
+              onPreferences();
+            }}
+          >
+            <span>{t('toolbar.preferences')}</span>
             <Chevron />
           </button>
           {user && (

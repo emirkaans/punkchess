@@ -1,3 +1,4 @@
+import type { Move, VariantDefinition } from '../engine/index.ts';
 import { detectLocale, isLocale } from '../i18n/index.ts';
 import type { Locale } from '../i18n/index.ts';
 import { loadJSON, saveJSON } from '../storage/local.ts';
@@ -37,7 +38,21 @@ export interface Prefs {
   readonly locale: Locale;
   /** Board width in px chosen by dragging its corner; null: fit the screen. */
   readonly boardSize: number | null;
+  /** A pawn reaching the last rank becomes a queen without asking. */
+  readonly autoQueen: boolean;
+  /** Moves may be queued while the opponent thinks. */
+  readonly premoves: boolean;
+  /** Dots on the squares the picked piece can reach. */
+  readonly moveHints: boolean;
+  /** File letters and rank numbers along the board's edges. */
+  readonly coordinates: boolean;
+  /** The last move's squares are tinted. */
+  readonly lastMove: boolean;
 }
+
+/** On/off preferences, in the order the preferences dialog lists them. */
+export const SWITCHES = ['autoQueen', 'premoves', 'moveHints', 'coordinates', 'lastMove'] as const;
+export type Switch = (typeof SWITCHES)[number];
 
 // Denim first (the default), then Classic; the faded boards stay together.
 export const BOARD_THEMES: readonly BoardTheme[] = [
@@ -58,6 +73,11 @@ const DEFAULT_PREFS: Omit<Prefs, 'locale'> = {
   sound: true,
   stickers: true,
   boardSize: null,
+  autoQueen: false,
+  premoves: true,
+  moveHints: true,
+  coordinates: true,
+  lastMove: true,
 };
 const KEY = 'prefs';
 
@@ -76,8 +96,12 @@ export function loadPrefs(): Prefs {
     typeof stored.boardSize === 'number' && stored.boardSize >= 200 && stored.boardSize <= 2000
       ? stored.boardSize
       : null;
+  const switches = Object.fromEntries(
+    SWITCHES.map((k) => [k, typeof stored[k] === 'boolean' ? stored[k] : DEFAULT_PREFS[k]]),
+  ) as Pick<Prefs, Switch>;
   return {
     ...DEFAULT_PREFS,
+    ...switches,
     sound: stored.sound ?? DEFAULT_PREFS.sound,
     stickers: stored.stickers ?? DEFAULT_PREFS.stickers,
     boardTheme,
@@ -94,6 +118,18 @@ export function applyPrefs(p: Prefs): void {
   const root = document.documentElement;
   root.dataset.board = p.boardTheme;
   root.dataset.pieces = p.pieceTheme;
+  root.dataset.hints = p.moveHints ? 'on' : 'off';
+  root.dataset.coords = p.coordinates ? 'on' : 'off';
+  root.dataset.last = p.lastMove ? 'on' : 'off';
   setPieceSet(p.pieceSet);
   root.lang = p.locale;
+}
+
+/**
+ * The move a drop or click plays at once: the only candidate, or the first promotion
+ * choice (the queen) when auto-queen is on. Null: ask which piece.
+ */
+export function directMove(variant: VariantDefinition, candidates: Move[], autoQueen: boolean): Move | null {
+  if (candidates.length === 1) return candidates[0];
+  return autoQueen ? (candidates.find((m) => m.promotion === variant.promotionTypes[0]) ?? null) : null;
 }

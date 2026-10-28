@@ -26,6 +26,7 @@ import { EngineLine } from './analysis/EngineLine.tsx';
 import { addMove, statesTo, treeOf } from './analysis/tree.ts';
 import type { MoveTree } from './analysis/tree.ts';
 import { PieceView } from './PieceView.tsx';
+import { directMove, loadPrefs } from './prefs.ts';
 import { PromotionDialog } from './PromotionDialog.tsx';
 import { ImportDialog, SharePanel } from './ShareTools.tsx';
 import type { ImportedLine } from './ShareTools.tsx';
@@ -226,7 +227,11 @@ export function AnalysisPage({
     setTree(t);
     setCurrent(at);
   };
-  const onMove = (candidates: Move[]) => (candidates.length > 1 ? setPromotion(candidates) : play(candidates[0]));
+  const onMove = (candidates: Move[]) => {
+    const move = directMove(variant, candidates, loadPrefs().autoQueen);
+    if (move) play(move);
+    else setPromotion(candidates);
+  };
   const onPromote = (type: PieceType) => {
     const move = promotion?.find((m) => m.promotion === type);
     setPromotion(null);
