@@ -26,11 +26,12 @@ export const PIECE_SETS = [
   'chrome',
   'kubist',
   'gercekustu',
+  'organik',
 ] as const;
 export type PieceSet = (typeof PIECE_SETS)[number];
 type Drawn = Exclude<
   PieceSet,
-  'glyph' | 'murekkep' | 'zincir' | 'sprey' | 'brutal' | 'metal' | 'chrome' | 'kubist' | 'gercekustu'
+  'glyph' | 'murekkep' | 'zincir' | 'sprey' | 'brutal' | 'metal' | 'chrome' | 'kubist' | 'gercekustu' | 'organik'
 >;
 type StandardKind = 'k' | 'q' | 'r' | 'b' | 'n' | 'p';
 /** The variants' own pieces: Bürokrat, Diplomat, Jester (by piece type). */
@@ -1262,6 +1263,111 @@ function surrealSvg(kind: Kind, id: string): string {
   );
 }
 
+/*
+ * Organik (biomorphic): soft flowing stone worn through with holes (cut out, so the square
+ * shows through) and soft balls. Its own palette, swapped per colour in CSS (--og, --og-line).
+ */
+// Two soft holes at the foot, as if the stone were worn through.
+const FEET = 'M30 86Q36 80 42 86Q36 89 30 86Z' + 'M58 86Q64 80 70 86Q64 89 58 86Z';
+/** The knight's dorsal fin: soft spikes along the back of the neck. */
+function organicFin(): string {
+  let d = '';
+  for (let i = 0; i < 7; i++) {
+    const t = i / 6;
+    const x = (1 - t) * (1 - t) * 54 + 2 * (1 - t) * t * 78 + t * t * 72;
+    const y = (1 - t) * (1 - t) * 18 + 2 * (1 - t) * t * 26 + t * t * 62;
+    const dx = 2 * (1 - t) * 24 - 12 * t;
+    const dy = 2 * (1 - t) * 8 + 72 * t;
+    const len = Math.hypot(dx, dy);
+    const [nx, ny, tx, ty] = [dy / len, -dx / len, dx / len, dy / len];
+    const h = 8 + 4 * Math.sin(t * Math.PI);
+    d += `M${f1(x - tx * 4 - nx * 3)} ${f1(y - ty * 4 - ny * 3)}Q${f1(x + nx * h * 0.4)} ${f1(y + ny * h * 0.4)} ${f1(x + nx * h + tx * 2)} ${f1(y + ny * h + ty * 2)}Q${f1(x + tx * 2)} ${f1(y + ty * 2)} ${f1(x + tx * 4 - nx * 3)} ${f1(y + ty * 4 - ny * 3)}Z`;
+  }
+  return d;
+}
+interface Organic {
+  /** The outline, one path (or the classic shapes for the variant pieces). */
+  body: string;
+  holes?: string;
+  /** Balls drawn over the body (and over the bishop's hole). */
+  balls?: string;
+  shine?: string;
+  fin?: boolean;
+}
+const ORGANIC: Record<Kind, Organic> = {
+  p: {
+    body: 'M18 90Q20 84 30 80Q42 74 45 56Q46 50 50 49Q54 50 55 56Q58 74 70 80Q80 84 82 90Z',
+    balls: ring(50, 38, 11),
+    holes: FEET + 'M46 76Q50 66 54 76Q50 80 46 76Z',
+    shine: 'M43 33Q45 29 49 28M46 60Q45 68 42 74',
+  },
+  r: {
+    body: 'M16 90Q22 82 32 78Q42 70 40 56Q36 44 32 34Q30 24 34 20Q38 24 38 30Q42 26 44 20Q48 24 50 18Q52 24 56 20Q58 26 62 30Q62 24 66 20Q70 24 68 34Q64 44 60 56Q58 70 68 78Q78 82 84 90Z',
+    holes: FEET + 'M42 66Q48 52 52 64Q50 74 42 66Z' + 'M46 40Q50 32 54 40Q50 46 46 40Z',
+    shine: 'M36 36Q40 46 42 54M38 76Q34 80 28 82',
+  },
+  n: {
+    fin: true,
+    body: 'M24 90Q28 80 40 76Q46 64 40 56Q32 50 22 48Q14 46 16 40Q20 34 30 30Q38 22 50 18Q64 16 70 30Q76 46 70 62Q66 74 74 82Q80 86 80 90Z',
+    holes:
+      'M37 31Q42 27 46 31Q42 34 37 31Z' +
+      'M51 30Q57 26 61 36Q59 48 53 42Q49 36 51 30Z' +
+      'M46 74Q50 62 58 70Q56 80 46 74Z' +
+      'M28 86Q34 80 40 86Q34 89 28 86Z' +
+      ring(19, 42, 1.4),
+    shine: 'M30 32Q38 24 48 21M44 60Q42 68 38 76',
+  },
+  b: {
+    body: 'M20 90Q24 82 34 78Q44 72 44 58Q44 50 40 44Q34 34 42 22Q46 14 50 5Q54 14 58 22Q66 34 60 44Q56 50 56 58Q56 72 66 78Q76 82 80 90Z',
+    holes:
+      'M50 16Q59 30 55 43Q50 47 45 43Q41 30 50 16Z' +
+      'M34 86Q40 80 46 86Q40 89 34 86Z' +
+      'M54 86Q60 80 66 86Q60 89 54 86Z',
+    balls: ring(50, 34, 5),
+    shine: 'M42 26Q38 34 41 42M47 60Q46 68 42 76',
+  },
+  // A splash crown with balls on its tips.
+  q: {
+    body: 'M20 90Q24 80 34 76Q44 68 44 56Q42 44 34 38Q24 34 16 24Q24 28 32 30Q34 22 38 16Q40 26 44 30Q46 20 50 12Q54 20 56 30Q60 26 62 16Q66 22 68 30Q76 28 84 24Q76 34 66 38Q58 44 56 56Q56 68 66 76Q76 80 80 90Z',
+    balls: ring(15, 23, 3) + ring(38, 15, 2.6) + ring(50, 10, 3) + ring(62, 15, 2.6) + ring(85, 23, 3),
+    holes: FEET + 'M44 70Q50 60 56 70Q50 78 44 70Z',
+    shine: 'M36 36Q44 44 46 54M38 74Q34 78 28 82',
+  },
+  // A twisting body with a ball on top (no crown points, no cross).
+  k: {
+    body:
+      'M18 90Q22 80 32 76Q40 70 38 62Q30 58 32 52Q40 50 42 44Q34 40 34 34Q38 28 46 30Q42 24 46 18H54Q58 22 56 28Q64 30 66 36Q60 40 58 44Q66 48 66 54Q58 58 60 64Q62 72 70 78Q78 82 82 90Z' +
+      'M48 18V12H52V18Z',
+    balls: ring(50, 7, 5),
+    holes: FEET + 'M46 64Q50 54 54 62Q52 72 46 64Z',
+    shine: 'M36 34Q40 31 44 32M34 54Q38 52 41 50M46 4Q48 3 50 3',
+  },
+  u: { body: '' },
+  d: { body: '' },
+  j: { body: '' },
+};
+
+/** An organic piece; `id` names its mask, so it must be unique on the page. */
+function organicSvg(kind: Kind, id: string): string {
+  const c = ORGANIC[kind];
+  const path = (cls: string, d: string | undefined) => (d ? `<path class="${cls}" d="${d}"/>` : '');
+  // The variant pieces keep their classic outlines.
+  const shapes = c.body ? `<path d="${c.body}"/>` : CLASSIC[kind];
+  const masked = c.holes ? ` mask="url(#${id})"` : '';
+  return (
+    '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+    (c.holes
+      ? `<defs><mask id="${id}"><rect x="-20" y="-20" width="140" height="140" fill="#fff"/><path d="${c.holes}" fill="#000"/></mask></defs>`
+      : '') +
+    path('bd', c.fin ? organicFin() : undefined) +
+    `<g${masked}><g class="bd">${shapes}</g></g>` +
+    path('ho', c.holes) +
+    path('bd', c.balls) +
+    path('sh', c.shine) +
+    '</svg>'
+  );
+}
+
 const KIND_OF_GLYPH: Record<string, Kind> = { '♚': 'k', '♛': 'q', '♜': 'r', '♝': 'b', '♞': 'n', '♟': 'p' };
 
 /**
@@ -1287,6 +1393,7 @@ function drawing(set: PieceSet, kind: Kind, id: string): string | null {
   if (set === 'chrome') return chromeSvg(kind, `${id}-${kind}`);
   if (set === 'kubist') return kubistSvg(kind, `${id}-${kind}`);
   if (set === 'gercekustu') return surrealSvg(kind, `${id}-${kind}`);
+  if (set === 'organik') return organicSvg(kind, `${id}-${kind}`);
   const drawn = set as Drawn;
   const body = kind === 'u' || kind === 'd' || kind === 'j' ? VARIANT_DRAWINGS[drawn][kind] : DRAWINGS[drawn][kind];
   const inner = drawn === 'firca' ? `<g class="o">${body}</g><g class="m">${body}</g>` : body;

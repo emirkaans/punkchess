@@ -2312,6 +2312,34 @@ button.primary:hover:not(:disabled) {
   fill: #111;
   stroke: none;
 }
+/* Organik: cream or black stone, soft highlights. */
+.piece.white .set-organik {
+  --og: #ecdfc2;
+  --og-line: #8a7a58;
+  --og-shine: #fff;
+}
+.piece.black .set-organik {
+  --og: #1d1b1d;
+  --og-line: #0b0a0b;
+  --og-shine: #8d8790;
+}
+.piece .set-organik svg {
+  stroke: var(--og-line);
+  stroke-width: 1.4;
+}
+.piece .set-organik .bd {
+  fill: var(--og);
+}
+.piece .set-organik .ho {
+  fill: none;
+  stroke-width: 1.2;
+}
+.piece .set-organik .sh {
+  fill: none;
+  stroke: var(--og-shine);
+  stroke-width: 2;
+  opacity: 0.55;
+}
 /* Brush: each stroke twice, a wide outline under the colour. */
 .piece .set-firca svg {
   fill: none;

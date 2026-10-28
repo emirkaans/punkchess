@@ -289,6 +289,7 @@ export const tr = {
   'pieceSet.chrome': 'Y2K Krom',
   'pieceSet.kubist': 'Kübist',
   'pieceSet.gercekustu': 'Gerçeküstü',
+  'pieceSet.organik': 'Organik',
 
   // Status line and announcements
   'status.setup': 'Oyun öncesi seçim bekleniyor…',
@@ -1252,6 +1253,7 @@ export const en: Record<MessageKey, string> = {
   'pieceSet.chrome': 'Y2K Chrome',
   'pieceSet.kubist': 'Cubist',
   'pieceSet.gercekustu': 'Surreal',
+  'pieceSet.organik': 'Organic',
 
   'status.setup': 'Waiting for the pre-game choice…',
   'status.thinking': '{color} bot ({name}) is thinking…',
