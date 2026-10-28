@@ -26,7 +26,7 @@ const PREVIEW: { type: PieceType; color: 'w' | 'b' }[] = [
 type View = 'main' | 'board' | 'pieces' | 'set';
 
 /**
- * Settings: a short menu (board, piece colours, piece set, sound); each look
+ * Settings: a short menu (board, piece colours, piece set); each look
  * opens its own page of small previews to pick from.
  */
 export function SettingsDialog({ prefs, onPrefs, onClose }: Props) {
@@ -156,20 +156,6 @@ export function SettingsDialog({ prefs, onPrefs, onClose }: Props) {
           </span>
         </MenuLink>
       </nav>
-      <label className="switch-row">
-        <input type="checkbox" checked={prefs.sound} onChange={() => onPrefs((p) => ({ ...p, sound: !p.sound }))} />
-        <span className="switch" aria-hidden="true" />
-        {t('toolbar.sound')}
-      </label>
-      <label className="switch-row">
-        <input
-          type="checkbox"
-          checked={prefs.stickers}
-          onChange={() => onPrefs((p) => ({ ...p, stickers: !p.stickers }))}
-        />
-        <span className="switch" aria-hidden="true" />
-        {t('settings.stickers')}
-      </label>
       <div className="modal-actions">
         <button className="primary" onClick={onClose} data-autofocus>
           {t('close')}

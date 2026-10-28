@@ -25,7 +25,7 @@ function Chevron({ back = false }: { back?: boolean }) {
 interface Props {
   locale: Locale;
   onLocale: (locale: Locale) => void;
-  /** Opens the settings dialog (board, pieces, sound). */
+  /** Opens the settings dialog (board, pieces). */
   onSettings: () => void;
   /** Opens the preferences dialog (how the game behaves). */
   onPreferences: () => void;

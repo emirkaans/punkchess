@@ -3,13 +3,15 @@ import { useI18n } from './i18n.tsx';
 import { Modal } from './Modal.tsx';
 import type { Prefs, Switch } from './prefs.ts';
 
+type Toggle = Switch | 'sound' | 'stickers';
+
 interface Props {
   prefs: Prefs;
   onPrefs: (update: (p: Prefs) => Prefs) => void;
   onClose: () => void;
 }
 
-const GROUPS: { title: MessageKey; switches: { key: Switch; note?: MessageKey }[] }[] = [
+const GROUPS: { title: MessageKey; switches: { key: Toggle; note?: MessageKey }[] }[] = [
   {
     title: 'prefs.game',
     switches: [
@@ -18,9 +20,13 @@ const GROUPS: { title: MessageKey; switches: { key: Switch; note?: MessageKey }[
     ],
   },
   { title: 'prefs.board', switches: [{ key: 'moveHints' }, { key: 'coordinates' }, { key: 'lastMove' }] },
+  {
+    title: 'prefs.soundGroup',
+    switches: [{ key: 'sound' }, { key: 'stickers', note: 'prefs.stickers.note' }],
+  },
 ];
 
-/** Preferences: how the game behaves (the look is in the settings dialog). */
+/** Preferences: how the game behaves and sounds (the look is in the settings dialog). */
 export function PreferencesDialog({ prefs, onPrefs, onClose }: Props) {
   const { t } = useI18n();
   return (
