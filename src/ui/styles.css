@@ -1933,6 +1933,69 @@ button.primary:hover:not(:disabled) {
 .piece .set-zincir .bd {
   stroke: none;
 }
+/* Spray: a blurred glow under the outline; drips, doodles and dust in the spray colour. */
+.piece.white .set-sprey {
+  --spray: var(--pw-accent);
+  --wire: var(--pw-accent);
+  --dust: var(--pw-line);
+}
+.piece.black .set-sprey {
+  --spray: var(--pb-line);
+  --wire: #c9c5cf;
+  --dust: var(--pb-line);
+}
+.piece .set-sprey svg {
+  stroke-width: 2.6;
+}
+.piece .set-sprey .gl {
+  fill: none;
+  stroke-width: 7;
+  opacity: 0.35;
+  filter: blur(2.5px);
+}
+.piece .set-sprey .mn {
+  fill: var(--line);
+  stroke-width: 1.6;
+}
+.piece .set-sprey :is(.sh, .ln, .wu, .wr, .dd) {
+  fill: none;
+}
+.piece .set-sprey .sh {
+  stroke: var(--spray);
+  stroke-width: 2;
+  opacity: 0.45;
+}
+.piece.white .set-sprey .sh {
+  stroke: #fff;
+}
+.piece .set-sprey .ln {
+  stroke-width: 2;
+}
+.piece .set-sprey .wu {
+  stroke: #2a2530;
+  stroke-width: 3.4;
+}
+.piece .set-sprey .wr {
+  stroke: var(--wire);
+  stroke-width: 1.8;
+}
+.piece .set-sprey .dd {
+  stroke: var(--spray);
+  stroke-width: 2.4;
+}
+.piece.white .set-sprey .db,
+.piece.black .set-sprey .dw {
+  display: none;
+}
+.piece .set-sprey .dr {
+  fill: var(--spray);
+  stroke: none;
+}
+.piece .set-sprey .du {
+  fill: var(--dust);
+  stroke: none;
+  opacity: 0.7;
+}
 /* Brush: each stroke twice, a wide outline under the colour. */
 .piece .set-firca svg {
   fill: none;

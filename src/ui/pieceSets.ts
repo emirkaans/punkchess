@@ -20,9 +20,10 @@ export const PIECE_SETS = [
   'firca',
   'murekkep',
   'zincir',
+  'sprey',
 ] as const;
 export type PieceSet = (typeof PIECE_SETS)[number];
-type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir'>;
+type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir' | 'sprey'>;
 type StandardKind = 'k' | 'q' | 'r' | 'b' | 'n' | 'p';
 /** The variants' own pieces: Bürokrat, Diplomat, Jester (by piece type). */
 type VariantKind = 'u' | 'd' | 'j';
@@ -379,6 +380,201 @@ function tattooedSvg(set: Tattooed, kind: Kind, id: string): string {
   return `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}">${shapes}</clipPath></defs><g class="ol">${shapes}</g><g class="bd">${shapes}</g><g clip-path="url(#${id})">${TATTOOS[set](kind)}${MARKS[kind] ?? ''}</g></svg>`;
 }
 
+/*
+ * Spray: classic pieces painted with a spray can. A soft glow under a sharp outline, then
+ * drips, a scribbled doodle and spray dust in the spray colour (CSS: --spray, --wire, --dust).
+ */
+const f1 = (n: number) => Math.round(n * 10) / 10;
+const ring = (cx: number, cy: number, r: number) =>
+  `M${f1(cx - r)} ${f1(cy)}a${f1(r)} ${f1(r)} 0 1 0 ${f1(2 * r)} 0a${f1(r)} ${f1(r)} 0 1 0 ${f1(-2 * r)} 0`;
+const drip = ([x, y, len]: [number, number, number]) => `M${x - 2} ${y}h4v${len}a2 2 0 0 1-4 0Z`;
+const SPRAY_BASE = 'M20 90H80V85Q80 81 76 81H24Q20 81 20 85Z' + 'M26 81L29 75H71L74 81Z';
+const barbs = (points: [number, number][]) =>
+  points.map(([x, y]) => `M${x - 2} ${y - 2.5}L${x + 2} ${y + 2.5}M${x + 2} ${y - 2.5}L${x - 2} ${y + 2.5}`).join('');
+
+/** The knight's mane: spikes along the back of the neck. */
+function sprayMane(): string {
+  let d = '';
+  for (let i = 0; i < 9; i++) {
+    const t = i / 8;
+    const x = (1 - t) * (1 - t) * 52 + 2 * (1 - t) * t * 78 + t * t * 74;
+    const y = (1 - t) * (1 - t) * 22 + 2 * (1 - t) * t * 28 + t * t * 62;
+    const dx = 2 * (1 - t) * 26 - 8 * t;
+    const dy = 2 * (1 - t) * 6 + 68 * t;
+    const len = Math.hypot(dx, dy);
+    const [nx, ny, tx, ty] = [dy / len, -dx / len, dx / len, dy / len];
+    const h = 10 + 5 * Math.sin(t * Math.PI);
+    d += `M${f1(x - tx * 3.5 - nx * 3)} ${f1(y - ty * 3.5 - ny * 3)}L${f1(x + nx * h)} ${f1(y + ny * h)}L${f1(x + tx * 3.5 - nx * 3)} ${f1(y + ty * 3.5 - ny * 3)}Z`;
+  }
+  return d;
+}
+
+interface Sprayed {
+  /** The piece's shapes (SVG elements). */
+  shapes: string;
+  shine?: string;
+  lines?: string;
+  wire?: string;
+  /** Doodle on both colours, or [black, white]. */
+  doodle?: string | [string, string];
+  drips: [number, number, number][];
+  mane?: boolean;
+}
+const p = (d: string) => `<path d="${d}"/>`;
+const SPRAYED: Record<Kind, Sprayed> = {
+  p: {
+    shapes: p(
+      SPRAY_BASE + 'M33 75Q35 64 43 59Q38 57 38 54H62Q62 57 57 59Q65 64 67 75Z' + 'M37 54H63V50H37Z' + ring(50, 39, 11),
+    ),
+    shine: 'M44 34Q46 31 49 30',
+    doodle: 'M40 22L38 10L45 16L50 7L55 16L62 10L60 22Z',
+    drips: [
+      [41, 22, 3],
+      [58, 22, 5],
+      [30, 90, 4],
+      [66, 90, 7],
+    ],
+  },
+  r: {
+    shapes: p(SPRAY_BASE + 'M34 75L36 42H64L66 75Z' + 'M30 42V22H38V28H45V22H55V28H62V22H70V42Z'),
+    shine: 'M39 46V70',
+    lines: 'M36 46H64',
+    doodle: 'M42 66L41 56L46 60L50 53L54 60L59 56L58 66Z',
+    drips: [
+      [33, 42, 7],
+      [67, 42, 4],
+      [65, 70, 6],
+      [28, 90, 6],
+    ],
+  },
+  n: {
+    shapes: p(SPRAY_BASE + 'M30 75Q32 66 40 60Q30 60 24 54Q20 48 26 43L42 28Q50 20 60 22Q76 28 74 54L72 75Z'),
+    mane: true,
+    shine: 'M45 30Q52 25 58 26',
+    lines: 'M27 49L30 48' + ring(44, 36, 1.6),
+    // An anarchy A on the black knight, an X on the white one.
+    doodle: [ring(60, 62, 6.5) + 'M56 67L60 56L64 67M55.5 63H64.5', 'M55 56L66 68M66 56L55 68'],
+    drips: [
+      [29, 54, 7],
+      [37, 60, 4],
+      [70, 90, 6],
+    ],
+  },
+  b: {
+    shapes: p(
+      SPRAY_BASE +
+        'M33 75Q37 68 44 65Q37 60 38 50Q40 36 50 27Q60 36 62 50Q63 60 56 65Q63 68 67 75Z' +
+        'M41 65H59V62H41Z' +
+        ring(50, 22, 4),
+    ),
+    shine: 'M43 50Q43 42 48 36',
+    doodle: 'M45 40L54 49M54 40L45 49',
+    drips: [
+      [47, 49, 9],
+      [53, 49, 5],
+      [28, 90, 4],
+    ],
+  },
+  q: {
+    shapes: p(
+      SPRAY_BASE +
+        'M31 75Q35 68 41 64L38 44H62L59 64Q65 68 69 75Z' +
+        'M35 44H65V39H35Z' +
+        'M35 39L29 16L40 29L44 10L50 25L56 10L60 29L71 16L65 39Z',
+    ),
+    shine: 'M42 48L44 66',
+    doodle: 'M74 66L73 58L77 61L80 55L83 61L87 58L86 66Z',
+    drips: [
+      [36, 39, 9],
+      [64, 39, 6],
+      [44, 29, 4],
+      [69, 90, 5],
+    ],
+  },
+  // A round, arched crown (the queen's is spiked), with a knob on top and barbed wire.
+  k: {
+    shapes: p(
+      SPRAY_BASE +
+        'M35 69L36 75H64L65 69Z' +
+        'M33 62H67V69H33Z' +
+        'M33 62C20 54 18 36 32 34C40 33 46 40 50 48C54 40 60 33 68 34C82 36 80 54 67 62Z' +
+        'M50 48C45 40 45 30 50 25C55 30 55 40 50 48Z' +
+        ring(50, 21, 4),
+    ),
+    shine: 'M26 44Q25 50 29 55',
+    lines: 'M36 65.5H64',
+    wire:
+      'M30 56Q50 50 70 56' +
+      barbs([
+        [36, 53.6],
+        [44, 52],
+        [52, 51.6],
+        [60, 52.4],
+        [66, 54.5],
+      ]),
+    drips: [
+      [35, 69, 6],
+      [65, 69, 4],
+      [71, 90, 7],
+    ],
+  },
+  // The variant pieces keep their classic outlines, with drips at the base.
+  u: {
+    shapes: CLASSIC.u,
+    drips: [
+      [30, 90, 5],
+      [68, 90, 7],
+    ],
+  },
+  d: {
+    shapes: CLASSIC.d,
+    drips: [
+      [30, 90, 5],
+      [68, 90, 7],
+    ],
+  },
+  j: {
+    shapes: CLASSIC.j,
+    drips: [
+      [30, 90, 5],
+      [68, 90, 7],
+    ],
+  },
+};
+
+/** Spray dust scattered around a piece, the same every game (a fixed seed per piece). */
+function sprayDust(kind: Kind): string {
+  let s = kind.charCodeAt(0) * 7919;
+  const next = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
+  let d = '';
+  for (let i = 0; i < 16; i++) {
+    const a = next() * Math.PI * 2;
+    const r = 38 + next() * 10;
+    d += ring(50 + Math.cos(a) * r, 55 + Math.sin(a) * r * 0.85, 0.5 + next() * 0.9);
+  }
+  return d;
+}
+
+function spraySvg(kind: Kind): string {
+  const s = SPRAYED[kind];
+  const path = (cls: string, d: string | undefined) => (d ? `<path class="${cls}" d="${d}"/>` : '');
+  const [black, white] = typeof s.doodle === 'string' ? [s.doodle, s.doodle] : (s.doodle ?? ['', '']);
+  return (
+    '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+    `<g class="gl">${s.shapes}</g>` +
+    path('mn', s.mane ? sprayMane() : undefined) +
+    `<g class="bd">${s.shapes}</g>` +
+    path('sh', s.shine) +
+    path('ln', s.lines) +
+    path('wu', s.wire) +
+    path('wr', s.wire) +
+    (black === white ? path('dd', black) : path('dd db', black) + path('dd dw', white)) +
+    path('dr', s.drips.map(drip).join('')) +
+    path('du', sprayDust(kind)) +
+    '</svg>'
+  );
+}
+
 const KIND_OF_GLYPH: Record<string, Kind> = { '♚': 'k', '♛': 'q', '♜': 'r', '♝': 'b', '♞': 'n', '♟': 'p' };
 
 /**
@@ -398,6 +594,7 @@ export function variantPieceSvg(set: PieceSet, type: string, id = `pc-${set}`): 
 function drawing(set: PieceSet, kind: Kind, id: string): string | null {
   if (set === 'glyph') return null;
   if (TATTOOED.includes(set)) return tattooedSvg(set as Tattooed, kind, `${id}-${kind}`);
+  if (set === 'sprey') return spraySvg(kind);
   const drawn = set as Drawn;
   const body = kind === 'u' || kind === 'd' || kind === 'j' ? VARIANT_DRAWINGS[drawn][kind] : DRAWINGS[drawn][kind];
   const inner = drawn === 'firca' ? `<g class="o">${body}</g><g class="m">${body}</g>` : body;
