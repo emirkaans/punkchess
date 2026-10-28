@@ -2261,6 +2261,57 @@ button.primary:hover:not(:disabled) {
   stroke: #111;
   stroke-width: 1.6;
 }
+/* Gerçeküstü: cream or black marble, gold veins, wire and orbs. */
+.piece.white .set-gercekustu {
+  --sr: #efe5cf;
+  --sr-line: #4a3b25;
+}
+.piece.black .set-gercekustu {
+  --sr: #19171a;
+  --sr-line: #b8923d;
+}
+.piece .set-gercekustu svg {
+  stroke: var(--sr-line);
+  stroke-width: 1.6;
+}
+.piece .set-gercekustu .bd {
+  fill: var(--sr);
+}
+.piece .set-gercekustu :is(.vn, .ho, .ln, .wr) {
+  fill: none;
+}
+.piece .set-gercekustu .vn {
+  stroke: #c9a24a;
+  stroke-width: 1.1;
+  opacity: 0.9;
+}
+.piece .set-gercekustu .ho {
+  stroke-width: 1.4;
+}
+.piece .set-gercekustu .ln {
+  stroke-width: 1.5;
+}
+.piece .set-gercekustu .wr {
+  stroke: #b8923d;
+  stroke-width: 1.3;
+}
+.piece .set-gercekustu .gd {
+  fill: #d4ae55;
+  stroke: #7a5c1e;
+  stroke-width: 1;
+}
+.piece .set-gercekustu .ew {
+  fill: #f6efe0;
+  stroke-width: 1.3;
+}
+.piece .set-gercekustu .ir {
+  fill: #b8923d;
+  stroke: none;
+}
+.piece .set-gercekustu .pu {
+  fill: #111;
+  stroke: none;
+}
 /* Brush: each stroke twice, a wide outline under the colour. */
 .piece .set-firca svg {
   fill: none;

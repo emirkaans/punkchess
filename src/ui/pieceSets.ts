@@ -25,9 +25,13 @@ export const PIECE_SETS = [
   'metal',
   'chrome',
   'kubist',
+  'gercekustu',
 ] as const;
 export type PieceSet = (typeof PIECE_SETS)[number];
-type Drawn = Exclude<PieceSet, 'glyph' | 'murekkep' | 'zincir' | 'sprey' | 'brutal' | 'metal' | 'chrome' | 'kubist'>;
+type Drawn = Exclude<
+  PieceSet,
+  'glyph' | 'murekkep' | 'zincir' | 'sprey' | 'brutal' | 'metal' | 'chrome' | 'kubist' | 'gercekustu'
+>;
 type StandardKind = 'k' | 'q' | 'r' | 'b' | 'n' | 'p';
 /** The variants' own pieces: Bürokrat, Diplomat, Jester (by piece type). */
 type VariantKind = 'u' | 'd' | 'j';
@@ -1144,6 +1148,120 @@ function kubistSvg(kind: Kind, id: string): string {
   );
 }
 
+/*
+ * Gerçeküstü (surreal): melting marble pieces with gold veins, pendulums and eyes. Holes are
+ * cut out of the piece (a mask), so the square shows through. Its own palette, swapped per
+ * colour in CSS (--sr, --sr-line).
+ */
+const MELT = 'M14 92Q16 85 24 87Q28 81 35 85Q42 80 50 84Q58 80 65 85Q72 81 76 87Q84 85 86 92Z';
+interface Surreal {
+  /** The outline, one path (or the classic shapes for the variant pieces). */
+  body: string;
+  hole?: string;
+  veins?: string;
+  lines?: string;
+  /** Gold wire: the pendulum strings and the knight's mane. */
+  wire?: string;
+  gold?: string;
+  eye?: [x: number, y: number, w: number];
+}
+const SURREAL: Record<Kind, Surreal> = {
+  p: {
+    body: MELT + 'M42 85Q47 73 46 61Q44 55 46 52H54Q56 55 54 61Q53 73 58 85Z' + ring(50, 39, 11),
+    gold: ring(50, 51, 2.4),
+    veins: 'M45 34Q50 40 48 46M53 64Q51 72 55 80M30 88Q40 86 46 89',
+  },
+  r: {
+    body:
+      MELT +
+      'M30 85Q41 75 38 60Q34 48 36 41H64Q66 48 62 60Q59 75 70 85Z' +
+      'M32 41L33 24H40V29H46V24H54V29H60V24H67L68 41Z',
+    hole: 'M46 63Q50 54 54 63Q55 74 50 77Q45 74 46 63Z',
+    wire: 'M67 41V60',
+    gold: ring(67, 63, 3),
+    veins: 'M40 30L44 38M58 46Q55 54 58 60M36 70Q40 76 38 82',
+  },
+  n: {
+    body:
+      MELT + 'M36 85Q44 71 40 57Q38 47 30 45L18 47Q13 45 16 40L30 27L36 15L41 24Q56 18 64 30Q72 45 68 61Q66 73 72 85Z',
+    hole: 'M51 67Q54 54 60 61Q60 73 56 77Q52 75 51 67Z',
+    wire: 'M44 22Q60 2 76 8M50 22Q66 8 82 16M56 26Q72 18 86 28M60 32Q76 30 84 42M64 40Q76 42 80 56',
+    lines: 'M18 47Q17 51 18 54',
+    eye: [35, 32, 4.5],
+    veins: 'M52 30Q48 44 54 52M44 62Q46 72 42 80',
+  },
+  b: {
+    body:
+      MELT +
+      'M38 85Q46 75 46 65Q42 59 44 57H56Q58 59 54 65Q54 75 62 85Z' +
+      'M42 57V54H58V57Z' +
+      'M50 6Q66 27 58 54H42Q34 27 50 6Z',
+    hole: 'M50 19Q58 32 50 48Q42 32 50 19Z',
+    wire: 'M50 6V19M50 39V48',
+    gold: ring(50, 33, 4.2) + ring(50, 4, 1.8),
+    veins: 'M44 60Q48 70 44 78',
+  },
+  // One great eye under a crown of gold-tipped prongs, a gold drop hanging from it.
+  q: {
+    body:
+      MELT +
+      'M30 85Q42 75 44 61Q44 53 40 47H60Q56 53 56 61Q58 75 70 85Z' +
+      'M34 47Q32 35 36 31H64Q68 35 66 47Z' +
+      'M34 33L15 19L38 28L40 12L46 26L50 6L54 26L60 12L62 28L85 19L66 33Z',
+    wire: 'M66 33V52',
+    gold:
+      ring(15, 18, 2.2) +
+      ring(40, 11, 2.2) +
+      ring(50, 5, 2.2) +
+      ring(60, 11, 2.2) +
+      ring(85, 18, 2.2) +
+      'M64.5 52Q66 57 67.5 52Q67 50 66 50Q65 50 64.5 52Z',
+    lines: 'M50 43Q51 51 49 58',
+    eye: [50, 38, 8],
+    veins: 'M42 64Q46 72 40 80M58 66Q56 74 60 82',
+  },
+  // A face in profile under a short crown, a gold orb on top (no cross).
+  k: {
+    body:
+      MELT +
+      'M30 85Q41 75 38 61Q36 51 38 47H62Q66 53 64 63Q62 75 70 85Z' +
+      'M36 47L35 21L44 15H62L64 23L60 27L64 33L60 37L62 41L58 45L60 47Z' +
+      'M35 21L33 10L42 16L48 8H52L58 16L66 10L64 21Z',
+    wire: 'M50 8V3',
+    gold: ring(50, 2, 3.4),
+    lines: 'M49 25L58 26M55 41H60M42 21V47',
+    eye: [53, 30, 4.5],
+    veins: 'M40 54Q44 62 40 70M58 60Q56 70 60 78',
+  },
+  u: { body: '' },
+  d: { body: '' },
+  j: { body: '' },
+};
+
+/** A surreal piece; `id` names its mask, so it must be unique on the page. */
+function surrealSvg(kind: Kind, id: string): string {
+  const c = SURREAL[kind];
+  const path = (cls: string, d: string | undefined) => (d ? `<path class="${cls}" d="${d}"/>` : '');
+  // The variant pieces keep their classic outlines.
+  const shapes = c.body ? `<path d="${c.body}"/>` : CLASSIC[kind];
+  const masked = c.hole ? ` mask="url(#${id})"` : '';
+  return (
+    '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+    (c.hole
+      ? `<defs><mask id="${id}"><rect x="-20" y="-20" width="140" height="140" fill="#fff"/><path d="${c.hole}" fill="#000"/></mask></defs>`
+      : '') +
+    `<g${masked}><g class="bd">${shapes}</g>${path('vn', c.veins)}</g>` +
+    path('ho', c.hole) +
+    path('ln', c.lines) +
+    path('wr', c.wire) +
+    path('gd', c.gold) +
+    path('ew', c.eye ? almond(...c.eye) : undefined) +
+    path('ir', c.eye ? ring(c.eye[0], c.eye[1], c.eye[2] * 0.42) : undefined) +
+    path('pu', c.eye ? ring(c.eye[0], c.eye[1], c.eye[2] * 0.2) : undefined) +
+    '</svg>'
+  );
+}
+
 const KIND_OF_GLYPH: Record<string, Kind> = { '♚': 'k', '♛': 'q', '♜': 'r', '♝': 'b', '♞': 'n', '♟': 'p' };
 
 /**
@@ -1168,6 +1286,7 @@ function drawing(set: PieceSet, kind: Kind, id: string): string | null {
   if (set === 'metal') return metalSvg(kind, `${id}-${kind}`);
   if (set === 'chrome') return chromeSvg(kind, `${id}-${kind}`);
   if (set === 'kubist') return kubistSvg(kind, `${id}-${kind}`);
+  if (set === 'gercekustu') return surrealSvg(kind, `${id}-${kind}`);
   const drawn = set as Drawn;
   const body = kind === 'u' || kind === 'd' || kind === 'j' ? VARIANT_DRAWINGS[drawn][kind] : DRAWINGS[drawn][kind];
   const inner = drawn === 'firca' ? `<g class="o">${body}</g><g class="m">${body}</g>` : body;
