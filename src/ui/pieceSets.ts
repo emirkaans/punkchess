@@ -429,10 +429,7 @@ const SPRAYED: Record<Kind, Sprayed> = {
       SPRAY_BASE + 'M33 75Q35 64 43 59Q38 57 38 54H62Q62 57 57 59Q65 64 67 75Z' + 'M37 54H63V50H37Z' + ring(50, 39, 11),
     ),
     shine: 'M44 34Q46 31 49 30',
-    doodle: 'M40 22L38 10L45 16L50 7L55 16L62 10L60 22Z',
     drips: [
-      [41, 22, 3],
-      [58, 22, 5],
       [30, 90, 4],
       [66, 90, 7],
     ],
@@ -598,7 +595,6 @@ const BRUTAL: Record<Kind, Brutal> = {
         'M38 58L40 53H60L62 58Z' +
         'M44 29H56L61 34V46L56 51H44L39 46V34Z',
     ),
-    doodle: 'M40 23L38 11L45 17L50 8L55 17L62 11L60 23Z',
   },
   r: {
     shapes: p(B_BASE + 'M34 76L36 44H64L66 76Z' + 'M30 44V22H39V29H46V22H54V29H61V22H70V44Z'),
