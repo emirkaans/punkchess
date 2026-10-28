@@ -175,6 +175,8 @@ class Searcher {
   private readonly params: SearchParams;
   /** Turns a fast-board move into a line move (set by search(); used for the reported line). */
   moveOf: ((m: number) => LineMove) | null = null;
+  /** Root moves to search; the others are left out (see search()). */
+  rootFilter: ((m: number) => boolean) | null = null;
 
   constructor(v: VariantDefinition, root: Position, recent: readonly Position[], params: SearchParams) {
     this.params = params;
@@ -674,7 +676,7 @@ class Searcher {
   }
 
   run(): { scores: RootScore[]; depth: number } {
-    const rootMoves = this.b.legalMoves();
+    const rootMoves = this.rootFilter ? this.b.legalMoves().filter(this.rootFilter) : this.b.legalMoves();
     if (rootMoves.length === 0) throw new Error('search: no legal moves');
     this.moveBuf.set(rootMoves, 0);
     this.scoreMoves(0, rootMoves.length, 0, 0);
@@ -733,14 +735,20 @@ export function search(v: VariantDefinition, state: GameState, params: SearchPar
     const promotion = promo >= 0 ? s.b.types[promo].letter : undefined;
     return promotion ? { from: moveFrom(m), to: moveTo(m), promotion } : { from: moveFrom(m), to: moveTo(m) };
   };
-  const { scores, depth } = s.run();
-  const toMove = (m: number): Move => {
+  const engineMove = (m: number): Move | undefined => {
     const promo = movePromo(m);
     const promotion = promo >= 0 ? s.b.types[promo].letter : undefined;
-    const found = legal.find((x) => x.from === moveFrom(m) && x.to === moveTo(m) && x.promotion === promotion);
-    if (!found) throw new Error(`search: fast move ${moveFrom(m)}-${moveTo(m)} is not legal in the engine`);
-    return found;
+    return legal.find((x) => x.from === moveFrom(m) && x.to === moveTo(m) && x.promotion === promotion);
   };
+  // The fast board can disagree with the engine at the root: it knows no lasting card effects,
+  // so a move that is illegal once a Barikat comes down looks fine to it. Only engine moves are searched.
+  s.rootFilter = (m) => engineMove(m) !== undefined;
+  if (!s.b.legalMoves().some(s.rootFilter)) {
+    if (!legal.length) throw new Error('search: no legal moves');
+    return { scores: [{ move: legal[0], score: 0 }], depth: 0, nodes: 0, pv: [] };
+  }
+  const { scores, depth } = s.run();
+  const toMove = (m: number): Move => engineMove(m)!;
   return {
     scores: scores.map((x) => ({ move: toMove(x.move), score: x.score })),
     depth,

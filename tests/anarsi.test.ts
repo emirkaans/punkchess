@@ -200,3 +200,25 @@ describe('Anarşi: hızlı tahta', () => {
     expect(moves).not.toContain('d8d4');
   });
 });
+
+describe('Anarşi: bot', () => {
+  // punkchess.com/NK4KsZEP: the wall on e2 comes down with White's next move, so Kd1 walks
+  // into the queen on f3. The fast board knows no wall expiry and offered Kd1; the bot crashed.
+  it('arama, duvar inince yasa dışı kalan hamleyi önermez', async () => {
+    const { search } = await import('../src/ai/search.ts');
+    const state = createGame(
+      v,
+      'r4rk1/p1p2pb1/1p1p4/8/4B2P/4Bq2/PP1QoooR/2K2R2 w - - 1 25 ice.wall.1101;wall.b.49.e2f2g2',
+    );
+    expect(targets(state, 'c1')).toEqual(['b1', 'c2']);
+    const r = search(v, state, {
+      maxDepth: 2,
+      quiescence: true,
+      transpositionTable: false,
+      mobility: false,
+      timeLimitMs: 500,
+      rootExact: { topK: 1, margin: 0 },
+    });
+    expect(r.scores.map((x) => `${squareName(x.move.from)}${squareName(x.move.to)}`)).not.toContain('c1d1');
+  });
+});
