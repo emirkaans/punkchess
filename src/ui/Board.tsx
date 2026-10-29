@@ -68,17 +68,19 @@ interface Props {
 }
 
 // Badge glyphs (any piece set): the standard pieces, blockers as a dot.
-const NOTE_GLYPH: Readonly<Record<string, string>> = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟', y: '♞', z: '♝' };
-const noteGlyph = (p: Piece | null) => (p ? (NOTE_GLYPH[p.type] ?? '●') : '×');
+const NOTE_GLYPH: Readonly<Record<string, string>> = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
 
-/** The badge on a card's first square: what stood there and what stands there now. */
-function noteBadge(r: CardResult): string {
+/**
+ * The badge on a card's first square: what stood there and what stands there now. A piece
+ * with its own badge (a nitro piece's queen) shows that badge.
+ */
+function noteBadge(r: CardResult, glyph: (p: Piece | null, after: boolean) => string): string {
   const [c0, c1] = r.changes;
   if (!c0 || r.empty) return '';
-  if (r.id === 'swap' || r.id === 'quake') return `${noteGlyph(c0.before)}⇄${noteGlyph(c1?.before ?? null)}`;
+  if (r.id === 'swap' || r.id === 'quake') return `${glyph(c0.before, false)}⇄${glyph(c1?.before ?? null, false)}`;
   if (r.id === 'ice') return '❄';
   if (r.id === 'shield') return '◈';
-  return `${noteGlyph(c0.before)}→${noteGlyph(c0.after)}`;
+  return `${glyph(c0.before, false)}→${glyph(c0.after, true)}`;
 }
 
 interface Drag {
@@ -377,6 +379,9 @@ export function Board({
   };
 
   const noteSquares = cardNote && !cardNote.empty ? cardNote.changes.map((c) => c.square) : [];
+  const noteGlyph = (p: Piece | null, after: boolean) =>
+    !p ? '×' : ((after ? texts.badge(p.type, position, p.color)?.label : null) ?? NOTE_GLYPH[p.type] ?? '●');
+  const badgeText = cardNote ? noteBadge(cardNote, noteGlyph) : '';
   const noteClass = cardNote ? `card-note card-note-${cardTone(cardNote)}` : '';
 
   const rect = boardRef.current?.getBoundingClientRect();
@@ -449,9 +454,9 @@ export function Board({
                 </span>
               ),
           )}
-          {cardNote && noteSquares[0] === sq && noteBadge(cardNote) && (
+          {cardNote && noteSquares[0] === sq && badgeText && (
             <span className={`card-badge card-badge-${cardTone(cardNote)}`} aria-hidden="true">
-              {noteBadge(cardNote)}
+              {badgeText}
             </span>
           )}
           {col === 0 && <span className="coord rank">{rankOf(sq) + 1}</span>}

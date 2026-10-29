@@ -301,3 +301,12 @@ describe('Anarşi: kart sonucu (ekranda gösterilen)', () => {
     ]);
   });
 });
+
+describe('Anarşi: nitrolu taşın rozeti', () => {
+  it('nitrolu at ve fil, sürdüğü sürece vezir rozeti taşır', () => {
+    const pos = createGame(v, fen('4k3/8/8/8/8/8/8/2Z1K1Y1', 'w', '-.-.0000')).position;
+    expect(v.pieces.z.badge!(pos, 'w')?.label).toBe('♛');
+    expect(v.pieces.y.badge!(pos, 'w')?.label).toBe('♛');
+    expect(v.pieces.b.badge).toBeUndefined();
+  });
+});

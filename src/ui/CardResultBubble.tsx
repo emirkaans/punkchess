@@ -1,5 +1,5 @@
 import { opposite, squareName } from '../engine/index.ts';
-import type { Color, Piece, VariantDefinition } from '../engine/index.ts';
+import type { Color, Piece, Position, VariantDefinition } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import type { CardResult } from './cardResult.ts';
 import { useI18n } from './i18n.tsx';
@@ -34,13 +34,15 @@ export function useCardSentence(variant: VariantDefinition, r: CardResult): stri
 interface Props {
   variant: VariantDefinition;
   result: CardResult;
+  /** The position after the card (for piece badges). */
+  position: Position;
 }
 
 /**
  * Under the board, after a card: a speech bubble from the player who played it, saying
  * whether it hit or backfired, what it did and the piece before and after.
  */
-export function CardResultBubble({ variant, result }: Props) {
+export function CardResultBubble({ variant, result, position }: Props) {
   const { t } = useI18n();
   const sentence = useCardSentence(variant, result);
   const tone = cardTone(result);
@@ -49,10 +51,11 @@ export function CardResultBubble({ variant, result }: Props) {
   // Swaps show both pieces trading places; everything else the piece before and after.
   const swap = result.id === 'swap' || result.id === 'quake';
   const pieces = result.empty || !c0 ? null : swap ? [c0.before, c1?.before ?? null] : [c0.before, c0.after];
-  const icon = (p: Piece | null) =>
+  // The piece after the card wears its badge (a nitro piece: the queen it moves like).
+  const icon = (p: Piece | null, after = false) =>
     p ? (
       <span className="cr-piece">
-        <PieceView variant={variant} piece={p} />
+        <PieceView variant={variant} piece={p} position={after ? position : undefined} />
       </span>
     ) : (
       <span className="cr-piece cr-none" aria-hidden="true">
@@ -77,7 +80,7 @@ export function CardResultBubble({ variant, result }: Props) {
           <div className="cr-pieces" aria-hidden="true">
             {icon(pieces[0])}
             <span className="cr-arrow">{swap ? '⇄' : '→'}</span>
-            {icon(pieces[1])}
+            {icon(pieces[1], !swap)}
           </div>
         )}
       </div>

@@ -606,7 +606,7 @@ function OnlineGame({
               onResize={(boardSize) => setPrefs((p) => ({ ...p, boardSize }))}
             />
           </div>
-          {cardNote && <CardResultBubble variant={variant} result={cardNote} />}
+          {cardNote && <CardResultBubble variant={variant} result={cardNote} position={shown!.position} />}
           <div className="board-bar">
             <label className="switch-row">
               <input

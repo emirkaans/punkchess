@@ -842,7 +842,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                     onResize={(boardSize) => setPrefs((p) => ({ ...p, boardSize }))}
                   />
                 </div>
-                {cardNote && <CardResultBubble variant={variant} result={cardNote} />}
+                {cardNote && <CardResultBubble variant={variant} result={cardNote} position={game.position} />}
                 <div className="board-bar">
                   <label className="switch-row">
                     <input

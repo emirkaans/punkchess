@@ -128,6 +128,8 @@ const nitro = (type: string, base: 'n' | 'b', name: string): PieceDefinition => 
   name,
   fenChar: type,
   patterns: fixedPatterns(QUEEN),
+  // A queen badge for as long as it lasts, for both players to see.
+  badge: () => ({ label: '♛', title: 'Nitro: bir hamle vezir gibi oynar' }),
 });
 
 /** A knight / bishop that moves like a queen for one move (Nitro). */
@@ -707,6 +709,10 @@ export const anarsi: VariantDefinition = defineVariant({
         captions: [],
       },
       pieceNames: { ...STANDARD_PIECE_NAMES_EN, x: 'Black hole', o: 'Barricade', y: 'Nitro knight', z: 'Nitro bishop' },
+      badges: {
+        y: () => ({ label: '♛', title: 'Nitro: moves like a queen for one move' }),
+        z: () => ({ label: '♛', title: 'Nitro: moves like a queen for one move' }),
+      },
       setup: { w: questionEn('w'), b: questionEn('b') },
     },
   },
