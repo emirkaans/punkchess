@@ -34,6 +34,10 @@ const STATIC: Readonly<Record<string, Preview>> = {
     title: 'Kullanım Koşulları · punkchess',
     description: 'punkchess kullanım koşulları.',
   },
+  '/contact': {
+    title: 'İletişim · punkchess',
+    description: 'Hata, öneri ya da hesabınla ilgili bir şey mi var? punkchess ekibine buradan yaz.',
+  },
   '/licenses': {
     title: 'Lisanslar · punkchess',
     description: 'punkchess’in kullandığı açık kaynak yazılımlar, fontlar ve veriler ile lisansları.',
@@ -129,7 +133,18 @@ export async function pagePreview(
 
 /** Pages listed for search engines: the fixed ones and the profiles of players who have played. */
 export async function sitemap(env: AuthEnv, url: URL): Promise<Response> {
-  const pages = ['/', '/puzzles', '/daily', '/rush', '/leaderboard', '/analysis', '/privacy', '/terms', '/licenses'];
+  const pages = [
+    '/',
+    '/puzzles',
+    '/daily',
+    '/rush',
+    '/leaderboard',
+    '/analysis',
+    '/privacy',
+    '/terms',
+    '/licenses',
+    '/contact',
+  ];
   if (env.DB) {
     const rows = await env.DB.prepare(
       `SELECT DISTINCT u.username FROM users u JOIN ratings r ON r.user_id = u.id WHERE r.games > 0

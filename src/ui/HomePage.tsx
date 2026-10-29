@@ -210,6 +210,7 @@ export function HomePage({ onPlay, onOnline, onDaily, onOpenGame }: Props) {
         <a href="/privacy">{t('legal.privacy')}</a>
         <a href="/terms">{t('legal.terms')}</a>
         <a href="/licenses">{t('legal.licenses')}</a>
+        <a href="/contact">{t('contact.link')}</a>
       </footer>
     </div>
   );

@@ -11,6 +11,7 @@
 //   /gangs            gangs (/gang/<TAG>: one gang)
 //   /tournaments      arena tournaments (/tournament/<id>: one tournament)
 //   /leaderboard      the best players
+//   /contact          write to the site team
 //   /<gameId>         a game (being played, or finished)
 //   /<gameId>/analysis   analysis of that game
 // Pure: no React, no DOM.
@@ -32,6 +33,7 @@ export type Route =
   | { readonly kind: 'privacy' }
   | { readonly kind: 'terms' }
   | { readonly kind: 'licenses' }
+  | { readonly kind: 'contact' }
   | { readonly kind: 'game'; readonly id: string }
   | { readonly kind: 'review'; readonly id: string };
 
@@ -57,6 +59,7 @@ const RESERVED = new Set([
   'licenses',
   'privacy',
   'terms',
+  'contact',
 ]);
 /** Game ids: 8 letters / digits; older history records also have dashes. */
 const GAME = /^\/([A-Za-z0-9][A-Za-z0-9-]{3,39})(\/analysis)?$/;
@@ -86,6 +89,7 @@ export function parseRoute(pathname: string): Route {
   const gang = /^\/gang\/([A-Za-z0-9]{2,4})$/.exec(p);
   if (gang) return { kind: 'gangs', tag: gang[1].toUpperCase() };
   if (p === '/leaderboard') return { kind: 'leaderboard' };
+  if (p === '/contact') return { kind: 'contact' };
   if (p === '/privacy' || p === '/terms' || p === '/licenses')
     return { kind: p.slice(1) as 'privacy' | 'terms' | 'licenses' };
   const puzzle = /^\/puzzles\/([A-Za-z0-9]{3,16})$/.exec(p);
@@ -125,6 +129,8 @@ export function pathOf(r: Route): string {
       return r.id ? `/tournament/${r.id}` : '/tournaments';
     case 'leaderboard':
       return '/leaderboard';
+    case 'contact':
+      return '/contact';
     case 'privacy':
     case 'terms':
     case 'licenses':

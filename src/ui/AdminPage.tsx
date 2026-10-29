@@ -9,12 +9,13 @@ import type {
   StaffRole,
 } from '../online/admin.ts';
 import { mayDo } from '../online/admin.ts';
+import type { ContactMessage } from '../online/contact.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import { useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
 
-type Tab = 'stats' | 'users' | 'tournaments' | 'gangs' | 'errors' | 'log';
-const TABS: readonly Tab[] = ['stats', 'users', 'tournaments', 'gangs', 'errors', 'log'];
+type Tab = 'stats' | 'messages' | 'users' | 'tournaments' | 'gangs' | 'errors' | 'log';
+const TABS: readonly Tab[] = ['stats', 'messages', 'users', 'tournaments', 'gangs', 'errors', 'log'];
 
 const getJSON = <T,>(path: string): Promise<T | null> =>
   fetch(path, { credentials: 'same-origin' })
@@ -70,6 +71,7 @@ export function AdminPage() {
         ))}
       </div>
       {tab === 'stats' && <Stats />}
+      {tab === 'messages' && <Messages />}
       {tab === 'users' && <Users role={role} myId={account.user!.id} />}
       {tab === 'tournaments' && <Tournaments />}
       {tab === 'gangs' && <Gangs />}
@@ -107,6 +109,7 @@ function Stats() {
     ['admin.stat.gangs', s.gangs],
     ['admin.stat.banned', s.banned],
     ['admin.stat.errorsDay', s.errorsDay],
+    ['admin.stat.unreadMessages', s.unreadMessages],
   ];
   return (
     <dl className="admin-stats">
@@ -327,6 +330,64 @@ function Errors() {
         </li>
       ))}
     </ul>
+  );
+}
+
+function Messages() {
+  const { t, locale } = useI18n();
+  const [list, setList] = useState<ContactMessage[] | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const load = () => void getJSON<ContactMessage[]>('/api/admin/messages').then(setList);
+  useEffect(load, []);
+  const run = async (id: number, what: 'read' | 'unread' | 'delete') => {
+    setProblem(await act(`/api/admin/messages/${id}/${what}`));
+    load();
+  };
+  if (!list) return <p className="muted">{t('leaders.loading')}</p>;
+  if (list.length === 0) return <p className="muted">{t('admin.noMessages')}</p>;
+  return (
+    <section className="tz-section">
+      <Problem code={problem} />
+      <ul className="admin-messages">
+        {list.map((m) => (
+          <li key={m.id} className={m.readAt ? 'read' : 'unread'}>
+            <header>
+              <strong>{t(`contact.topic.${m.topic}` as MessageKey)}</strong>
+              <small>
+                {when(m.at, locale)}
+                {m.username && (
+                  <>
+                    {' · '}
+                    <a href={`/@/${m.username}`}>{m.username}</a>
+                  </>
+                )}
+                {m.name && ` · ${m.name}`}
+                {m.email && (
+                  <>
+                    {' · '}
+                    <a href={`mailto:${m.email}`}>{m.email}</a>
+                  </>
+                )}
+              </small>
+            </header>
+            <p>{m.message}</p>
+            <span className="admin-actions">
+              <button onClick={() => void run(m.id, m.readAt ? 'unread' : 'read')}>
+                {t(m.readAt ? 'admin.markUnread' : 'admin.markRead')}
+              </button>
+              <button
+                className="danger"
+                onClick={() => {
+                  if (window.confirm(t('admin.deleteMessageConfirm'))) void run(m.id, 'delete');
+                }}
+              >
+                {t('admin.delete')}
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

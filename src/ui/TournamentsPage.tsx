@@ -53,11 +53,27 @@ const clockText = (ms: number) => {
   return h > 0 ? `${h}:${pad(m)}:${pad(s % 60)}` : `${pad(m)}:${pad(s % 60)}`;
 };
 
+/**
+ * Marks the English format names (Arena, Swiss) as English, so CSS uppercase gives SWISS
+ * rather than the Turkish SWİSS.
+ */
+function englishTerms(text: string) {
+  return text.split(/(Arena|Swiss)/).map((part, i) =>
+    i % 2 ? (
+      <span key={i} lang="en">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+}
+
 function Rules({ format }: { format: TournamentFormat }) {
   const { t } = useI18n();
   return (
     <p className="tz-rule">
-      <strong className={`tz-format ${format}`}>{t(`tournament.format.${format}`)}</strong>
+      <strong className={`tz-format ${format}`}>{englishTerms(t(`tournament.format.${format}`))}</strong>
       <span>
         {t(
           format === 'swiss' ? 'tournament.swissRules' : format === 'war' ? 'tournament.warRules' : 'tournament.rules',
@@ -174,7 +190,7 @@ function TournamentIndex({ onOpen }: { onOpen: (path: string) => void }) {
         <span className="tz-item-text">
           <strong>{s.name}</strong>
           <span>
-            {t(`tournament.format.${s.format}`)}
+            {englishTerms(t(`tournament.format.${s.format}`))}
             {s.format === 'swiss' && s.rounds ? ` (${t('tournament.roundsN', { n: String(s.rounds) })})` : ''} ·{' '}
             {vt(getVariant(s.variantId)).name} · {timeControl(s.timeControlId).label} ·{' '}
             {t(s.rated ? 'lobby.rated' : 'lobby.casual')}
@@ -207,7 +223,7 @@ function TournamentIndex({ onOpen }: { onOpen: (path: string) => void }) {
           <Crown />
         </div>
         <div className="tz-title">
-          <p className="tz-meta">{t('tournament.arena')}</p>
+          <p className="tz-meta">{englishTerms(t('tournament.arena'))}</p>
           <RansomTitle text={t('tournament.title')} />
           <Rules format="arena" />
           <Rules format="swiss" />
@@ -379,7 +395,7 @@ function TournamentRoom({
         </div>
         <div className="tz-title">
           <p className="tz-meta">
-            {t(`tournament.format.${v.format}`)}
+            {englishTerms(t(`tournament.format.${v.format}`))}
             {swiss && v.rounds ? ` · ${t('tournament.roundsN', { n: String(v.rounds) })}` : ''} ·{' '}
             {vt(getVariant(v.variantId)).name} · {timeControl(v.timeControlId).label} ·{' '}
             {t(v.rated ? 'lobby.rated' : 'lobby.casual')}

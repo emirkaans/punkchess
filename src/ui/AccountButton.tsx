@@ -169,7 +169,8 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
             </div>
           )}
           <p className="account-links">
-            <a href="/privacy">{t('legal.privacy')}</a> · <a href="/terms">{t('legal.terms')}</a>
+            <a href="/privacy">{t('legal.privacy')}</a> · <a href="/terms">{t('legal.terms')}</a> ·{' '}
+            <a href="/contact">{t('contact.link')}</a>
           </p>
         </div>
       )}

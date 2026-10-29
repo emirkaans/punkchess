@@ -7168,6 +7168,152 @@ a:focus-visible {
   }
 }
 
+/* Contact messages on the admin page: unread ones stand out. */
+.admin-messages {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.admin-messages li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #1f1f23;
+  border-left: 3px solid transparent;
+}
+.admin-messages li.unread {
+  border-left-color: var(--pink);
+}
+.admin-messages li.read {
+  opacity: 0.7;
+}
+.admin-messages header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+.admin-messages p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+/* /contact */
+.contact-page {
+  max-width: 640px;
+}
+.contact-title {
+  font-size: 44px;
+}
+.contact-lede {
+  margin: 10px 0 0;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.contact-topics {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.contact-topics legend {
+  margin-bottom: 8px;
+  font: 500 13px/1 var(--ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.contact-topics label {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.contact-topics label.on {
+  border-color: var(--pink);
+  color: var(--pink);
+}
+.contact-topics label:focus-within {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+.contact-topics input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.contact-form textarea {
+  font:
+    400 14px/1.5 'Space Mono',
+    ui-monospace,
+    monospace;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fg);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px;
+  resize: vertical;
+}
+.contact-note,
+.contact-count {
+  margin: -6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.contact-count {
+  text-align: right;
+}
+/* The bots' field: off screen, never in the tab order. */
+.contact-trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.contact-send {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 28px;
+}
+.contact-sent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.contact-sent p {
+  margin: 0;
+  font-size: 18px;
+  color: var(--lime);
+}
+.contact-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.contact-foot p {
+  margin: 0;
+}
+
 /* The top bar's player search, and a profile's own follower lists (same dialog look). */
 .player-search-button {
   flex: none;

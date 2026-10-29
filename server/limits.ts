@@ -41,7 +41,10 @@ const LIMITED_READS = [
 export function limitKind(method: string, path: string): LimitKind | null {
   if (
     method === 'POST' &&
-    (path === '/api/games' || path === '/api/tournaments' || /^\/api\/games\/[^/]+\/join$/.test(path))
+    (path === '/api/games' ||
+      path === '/api/tournaments' ||
+      path === '/api/contact' ||
+      /^\/api\/games\/[^/]+\/join$/.test(path))
   )
     return 'create';
   if (

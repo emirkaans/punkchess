@@ -4,7 +4,7 @@
 export type StaffRole = 'admin' | 'moderator';
 
 export type AdminAction =
-  'ban' | 'unban' | 'rename-user' | 'set-role' | 'cancel-tournament' | 'rename-gang' | 'delete-gang';
+  'ban' | 'unban' | 'rename-user' | 'set-role' | 'cancel-tournament' | 'rename-gang' | 'delete-gang' | 'delete-message';
 
 export const isStaffRole = (role: unknown): role is StaffRole => role === 'admin' || role === 'moderator';
 
@@ -34,6 +34,8 @@ export interface AdminStats {
   readonly tournamentsOpen: number;
   readonly gangs: number;
   readonly errorsDay: number;
+  /** Contact messages nobody has read yet. */
+  readonly unreadMessages: number;
 }
 
 export interface AdminUser {

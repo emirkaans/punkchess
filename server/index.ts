@@ -23,6 +23,7 @@ import { handleDaily } from './daily.ts';
 import { handleLeaderboard } from './leaderboard.ts';
 import { handleRush } from './rush.ts';
 import { handleChallenges } from './challenges.ts';
+import { handleContact } from './contact.ts';
 import { handleErrors } from './errors.ts';
 import { handleAdmin } from './admin.ts';
 import { handleFollows } from './follows.ts';
@@ -60,7 +61,7 @@ function toRoom(env: Env, request: Request, id: string, path: string): Promise<R
 }
 
 /** The app's page names that have a game id's shape (never looked up as games). */
-const STATIC_PAGES = new Set(['licenses', 'privacy', 'terms']);
+const STATIC_PAGES = new Set(['licenses', 'privacy', 'terms', 'contact']);
 
 /**
  * A game address: the app page, with the link-preview tags of that game
@@ -134,6 +135,8 @@ export default {
     if (admin) return admin;
     const errors = await handleErrors(request, url, env.DB);
     if (errors) return errors;
+    const contact = await handleContact(request, env, url);
+    if (contact) return contact;
     const tournaments = await handleTournaments(request, env, url);
     if (tournaments) return tournaments;
     const gangs = await handleGangs(request, env, url);

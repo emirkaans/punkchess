@@ -10,6 +10,8 @@
 //   GET  /api/admin/gangs?q=…                  gangs by name or tag
 //   POST /api/admin/gangs/:tag/rename { name } / …/delete
 //   GET  /api/admin/errors                     the latest browser error reports
+//   GET  /api/admin/messages                   contact page messages, latest first
+//   POST /api/admin/messages/:id/read          … / unread / delete
 //   GET  /api/admin/log                        what staff did, latest first
 //
 // Every request checks the role on the server; every change is logged.
@@ -26,6 +28,7 @@ import type {
   AdminUser,
   StaffRole,
 } from '../src/online/admin.ts';
+import type { ContactMessage, ContactTopic } from '../src/online/contact.ts';
 import { gangProblem } from '../src/online/gang.ts';
 import type { LiveStats } from '../src/online/lobby.ts';
 import { currentUser, sameOrigin, usernameTaken } from './auth.ts';
@@ -78,16 +81,18 @@ export async function handleAdmin(request: Request, env: Env, url: URL): Promise
         .fetch('https://lobby/stats')
         .then((r) => r.json() as Promise<LiveStats>)
         .catch(() => ({ games: 0, players: 0 }));
-      const [users, usersWeek, banned, gamesDay, gamesTotal, tournamentsOpen, gangs, errorsDay] = await Promise.all([
-        one('SELECT count(*) AS n FROM users'),
-        one('SELECT count(*) AS n FROM users WHERE created_at >= ?1', now - 7 * DAY),
-        one('SELECT count(*) AS n FROM users WHERE banned_at IS NOT NULL'),
-        one('SELECT count(*) AS n FROM games WHERE ended_at >= ?1', now - DAY),
-        one('SELECT count(*) AS n FROM games'),
-        one('SELECT count(*) AS n FROM tournaments WHERE ends_at > ?1', now),
-        one('SELECT count(*) AS n FROM gangs'),
-        one('SELECT count(*) AS n FROM error_reports WHERE at >= ?1', now - DAY),
-      ]);
+      const [users, usersWeek, banned, gamesDay, gamesTotal, tournamentsOpen, gangs, errorsDay, unreadMessages] =
+        await Promise.all([
+          one('SELECT count(*) AS n FROM users'),
+          one('SELECT count(*) AS n FROM users WHERE created_at >= ?1', now - 7 * DAY),
+          one('SELECT count(*) AS n FROM users WHERE banned_at IS NOT NULL'),
+          one('SELECT count(*) AS n FROM games WHERE ended_at >= ?1', now - DAY),
+          one('SELECT count(*) AS n FROM games'),
+          one('SELECT count(*) AS n FROM tournaments WHERE ends_at > ?1', now),
+          one('SELECT count(*) AS n FROM gangs'),
+          one('SELECT count(*) AS n FROM error_reports WHERE at >= ?1', now - DAY),
+          one('SELECT count(*) AS n FROM contact_messages WHERE read_at IS NULL'),
+        ]);
       return json({
         users,
         usersWeek,
@@ -99,6 +104,7 @@ export async function handleAdmin(request: Request, env: Env, url: URL): Promise
         tournamentsOpen,
         gangs,
         errorsDay,
+        unreadMessages,
       } satisfies AdminStats);
     }
     if (path === '/users') {
@@ -174,6 +180,35 @@ export async function handleAdmin(request: Request, env: Env, url: URL): Promise
         .all<{ at: number; report: string }>();
       return json(rows.results satisfies AdminError[]);
     }
+    if (path === '/messages') {
+      const rows = await db
+        .prepare(
+          `SELECT id, at, topic, name, email, username, message, read_at FROM contact_messages
+           ORDER BY (read_at IS NOT NULL), at DESC LIMIT 100`,
+        )
+        .all<{
+          id: number;
+          at: number;
+          topic: string;
+          name: string | null;
+          email: string | null;
+          username: string | null;
+          message: string;
+          read_at: number | null;
+        }>();
+      return json(
+        rows.results.map((r): ContactMessage => ({
+          id: r.id,
+          at: r.at,
+          topic: r.topic as ContactTopic,
+          name: r.name,
+          email: r.email,
+          username: r.username,
+          message: r.message,
+          readAt: r.read_at,
+        })),
+      );
+    }
     if (path === '/log') {
       const rows = await db
         .prepare('SELECT at, actor, action, target, detail FROM admin_log ORDER BY at DESC LIMIT 100')
@@ -238,6 +273,26 @@ export async function handleAdmin(request: Request, env: Env, url: URL): Promise
       .catch(() => null);
     await db.prepare('DELETE FROM tournaments WHERE id = ?1').bind(t[1]).run();
     await log(db, staff, 'cancel-tournament', row.name, t[1]);
+    return json({ ok: true });
+  }
+
+  const msg = /^\/messages\/(\d+)\/(read|unread|delete)$/.exec(path);
+  if (msg) {
+    const id = Number(msg[1]);
+    const row = await db
+      .prepare('SELECT topic, username, email FROM contact_messages WHERE id = ?1')
+      .bind(id)
+      .first<{ topic: string; username: string | null; email: string | null }>();
+    if (!row) return json({ error: 'not-found' }, 404);
+    if (msg[2] === 'delete') {
+      await db.prepare('DELETE FROM contact_messages WHERE id = ?1').bind(id).run();
+      await log(db, staff, 'delete-message', `#${id}`, row.topic);
+    } else {
+      await db
+        .prepare('UPDATE contact_messages SET read_at = ?1 WHERE id = ?2')
+        .bind(msg[2] === 'read' ? now : null, id)
+        .run();
+    }
     return json({ ok: true });
   }
 
