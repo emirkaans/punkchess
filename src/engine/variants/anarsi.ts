@@ -35,9 +35,9 @@ import {
 // is not part of the position: whoever runs the game deals it, keeps it secret and resolves it
 // (see `resolveChaos`); the position only records whether it was played.
 
-export const TRICKS = ['void', 'pawn', 'ice', 'swap', 'shield', 'wall'] as const;
+export const TRICKS = ['void', 'pawn', 'ice', 'swap', 'shield', 'wall', 'revive', 'exile'] as const;
 export type Trick = (typeof TRICKS)[number];
-export const CHAOS_CARDS = ['time', 'ambush', 'traitor', 'nitro'] as const;
+export const CHAOS_CARDS = ['time', 'ambush', 'traitor', 'nitro', 'demote', 'quake'] as const;
 export type ChaosCard = (typeof CHAOS_CARDS)[number];
 
 /** Notation codes of the cards (Kara Delik, Piyon Avı, … / Zaman Hırsızı, Pusu, …). */
@@ -48,10 +48,14 @@ export const CARD_CODES: Readonly<Record<Trick | ChaosCard, string>> = {
   swap: 'IS',
   shield: 'KL',
   wall: 'BR',
+  revive: 'DR',
+  exile: 'SG',
   time: 'ZH',
   ambush: 'PU',
   traitor: 'HN',
   nitro: 'NT',
+  demote: 'RD',
+  quake: 'DP',
 };
 const CARD_OF_CODE = new Map(Object.entries(CARD_CODES).map(([id, code]) => [code, id]));
 
@@ -133,6 +137,47 @@ const NITRO_OF: Readonly<Record<string, string>> = { n: 'y', b: 'z' };
 const BASE_OF: Readonly<Record<string, string>> = { y: 'n', z: 'b' };
 
 const MINORS = new Set(['n', 'b', 'y', 'z']);
+/** Pieces Deprem may move: knights, bishops, rooks, queens (nitro ones too). */
+const QUAKE_TYPES = new Set(['n', 'b', 'r', 'q', 'y', 'z']);
+/** Rütbe Düşürme: each piece one rank down (a nitro piece as its base piece). */
+const DEMOTED: Readonly<Record<string, string>> = { q: 'r', r: 'b', b: 'n', z: 'n', n: 'p', y: 'p' };
+const homeRank = (c: Color) => (c === 'w' ? 0 : 7);
+const kindOf = (type: string) => BASE_OF[type] ?? type;
+
+/** The minor piece Diriliş brings back for `c`: a bishop if one was taken, else a knight (null: none). */
+function revived(pos: Position, c: Color): 'b' | 'n' | null {
+  let bishops = 0;
+  let knights = 0;
+  for (const p of pos.board) {
+    if (!p || p.color !== c) continue;
+    if (kindOf(p.type) === 'b') bishops++;
+    if (kindOf(p.type) === 'n') knights++;
+  }
+  return bishops < 2 ? 'b' : knights < 2 ? 'n' : null;
+}
+
+/**
+ * Where Sürgün sends the minor piece on `sq`: its own starting square (a bishop the one of its
+ * square colour, a knight the nearer one), if that is empty and not where it stands; else null.
+ */
+function exileHome(pos: Position, sq: number): number | null {
+  const p = pos.board[sq];
+  if (!p) return null;
+  const rank = homeRank(p.color);
+  const kind = kindOf(p.type);
+  let homes: number[];
+  if (kind === 'b')
+    homes = [2, 5]
+      .map((f) => rank * 8 + f)
+      .filter((h) => (fileOf(h) + rankOf(h)) % 2 === (fileOf(sq) + rankOf(sq)) % 2);
+  else if (kind === 'n')
+    homes = [1, 6]
+      .map((f) => rank * 8 + f)
+      .sort((a, b) => Math.abs(fileOf(a) - fileOf(sq)) - Math.abs(fileOf(b) - fileOf(sq)));
+  else return null;
+  if (homes.includes(sq)) return null;
+  return homes.find((h) => !pos.board[h]) ?? null;
+}
 /** Pieces the cards treat as ordinary pieces (not the king, not blockers). */
 const isPlain = (p: Piece | null): p is Piece => !!p && p.type !== 'k' && p.type !== 'x' && p.type !== 'o';
 
@@ -178,6 +223,12 @@ function trickMoves(pos: Position, trick: Trick): Move[] {
         if (f > 0 && f < 7 && !board[sq - 1] && !board[sq] && !board[sq + 1])
           out.push(play('wall', [sq - 1, sq, sq + 1]));
       }
+      break;
+    case 'revive':
+      if (revived(pos, me)) each((p, sq) => !p && rankOf(sq) === homeRank(me));
+      break;
+    case 'exile':
+      each((p, sq) => !!p && p.color !== me && MINORS.has(p.type) && exileHome(pos, sq) !== null);
       break;
   }
   return out;
@@ -228,6 +279,22 @@ function applyCard(pos: Position, move: Move): Position {
     case 'wall':
       for (const s of sq) board[s] = { type: 'o', color: me };
       fx.push({ k: 'wall', c: me, exp: ply + 6, sq });
+      break;
+    case 'revive':
+      board[sq[0]] = { type: revived(pos, me)!, color: me };
+      break;
+    case 'exile': {
+      const home = exileHome(pos, sq[0])!;
+      const p = board[sq[0]]!;
+      board[home] = { type: kindOf(p.type), color: p.color };
+      board[sq[0]] = null;
+      break;
+    }
+    case 'demote':
+      for (const s of sq) board[s] = { type: DEMOTED[board[s]!.type], color: board[s]!.color };
+      break;
+    case 'quake':
+      if (sq.length === 2) [board[sq[0]], board[sq[1]]] = [board[sq[1]], board[sq[0]]];
       break;
     case 'ambush':
       for (const s of sq) board[s] = null;
@@ -295,14 +362,34 @@ function resolveChaos(pos: Position, kind: string): { '+': Move[]; '-': Move[] }
       }
       case 'traitor':
         return squares((p, sq) => p.type === 'p' && p.color === victim && farFromPromotion(sq, opposite(victim)));
+      case 'demote': {
+        // The victim's most valuable piece (a knight never becomes a pawn on its first or last rank).
+        const can = squares(
+          (p, sq) =>
+            p.color === victim && p.type in DEMOTED && (DEMOTED[p.type] !== 'p' || (rankOf(sq) > 0 && rankOf(sq) < 7)),
+        );
+        const value = (sq: number) => STANDARD_VALUES[kindOf(board[sq]!.type)] ?? 0;
+        const top = Math.max(0, ...can.map(value));
+        return can.filter((sq) => value(sq) === top);
+      }
       default:
         return [];
     }
   };
+  // Deprem: two of the victim's pieces of different kinds swap places.
+  const quakePairs = (outcome: '+' | '-'): number[][] => {
+    const victim = outcome === '+' ? them : me;
+    const sqs = squares((p) => p.color === victim && QUAKE_TYPES.has(p.type));
+    const pairs: number[][] = [];
+    for (let i = 0; i < sqs.length; i++)
+      for (let j = i + 1; j < sqs.length; j++)
+        if (kindOf(board[sqs[i]]!.type) !== kindOf(board[sqs[j]]!.type)) pairs.push([sqs[i], sqs[j]]);
+    return pairs;
+  };
   const resolve = (outcome: '+' | '-'): Move[] => {
     if (kind === 'time') return [play('chaos', [], kind, outcome)];
-    const moves = targets(outcome)
-      .map((sq) => play('chaos', [sq], kind, outcome))
+    const moves = (kind === 'quake' ? quakePairs(outcome) : targets(outcome).map((sq) => [sq]))
+      .map((sq) => play('chaos', sq, kind, outcome))
       .filter((m) => {
         if (!isLegal(anarsi, pos, m)) return false;
         // A backfire never hands the opponent a mate in one.
@@ -435,10 +522,14 @@ export const TRICK_NAMES: Readonly<Record<Trick | ChaosCard, string>> = {
   swap: 'Işınlanma',
   shield: 'Kalkan',
   wall: 'Barikat',
+  revive: 'Diriliş',
+  exile: 'Sürgün',
   time: 'Zaman Hırsızı',
   ambush: 'Pusu',
   traitor: 'Hain',
   nitro: 'Nitro',
+  demote: 'Rütbe Düşürme',
+  quake: 'Deprem',
 };
 
 export const TRICK_NAMES_EN: Readonly<Record<Trick | ChaosCard, string>> = {
@@ -448,10 +539,14 @@ export const TRICK_NAMES_EN: Readonly<Record<Trick | ChaosCard, string>> = {
   swap: 'Teleport',
   shield: 'Shield',
   wall: 'Barricade',
+  revive: 'Revival',
+  exile: 'Exile',
   time: 'Time Thief',
   ambush: 'Ambush',
   traitor: 'Traitor',
   nitro: 'Nitro',
+  demote: 'Demotion',
+  quake: 'Earthquake',
 };
 
 const TRICK_DETAILS: Readonly<Record<Trick, string>> = {
@@ -461,6 +556,8 @@ const TRICK_DETAILS: Readonly<Record<Trick, string>> = {
   swap: 'Kendi iki taşının yeri değişir.',
   shield: 'Taşın bir tur yenemez.',
   wall: '3 boş kare 3 tur kapanır.',
+  revive: 'Yenmiş filin (yoksa atın) ilk sırandaki seçtiğin boş kareye döner.',
+  exile: 'Rakibin bir hafif taşı başladığı kareye geri döner.',
 };
 
 const TRICK_DETAILS_EN: Readonly<Record<Trick, string>> = {
@@ -470,6 +567,8 @@ const TRICK_DETAILS_EN: Readonly<Record<Trick, string>> = {
   swap: 'Two of your pieces swap places.',
   shield: 'Your piece cannot be taken for a turn.',
   wall: '3 empty squares close for 3 turns.',
+  revive: 'A bishop of yours that was taken (else a knight) returns to an empty square of your first rank.',
+  exile: 'An opponent minor piece goes back to its starting square.',
 };
 
 const question = (color: Color): SetupQuestion => ({
@@ -536,8 +635,8 @@ export const anarsi: VariantDefinition = defineVariant({
   unrated: true,
   description: [
     'Standart satranç, artı kartlar. Her kart oyunda bir kez, o turun hamlesi yerine oynanır.',
-    'Oyundan önce herkes bir numara seçer: Kara Delik, Piyon Avı, Buz, Işınlanma, Kalkan ya da Barikat. Numara hep sana yarar.',
-    'Herkese bir de gizli kaos kartı gelir: Zaman Hırsızı, Pusu, Hain ya da Nitro. Oynayınca ya isabet eder (sana yarar) ya geri teper (rakibe yarar).',
+    'Oyundan önce herkes bir numara seçer: Kara Delik, Piyon Avı, Buz, Işınlanma, Kalkan, Barikat, Diriliş ya da Sürgün. Numara hep sana yarar.',
+    'Herkese bir de gizli kaos kartı gelir: Zaman Hırsızı, Pusu, Hain, Nitro, Rütbe Düşürme ya da Deprem. Oynayınca ya isabet eder (sana yarar) ya geri teper (rakibe yarar).',
     `Kaos kartı ${CHAOS_FROM_MOVE}. hamleden önce oynanmaz. Şah çekiliyken hiçbir kart oynanmaz.`,
     'Geri tepen kart şahını açmaz, rakibe tek hamlede mat fırsatı vermez.',
   ],
@@ -577,9 +676,9 @@ export const anarsi: VariantDefinition = defineVariant({
     bullets: [
       'Oyundan önce bir numara seçersin ve oyunda bir kez, hamle yerine oynarsın. Numara hep sana yarar.',
       'Kara Delik boş bir kareyi oyun sonuna kadar siler; Barikat yan yana 3 boş kareyi 3 tur kapatır. Oralara hiçbir taş giremez, üstünden geçemez.',
-      'Piyon Avı rakibin bir piyonunu alır; Buz rakibin bir taşını 3 tur dondurur (donan taş yine saldırır ve korur).',
-      'Işınlanma kendi iki taşının yerini değiştirir (şah ve piyon olmaz); Kalkan taşını bir tur yenmez yapar.',
-      `Gizli kaos kartı (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı 60 saniye, Pusu bir hafif taş, Hain bir piyon, Nitro bir hamlelik vezir gücü. İsabet sana, geri tepme rakibe yarar.`,
+      'Piyon Avı rakibin bir piyonunu alır; Buz rakibin bir taşını 3 tur dondurur (donan taş yine saldırır ve korur); Sürgün rakibin bir hafif taşını başladığı kareye geri yollar.',
+      'Işınlanma kendi iki taşının yerini değiştirir (şah ve piyon olmaz); Kalkan taşını bir tur yenmez yapar; Diriliş yenmiş filini (yoksa atını) ilk sırandaki seçtiğin boş kareye geri getirir.',
+      `Gizli kaos kartı (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı 60 saniye, Pusu bir hafif taş, Hain bir piyon, Nitro bir hamlelik vezir gücü, Rütbe Düşürme en değerli taşı bir rütbe indirir, Deprem iki taşın yerini değiştirir. İsabet sana, geri tepme rakibe yarar.`,
       'Şah çekiliyken kart oynanmaz. Geri tepen kart şahını açmaz, rakibe tek hamlede mat fırsatı vermez.',
     ],
     examples: [],
@@ -589,8 +688,8 @@ export const anarsi: VariantDefinition = defineVariant({
       name: 'Anarchy',
       description: [
         'Standard chess plus cards. Each card is played once in a game, instead of that turn’s move.',
-        'Before the game each player picks a trick: Black Hole, Pawn Hunt, Ice, Teleport, Shield or Barricade. A trick always helps you.',
-        'Each player also gets a hidden chaos card: Time Thief, Ambush, Traitor or Nitro. Played, it either hits (helps you) or backfires (helps the opponent).',
+        'Before the game each player picks a trick: Black Hole, Pawn Hunt, Ice, Teleport, Shield, Barricade, Revival or Exile. A trick always helps you.',
+        'Each player also gets a hidden chaos card: Time Thief, Ambush, Traitor, Nitro, Demotion or Earthquake. Played, it either hits (helps you) or backfires (helps the opponent).',
         `A chaos card cannot be played before move ${CHAOS_FROM_MOVE}. No card can be played while in check.`,
         'A backfire never leaves your king open and never hands the opponent a mate in one.',
       ],
@@ -600,9 +699,9 @@ export const anarsi: VariantDefinition = defineVariant({
         bullets: [
           'Before the game you pick a trick and play it once, instead of a move. A trick always helps you.',
           'Black Hole takes an empty square off the board for good; Barricade closes 3 empty squares in a row for 3 turns. No piece enters or passes them.',
-          'Pawn Hunt takes an opponent pawn; Ice freezes an opponent piece for 3 turns (it still attacks and defends).',
-          'Teleport swaps two of your pieces (not the king, not pawns); Shield keeps your piece from being taken for a turn.',
-          `Hidden chaos card (from move ${CHAOS_FROM_MOVE}): Time Thief 60 seconds, Ambush a minor piece, Traitor a pawn, Nitro one queen move. A hit helps you, a backfire the opponent.`,
+          'Pawn Hunt takes an opponent pawn; Ice freezes an opponent piece for 3 turns (it still attacks and defends); Exile sends an opponent minor piece back to its starting square.',
+          'Teleport swaps two of your pieces (not the king, not pawns); Shield keeps your piece from being taken for a turn; Revival brings back a taken bishop (else a knight) to an empty square of your first rank.',
+          `Hidden chaos card (from move ${CHAOS_FROM_MOVE}): Time Thief 60 seconds, Ambush a minor piece, Traitor a pawn, Nitro one queen move, Demotion takes the best piece one rank down, Earthquake swaps two pieces. A hit helps you, a backfire the opponent.`,
           'No card while in check. A backfire never leaves your king open or hands the opponent a mate in one.',
         ],
         captions: [],

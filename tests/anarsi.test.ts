@@ -222,3 +222,68 @@ describe('Anarşi: bot', () => {
     expect(r.scores.map((x) => `${squareName(x.move.from)}${squareName(x.move.to)}`)).not.toContain('c1d1');
   });
 });
+
+describe('Anarşi: yeni kartlar', () => {
+  const rng = (...xs: number[]) => {
+    let i = 0;
+    return () => xs[i++ % xs.length];
+  };
+  const tricks = (state: GameState, id: string) =>
+    cards(state)
+      .filter((m) => m.card!.id === id)
+      .map((m) => squareName(m.card!.squares[0]));
+  it('Diriliş: yenmiş fil ilk sıradaki seçilen boş kareye döner; notasyon DR@c1', () => {
+    // Beyazın iki atı da duruyor, bir fili eksik: fil döner.
+    let g = createGame(v, fen('4k3/8/8/8/8/8/8/1N2K1NB', 'w', 'revive.-.0000'));
+    expect(tricks(g, 'revive').sort()).toEqual(['a1', 'c1', 'd1', 'f1']);
+    g = makeMove(v, g, card('revive', 'd1'));
+    expect(g.position.board[sq('d1')]).toEqual({ type: 'b', color: 'w' });
+    expect(g.moves[0].san).toBe('DR@d1');
+    expect(playSan(v, createGame(v, fen('4k3/8/8/8/8/8/8/1N2K1NB', 'w', 'revive.-.0000')), 'DR@d1').position).toEqual(
+      g.position,
+    );
+  });
+
+  it('Diriliş: iki fil de duruyorsa at döner; hiçbiri yenmediyse kart yok', () => {
+    const g = makeMove(v, createGame(v, fen('4k3/8/8/8/8/8/8/2B1KB2', 'w', 'revive.-.0000')), card('revive', 'a1'));
+    expect(g.position.board[sq('a1')]).toEqual({ type: 'n', color: 'w' });
+    expect(tricks(createGame(v, fen('4k3/8/8/8/8/8/8/1NB1KBN1', 'w', 'revive.-.0000')), 'revive')).toEqual([]);
+  });
+
+  it('Sürgün: rakibin hafif taşı başladığı kareye döner (fil kendi renginde, at yakındakine)', () => {
+    let g = createGame(v, fen('4k3/p7/8/3b4/8/8/P7/4K3', 'w', 'exile.-.0000'));
+    g = makeMove(v, g, card('exile', 'd5'));
+    // d5 açık renk kare: siyahın açık kareli fili c8'de başlar.
+    expect(g.position.board[sq('c8')]).toEqual({ type: 'b', color: 'b' });
+    expect(g.position.board[sq('d5')]).toBeNull();
+    const h = makeMove(v, createGame(v, fen('4k3/p7/8/5n2/8/8/P7/4K3', 'w', 'exile.-.0000')), card('exile', 'f5'));
+    expect(h.position.board[sq('g8')]).toEqual({ type: 'n', color: 'b' });
+    expect(h.moves[0].san).toBe('SG@f5');
+  });
+
+  it('Sürgün: başlangıç karesi doluysa ya da taş zaten oradaysa oynanmaz', () => {
+    const g = createGame(v, fen('2b1k3/8/8/3b4/8/8/8/4K3', 'w', 'exile.-.0000'));
+    expect(tricks(g, 'exile')).toEqual([]);
+  });
+
+  it('Rütbe Düşürme: isabet rakibin veziri kale olur, geri tepme kendi kalen fil olur', () => {
+    const g = createGame(v, fen('3qk3/8/8/8/8/8/8/R3K3', 'w', '-.-.0000'));
+    const hit = makeMove(v, g, drawChaos(v, g.position, 'demote', rng(0.1, 0)));
+    expect(hit.position.board[sq('d8')]).toEqual({ type: 'r', color: 'b' });
+    expect(hit.moves[0].san).toBe('RD+@d8');
+    const back = makeMove(v, g, drawChaos(v, g.position, 'demote', rng(0.9, 0)));
+    expect(back.position.board[sq('a1')]).toEqual({ type: 'b', color: 'w' });
+    // Köşedeki kale düşünce rok hakkı gider.
+    expect(back.position.castling.wQ).toBe(false);
+  });
+
+  it('Deprem: rakibin iki farklı taşı yer değiştirir, piyon ve şah karışmaz', () => {
+    const g = createGame(v, fen('r3k3/p7/8/8/8/2n5/8/4K3', 'w', '-.-.0000'));
+    const ways = v.cards!.resolveChaos(g.position, 'quake');
+    expect(ways['+'].map((m) => m.card!.squares.map(squareName))).toEqual([['c3', 'a8']]);
+    const after = makeMove(v, g, ways['+'][0]);
+    expect(after.position.board[sq('a8')]).toEqual({ type: 'n', color: 'b' });
+    expect(after.position.board[sq('c3')]).toEqual({ type: 'r', color: 'b' });
+    expect(after.moves[0].san).toBe('DP+@c3-a8');
+  });
+});
