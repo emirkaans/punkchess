@@ -22,6 +22,9 @@ interface Props {
   onDaily: () => void;
   /** Opens an online game (made or paired from the home page's lobby). */
   onOpenGame: (id: string) => void;
+  /** A variant picked elsewhere (the footer): its card opens here. */
+  openVariant?: string | null;
+  onVariantOpened?: () => void;
 }
 
 const STANDARD_TYPES = new Set(['k', 'q', 'r', 'b', 'n', 'p']);
@@ -66,7 +69,7 @@ function Arrow() {
 }
 
 /** Landing page: hero, the variants and the ways to play. */
-export function HomePage({ onPlay, onOnline, onDaily, onOpenGame }: Props) {
+export function HomePage({ onPlay, onOnline, onDaily, onOpenGame, openVariant, onVariantOpened }: Props) {
   const { t, vt } = useI18n();
   const today = dailyDay(Date.now());
   const done = dailyResults()[today];
@@ -75,6 +78,12 @@ export function HomePage({ onPlay, onOnline, onDaily, onOpenGame }: Props) {
   const lobby = useLobby((ticket) => onOpenGame(ticket.gameId));
   // The variant whose card was clicked: its dialog is open.
   const [picked, setPicked] = useState<VariantDefinition | null>(null);
+  useEffect(() => {
+    if (!openVariant) return;
+    const v = listVariants().find((x) => x.id === openVariant);
+    if (v) setPicked(v);
+    onVariantOpened?.();
+  }, [openVariant, onVariantOpened]);
   return (
     <div className="home">
       <section className="hero">
@@ -206,12 +215,6 @@ export function HomePage({ onPlay, onOnline, onDaily, onOpenGame }: Props) {
           onClose={() => setPicked(null)}
         />
       )}
-      <footer className="home-footer">
-        <a href="/privacy">{t('legal.privacy')}</a>
-        <a href="/terms">{t('legal.terms')}</a>
-        <a href="/licenses">{t('legal.licenses')}</a>
-        <a href="/contact">{t('contact.link')}</a>
-      </footer>
     </div>
   );
 }

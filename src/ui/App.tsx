@@ -31,6 +31,7 @@ import type { SavedGame } from '../storage/games.ts';
 import { RuleCardModal } from './RuleCardModal.tsx';
 import { PreferencesDialog } from './PreferencesDialog.tsx';
 import { SettingsDialog } from './SettingsDialog.tsx';
+import { SiteFooter } from './SiteFooter.tsx';
 import { ChallengeInbox } from './ChallengeInbox.tsx';
 import { SetupDialog } from './SetupDialog.tsx';
 import { SharePanel } from './ShareTools.tsx';
@@ -149,6 +150,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const [showRules, setShowRules] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
+  // A variant picked in the footer: the home page opens its card.
+  const [homeVariant, setHomeVariant] = useState<string | null>(null);
   /** Finished game shown on the review (post-game analysis) page, and the page to go back to. */
   const [review, setReview] = useState<{ review: Review; back: Page } | null>(null);
   const [tab, setTab] = useState<Tab>('moves');
@@ -641,6 +644,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
               setOnlineId(id);
               setPage('online');
             }}
+            openVariant={homeVariant}
+            onVariantOpened={() => setHomeVariant(null)}
           />
         ) : page === 'leaderboard' ? (
           <LeaderboardPage />
@@ -996,6 +1001,26 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           </main>
         )}
       </Suspense>
+
+      <SiteFooter
+        locale={prefs.locale}
+        onLocale={(locale) => setPrefs((p) => ({ ...p, locale }))}
+        onNavigate={(path) =>
+          leaveGame(() => {
+            history.pushState(null, '', path);
+            applyRouteRef.current(parseRoute(path));
+            window.scrollTo(0, 0);
+          })()
+        }
+        onVariant={(id) =>
+          leaveGame(() => {
+            history.pushState(null, '', '/');
+            applyRouteRef.current(parseRoute('/'));
+            setHomeVariant(id);
+            window.scrollTo(0, 0);
+          })()
+        }
+      />
 
       {showSettings && <SettingsDialog prefs={prefs} onPrefs={setPrefs} onClose={() => setShowSettings(false)} />}
       {showPreferences && (

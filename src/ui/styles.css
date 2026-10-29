@@ -3787,19 +3787,130 @@ button.primary:hover:not(:disabled) {
 }
 .account-links a,
 .signup-legal a,
-.home-footer a {
-  color: var(--muted);
-}
 .signup-legal {
   margin: 0;
   font-size: 12px;
 }
-.home-footer {
+/* The footer on every page (src/ui/SiteFooter.tsx). */
+.site-footer {
+  margin-top: 48px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Space Mono', ui-monospace, monospace;
+}
+.site-footer-tape {
+  height: 12px;
+  background: repeating-linear-gradient(-45deg, var(--pink) 0 12px, var(--bg) 12px 24px);
+}
+.site-footer-grid {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px max(24px, env(safe-area-inset-left, 0px)) 24px;
+  display: grid;
+  grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr));
+  gap: 36px;
+}
+.site-footer a {
+  color: var(--fg);
+  text-decoration: none;
+}
+.site-footer a:hover {
+  color: var(--pink);
+}
+.site-footer-brand {
   display: flex;
-  justify-content: center;
-  gap: 24px;
-  padding: 24px 16px 32px;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.site-footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font:
+    400 30px/1 'Permanent Marker',
+    cursive;
+}
+.site-footer-logo svg {
+  width: 36px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.5;
+  stroke-linejoin: round;
+}
+.site-footer-logo .punk {
+  color: var(--pink);
+}
+.site-footer-brand p {
+  margin: 0;
+  max-width: 34ch;
   font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.site-footer-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+}
+.site-footer-col h2 {
+  margin: 0 0 4px;
+  font: 500 13px/1 var(--ui);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pink);
+}
+.site-footer-bottom {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px max(24px, env(safe-area-inset-left, 0px)) calc(20px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.site-footer-bottom a {
+  color: var(--muted);
+}
+.site-footer-lang {
+  display: flex;
+  gap: 6px;
+}
+.site-footer-lang button {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg);
+  font:
+    700 12px/1 'Space Mono',
+    monospace;
+}
+.site-footer-lang button.on {
+  border-color: var(--pink);
+  background: var(--pink);
+  color: var(--bg);
+}
+@media (max-width: 900px) {
+  .site-footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .site-footer-brand {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 420px) {
+  .site-footer-grid {
+    gap: 28px 20px;
+  }
 }
 /* Battle jacket on the profile: the jacket, its share button and every patch (earned or locked). */
 .jacket {
