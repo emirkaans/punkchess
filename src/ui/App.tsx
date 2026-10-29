@@ -176,9 +176,15 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
     history.replaceState(null, '', location.pathname);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // A new app version is installed and waiting (service worker): offer a reload.
+  // A new app version is installed and waiting (service worker): it takes over by itself,
+  // reloading the page at once, or as soon as the player leaves a page where a reload
+  // would cost something (a game, a Puzzle Rush run, an analysis, a half-written form).
   const [updateReady, setUpdateReady] = useState(false);
   useEffect(() => onUpdateReady(() => setUpdateReady(true)), []);
+  const updateWaits = review !== null || ['game', 'online', 'rush', 'analysis', 'contact', 'signup'].includes(page);
+  useEffect(() => {
+    if (updateReady && !updateWaits) applyUpdate();
+  }, [updateReady, updateWaits]);
   const soundOn = useRef(prefs.sound);
   useEffect(() => {
     soundOn.current = prefs.sound;
@@ -559,14 +565,6 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
 
   return (
     <div className="app">
-      {updateReady && (
-        <div className="update-bar" role="status">
-          {t('update.ready')}{' '}
-          <button className="primary" onClick={applyUpdate}>
-            {t('update.reload')}
-          </button>
-        </div>
-      )}
       <Toolbar
         page={page}
         prefs={prefs}

@@ -2955,17 +2955,6 @@ button.primary:hover:not(:disabled) {
 
 /* ---------- app update (service worker) ---------- */
 
-.update-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--pink);
-  background: var(--panel);
-  font-size: 0.9rem;
-}
-
 /* ---------- analysis ---------- */
 
 /* A dialog holding a game viewer takes the whole screen. */

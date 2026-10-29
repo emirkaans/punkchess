@@ -326,8 +326,6 @@ export const tr = {
   'notice.botError': 'Bot hatası: {message}',
   'notice.drawDeclined': 'Bot beraberliği reddetti.',
   'notice.drawThinking': 'Bot teklifi değerlendiriyor…',
-  'update.ready': 'Yeni sürüm hazır.',
-  'update.reload': 'Yenile',
 
   // Panels and dialogs
   'panel.moves': 'Hamleler',
@@ -1325,8 +1323,6 @@ export const en: Record<MessageKey, string> = {
   'notice.botError': 'Bot error: {message}',
   'notice.drawDeclined': 'The bot declined the draw.',
   'notice.drawThinking': 'The bot is considering your offer…',
-  'update.ready': 'A new version is ready.',
-  'update.reload': 'Reload',
 
   'panel.moves': 'Moves',
   'panel.position': 'Position',
