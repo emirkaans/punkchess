@@ -287,3 +287,17 @@ describe('Anarşi: yeni kartlar', () => {
     expect(after.moves[0].san).toBe('DP+@c3-a8');
   });
 });
+
+describe('Anarşi: kart sonucu (ekranda gösterilen)', () => {
+  it('değişen kareler, önceki ve sonraki taşlarıyla okunur', async () => {
+    const { cardResult } = await import('../src/ui/cardResult.ts');
+    const start = createGame(v, fen('4k3/p7/8/5n2/8/8/P7/4K3', 'w', 'exile.-.0000'));
+    const after = makeMove(v, start, card('exile', 'f5'));
+    const r = cardResult(start.position, after.moves[0].move, after.position)!;
+    expect(r).toMatchObject({ color: 'w', id: 'exile', chaos: false, outcome: null, empty: false });
+    expect(r.changes.map((c) => [squareName(c.square), c.before?.type ?? null, c.after?.type ?? null])).toEqual([
+      ['f5', 'n', null],
+      ['g8', null, 'n'],
+    ]);
+  });
+});

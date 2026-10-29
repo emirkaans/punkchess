@@ -16,6 +16,8 @@ import type { Color, GameState, Move, PieceType, VariantDefinition } from '../..
 import { moveOfWire, wireOf } from '../../online/protocol.ts';
 import type { ClientMessage, GameView, OnlineOutcome, WireMove } from '../../online/protocol.ts';
 import { CardHand } from '../CardHand.tsx';
+import { lastCardResult } from '../cardResult.ts';
+import { CardResultBubble } from '../CardResultBubble.tsx';
 import { clickTarget, pickTargets } from '../cardPick.ts';
 import type { CardPick } from '../cardPick.ts';
 import { Board } from '../Board.tsx';
@@ -409,6 +411,8 @@ function OnlineGame({
   // Cards (variants with cards): played on your turn, targets picked on the board.
   const cardColor: Color | null = variant.cards && yourTurn && atEnd && promotion === null ? you : null;
   const cardMoves = cardPick && cardColor && state ? legalMoves(variant, state.position).filter((m) => m.card) : [];
+  // The card the shown position was reached by: a bubble under the board, a badge on it.
+  const cardNote = variant.cards ? lastCardResult(shown) : null;
   const onCardTarget = (sq: number) => {
     if (!cardPick) return;
     const r = clickTarget(cardMoves, cardPick, sq);
@@ -554,6 +558,7 @@ function OnlineGame({
                     : null
                 }
                 onCardTarget={onCardTarget}
+                cardNote={cardNote}
               />
               {view.outcome && atEnd && (
                 <GameOverOverlay
@@ -601,6 +606,7 @@ function OnlineGame({
               onResize={(boardSize) => setPrefs((p) => ({ ...p, boardSize }))}
             />
           </div>
+          {cardNote && <CardResultBubble variant={variant} result={cardNote} />}
           <div className="board-bar">
             <label className="switch-row">
               <input

@@ -11,7 +11,9 @@ import {
   royalSquares,
   squareName,
 } from '../engine/index.ts';
-import type { Color, Move, Position, Square, VariantDefinition } from '../engine/index.ts';
+import type { Color, Move, Piece, Position, Square, VariantDefinition } from '../engine/index.ts';
+import type { CardResult } from './cardResult.ts';
+import { cardTone } from './CardResultBubble.tsx';
 import { PieceView } from './PieceView.tsx';
 import { useI18n } from './i18n.tsx';
 import type { MessageKey } from '../i18n/index.ts';
@@ -61,6 +63,22 @@ interface Props {
   /** A card being played: clicks pick its targets instead of moving pieces. */
   cardTargets?: { readonly squares: readonly Square[]; readonly picked: readonly Square[] } | null;
   onCardTarget?: (sq: Square) => void;
+  /** The card just played: its squares are ringed, the first one gets a before→after badge. */
+  cardNote?: CardResult | null;
+}
+
+// Badge glyphs (any piece set): the standard pieces, blockers as a dot.
+const NOTE_GLYPH: Readonly<Record<string, string>> = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟', y: '♞', z: '♝' };
+const noteGlyph = (p: Piece | null) => (p ? (NOTE_GLYPH[p.type] ?? '●') : '×');
+
+/** The badge on a card's first square: what stood there and what stands there now. */
+function noteBadge(r: CardResult): string {
+  const [c0, c1] = r.changes;
+  if (!c0 || r.empty) return '';
+  if (r.id === 'swap' || r.id === 'quake') return `${noteGlyph(c0.before)}⇄${noteGlyph(c1?.before ?? null)}`;
+  if (r.id === 'ice') return '❄';
+  if (r.id === 'shield') return '◈';
+  return `${noteGlyph(c0.before)}→${noteGlyph(c0.after)}`;
 }
 
 interface Drag {
@@ -105,6 +123,7 @@ export function Board({
   onCancelPremove,
   cardTargets = null,
   onCardTarget,
+  cardNote = null,
 }: Props) {
   const { t, vt, locale } = useI18n();
   const texts = vt(variant);
@@ -357,6 +376,9 @@ export function Board({
     return [top ? 'band-top' : '', bottom ? 'band-bottom' : ''].join(' ');
   };
 
+  const noteSquares = cardNote && !cardNote.empty ? cardNote.changes.map((c) => c.square) : [];
+  const noteClass = cardNote ? `card-note card-note-${cardTone(cardNote)}` : '';
+
   const rect = boardRef.current?.getBoundingClientRect();
   const squares = [];
   for (let row = 0; row < 8; row++) {
@@ -379,6 +401,7 @@ export function Board({
         highlight.includes(sq) ? 'zone' : '',
         cardPicked ? 'selected' : '',
         ...squareMarks.map((m) => `mark-${m.kind}`),
+        noteSquares.includes(sq) ? noteClass : '',
         bandEdge(sq),
       ].join(' ');
       const dragging = drag?.moved && drag.from === sq;
@@ -425,6 +448,11 @@ export function Board({
                   {m.label}
                 </span>
               ),
+          )}
+          {cardNote && noteSquares[0] === sq && noteBadge(cardNote) && (
+            <span className={`card-badge card-badge-${cardTone(cardNote)}`} aria-hidden="true">
+              {noteBadge(cardNote)}
+            </span>
           )}
           {col === 0 && <span className="coord rank">{rankOf(sq) + 1}</span>}
           {row === 7 && <span className="coord file">{FILES[fileOf(sq)]}</span>}

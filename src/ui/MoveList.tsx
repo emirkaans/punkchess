@@ -20,12 +20,12 @@ export function MoveList({ game, cursor, onSelect, marks = [] }: Props) {
   const startNumber = first.position.fullmove;
   const blackFirst = first.position.turn === 'b';
 
-  const rows: { n: number; cells: ({ san: string; index: number } | null)[] }[] = [];
+  const rows: { n: number; cells: ({ san: string; index: number; outcome: '+' | '-' | null } | null)[] }[] = [];
   game.moves.forEach((m, i) => {
     const ply = i + (blackFirst ? 1 : 0);
     const n = startNumber + Math.floor(ply / 2);
     if (ply % 2 === 0 || rows.length === 0) rows.push({ n, cells: ply % 2 === 0 ? [] : [null] });
-    rows[rows.length - 1].cells.push({ san: m.san, index: i });
+    rows[rows.length - 1].cells.push({ san: m.san, index: i, outcome: m.move.card?.outcome ?? null });
   });
 
   if (!rows.length) return <p className="muted">{t('moves.none')}</p>;
@@ -44,6 +44,12 @@ export function MoveList({ game, cursor, onSelect, marks = [] }: Props) {
               >
                 {c.san}
                 {marks[c.index] === 'blunder' ? '??' : marks[c.index] === 'mistake' ? '?' : ''}
+                {/* A chaos card: hit or backfire, kept for anyone reading the game later. */}
+                {c.outcome && (
+                  <span className={`mv-card ${c.outcome === '+' ? 'hit' : 'backfire'}`}>
+                    {t(c.outcome === '+' ? 'card.hitShort' : 'card.backfireShort')}
+                  </span>
+                )}
               </button>
             ) : (
               <span key={j} className="mv">

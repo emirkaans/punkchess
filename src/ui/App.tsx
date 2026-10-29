@@ -31,6 +31,8 @@ import type { SavedGame } from '../storage/games.ts';
 import { RuleCardModal } from './RuleCardModal.tsx';
 import { PreferencesDialog } from './PreferencesDialog.tsx';
 import { SettingsDialog } from './SettingsDialog.tsx';
+import { lastCardResult } from './cardResult.ts';
+import { CardResultBubble } from './CardResultBubble.tsx';
 import { SiteFooter } from './SiteFooter.tsx';
 import { ChallengeInbox } from './ChallengeInbox.tsx';
 import { SetupDialog } from './SetupDialog.tsx';
@@ -513,6 +515,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
     if (cardPick) setCardPick(null);
   }
   const cardMoves = cardPick && cardColor ? legalMoves(variant, game.position).filter((m) => m.card) : [];
+  // The card the shown position was reached by: a bubble under the board, a badge on it.
+  const cardNote = variant.cards ? lastCardResult(game) : null;
   const onCardTarget = (sq: number) => {
     if (!cardPick) return;
     const r = clickTarget(cardMoves, cardPick, sq);
@@ -791,6 +795,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                           : null
                       }
                       onCardTarget={onCardTarget}
+                      cardNote={cardNote}
                     />
                     {setup && (
                       <SetupDialog
@@ -837,6 +842,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                     onResize={(boardSize) => setPrefs((p) => ({ ...p, boardSize }))}
                   />
                 </div>
+                {cardNote && <CardResultBubble variant={variant} result={cardNote} />}
                 <div className="board-bar">
                   <label className="switch-row">
                     <input
