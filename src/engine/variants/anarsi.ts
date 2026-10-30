@@ -129,10 +129,10 @@ const nitro = (type: string, base: 'n' | 'b', name: string): PieceDefinition => 
   fenChar: type,
   patterns: fixedPatterns(QUEEN),
   // A queen badge for as long as it lasts, for both players to see.
-  badge: () => ({ label: '♛', title: 'Nitro: bir hamle vezir gibi oynar' }),
+  badge: () => ({ label: '♛', title: 'Nitro: iki hamle vezir gibi oynar' }),
 });
 
-/** A knight / bishop that moves like a queen for one move (Nitro). */
+/** A knight / bishop that moves like a queen for two moves (Nitro). */
 export const NITRO_KNIGHT = nitro('y', 'n', 'Nitrolu at');
 export const NITRO_BISHOP = nitro('z', 'b', 'Nitrolu fil');
 const NITRO_OF: Readonly<Record<string, string>> = { n: 'y', b: 'z' };
@@ -313,8 +313,8 @@ function applyCard(pos: Position, move: Move): Position {
       break;
     case 'nitro':
       for (const s of sq) board[s] = { type: NITRO_OF[board[s]!.type] ?? board[s]!.type, color: forMe ? me : them };
-      // Mine lasts until after my next move, theirs until after theirs (the very next).
-      if (sq.length) fx.push({ k: 'nitro', c: forMe ? me : them, exp: ply + (forMe ? 3 : 2), sq: [] });
+      // Two moves of its owner: mine until after my second move from now, theirs until after their second.
+      if (sq.length) fx.push({ k: 'nitro', c: forMe ? me : them, exp: ply + (forMe ? 5 : 4), sq: [] });
       break;
     // 'time' changes only the clocks; an unresolved chaos card (legality check) changes nothing.
   }
@@ -686,7 +686,7 @@ export const anarsi: VariantDefinition = defineVariant({
       'Kara Delik boş bir kareyi oyun sonuna kadar siler; Barikat yan yana 3 boş kareyi 3 tur kapatır. Oralara hiçbir taş giremez, üstünden geçemez.',
       'Piyon Avı rakibin iki piyonunu alır; Buz rakibin bir taşını 3 tur dondurur (donan taş yine saldırır ve korur); Sürgün rakibin bir hafif taşını başladığı kareye geri yollar.',
       'Işınlanma kendi iki taşının yerini değiştirir (şah ve piyon olmaz); Kalkan taşını bir tur yenmez yapar; Diriliş yenmiş filini (yoksa atını) ilk sırandaki seçtiğin boş kareye geri getirir.',
-      `Gizli kaos kartı (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı 60 saniye, Pusu bir hafif taş, Hain bir piyon, Nitro bir hamlelik vezir gücü, Rütbe Düşürme en değerli taşı bir rütbe indirir, Deprem iki taşın yerini değiştirir. İsabet sana, geri tepme rakibe yarar.`,
+      `Gizli kaos kartı (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı 60 saniye, Pusu bir hafif taş, Hain bir piyon, Nitro iki hamlelik vezir gücü, Rütbe Düşürme en değerli taşı bir rütbe indirir, Deprem iki taşın yerini değiştirir. İsabet sana, geri tepme rakibe yarar.`,
       'Şah çekiliyken kart oynanmaz. Geri tepen kart şahını açmaz, rakibe tek hamlede mat fırsatı vermez.',
     ],
     examples: [],
@@ -709,15 +709,15 @@ export const anarsi: VariantDefinition = defineVariant({
           'Black Hole takes an empty square off the board for good; Barricade closes 3 empty squares in a row for 3 turns. No piece enters or passes them.',
           'Pawn Hunt takes two opponent pawns; Ice freezes an opponent piece for 3 turns (it still attacks and defends); Exile sends an opponent minor piece back to its starting square.',
           'Teleport swaps two of your pieces (not the king, not pawns); Shield keeps your piece from being taken for a turn; Revival brings back a taken bishop (else a knight) to an empty square of your first rank.',
-          `Hidden chaos card (from move ${CHAOS_FROM_MOVE}): Time Thief 60 seconds, Ambush a minor piece, Traitor a pawn, Nitro one queen move, Demotion takes the best piece one rank down, Earthquake swaps two pieces. A hit helps you, a backfire the opponent.`,
+          `Hidden chaos card (from move ${CHAOS_FROM_MOVE}): Time Thief 60 seconds, Ambush a minor piece, Traitor a pawn, Nitro two queen moves, Demotion takes the best piece one rank down, Earthquake swaps two pieces. A hit helps you, a backfire the opponent.`,
           'No card while in check. A backfire never leaves your king open or hands the opponent a mate in one.',
         ],
         captions: [],
       },
       pieceNames: { ...STANDARD_PIECE_NAMES_EN, x: 'Black hole', o: 'Barricade', y: 'Nitro knight', z: 'Nitro bishop' },
       badges: {
-        y: () => ({ label: '♛', title: 'Nitro: moves like a queen for one move' }),
-        z: () => ({ label: '♛', title: 'Nitro: moves like a queen for one move' }),
+        y: () => ({ label: '♛', title: 'Nitro: moves like a queen for two moves' }),
+        z: () => ({ label: '♛', title: 'Nitro: moves like a queen for two moves' }),
       },
       setup: { w: questionEn('w'), b: questionEn('b') },
     },

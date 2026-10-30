@@ -162,14 +162,20 @@ describe('Anarşi: kaos kartları', () => {
     expect(makeMove(v, g, ways['+'][0]).moves[0].san).toBe('HN+');
   });
 
-  it('Nitro: hafif taş bir hamlelik vezir gibi oynar, sonra geri döner', () => {
+  it('Nitro: hafif taş iki hamle vezir gibi oynar, sonra geri döner', () => {
     let g = createGame(v, fen('4k3/7p/8/8/8/8/7P/1N2K3', 'w', '-.-.0000'));
     g = makeMove(v, g, drawChaos(v, g.position, 'nitro', rng(0.1, 0)));
     expect(g.position.board[sq('b1')]).toEqual({ type: 'y', color: 'w' });
     g = playSan(v, g, 'Kd8');
     expect(targets(g, 'b1')).toContain('b7');
-    g = playSan(v, g, 'Nb7+');
-    expect(g.position.board[sq('b7')]).toEqual({ type: 'n', color: 'w' });
+    // İlk vezir hamlesinden sonra hâlâ nitrolu.
+    g = playSan(v, g, 'Nb3');
+    expect(g.position.board[sq('b3')]).toEqual({ type: 'y', color: 'w' });
+    g = playSan(v, g, 'Kc8');
+    expect(targets(g, 'b3')).toContain('b8');
+    // İkinci hamleden sonra yeniden at.
+    g = playSan(v, g, 'Nb6');
+    expect(g.position.board[sq('b6')]).toEqual({ type: 'n', color: 'w' });
   });
 
   it('Zaman Hırsızı tahtaya dokunmaz; kaos notasyonu geri okunur', () => {
