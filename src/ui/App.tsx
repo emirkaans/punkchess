@@ -772,6 +772,21 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   clock={timed ? session.clock : null}
                   place="top"
                 />
+                {/* Wide screens: the variant and the game state, small, between the two clocks. */}
+                <div className="players-mid">
+                  <div className="players-variant">
+                    <svg className="bolt" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M13 2L4 14h7l-1 8 9-12h-7z" />
+                    </svg>
+                    {texts.name}
+                  </div>
+                  <div
+                    className={`status${thinking ? ' thinking' : ''}${outcome || (inCheck && !setup) ? ' alert' : ''}`}
+                  >
+                    {status}
+                  </div>
+                  {notice && <div className="notice">{notice}</div>}
+                </div>
                 <PlayerRow
                   variant={variant}
                   color={bottom}
@@ -894,7 +909,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
             </section>
 
             <aside className="side">
-              <div className="box game-box">
+              <div className="box game-box side-game-box">
                 <div className="box-head">
                   <svg className="bolt" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M13 2L4 14h7l-1 8 9-12h-7z" />
@@ -926,11 +941,6 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   onChaos={playChaos}
                 />
               )}
-              {view.finalOutcome && view.endState.moves.length > 0 && (
-                <button className="primary analyse-button" onClick={() => openReview(postGameReview(), 'game')}>
-                  {t('analysis.button')}
-                </button>
-              )}
               <GameControls
                 vsBot={vsBot}
                 watching={watching}
@@ -951,6 +961,11 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                 onRun={(run) => dispatch({ type: 'run', run })}
                 onToggleHighlight={() => setShowHighlight((h) => !h)}
               />
+              {view.finalOutcome && view.endState.moves.length > 0 && (
+                <button className="primary analyse-button" onClick={() => openReview(postGameReview(), 'game')}>
+                  {t('analysis.button')}
+                </button>
+              )}
               <button className="primary new-game-button" onClick={() => openNewGame()}>
                 <svg className="ic bolt-ic" viewBox="0 0 24 24" aria-hidden="true">
                   <path className="fill" d="M13 2L4 14h7l-1 8 9-12h-7z" />

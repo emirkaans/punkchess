@@ -1313,6 +1313,42 @@ button.primary:hover:not(:disabled) {
   color: var(--muted);
 }
 
+/* Between the clocks on wide screens: the variant's name and the game state, small. The
+   side panel's game box shows them on narrower screens instead. */
+.players-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.players-variant {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 400 22px/1.1 var(--marker);
+  color: var(--fg);
+}
+.players-variant .bolt {
+  width: 18px;
+  height: 18px;
+  fill: var(--pink);
+}
+.players-mid .status {
+  padding: 2px 12px;
+  font-size: 16px;
+}
+@media (min-width: 1101px) {
+  .side-game-box {
+    display: none;
+  }
+}
+@media (max-width: 1100px) {
+  .players-mid {
+    display: none;
+  }
+}
+
 /* One player card: avatar, name, pieces taken, clock (toward the middle). */
 .player-row {
   display: grid;

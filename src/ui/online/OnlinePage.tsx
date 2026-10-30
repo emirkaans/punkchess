@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { LOW_TIME_MS, remainingMs, timeControl } from '../../clock/clock.ts';
 import type { ClockState } from '../../clock/clock.ts';
@@ -516,27 +516,45 @@ function OnlineGame({
       <section className={prefs.boardSize ? 'board-wrap sized' : 'board-wrap'} style={sized}>
         <aside className="players" aria-label={t('game.players')}>
           {[top, bottom].map((c, i) => (
-            <PlayerRow
-              key={c}
-              variant={variant}
-              color={c}
-              player={HUMAN}
-              label={nameWithRating(c)}
-              position={shown?.position ?? createGame(variant).position}
-              active={playing && state?.position.turn === c}
-              clock={timed ? clock : null}
-              place={i === 0 ? 'top' : 'bottom'}
-              taunt={
-                prefs.stickers && poppedSticker?.from === c
-                  ? {
-                      key: poppedSticker.key,
-                      tone: `sticker-${poppedSticker.id}`,
-                      who: nameOf(c),
-                      text: t(`sticker.${poppedSticker.id}`),
-                    }
-                  : null
-              }
-            />
+            <Fragment key={c}>
+              {i === 1 && (
+                // Wide screens: the variant and the game state, small, between the two clocks.
+                <div className="players-mid">
+                  <div className="players-variant">
+                    <svg className="bolt" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M13 2L4 14h7l-1 8 9-12h-7z" />
+                    </svg>
+                    {texts.name}
+                  </div>
+                  <div
+                    className={`status${view.outcome || (playing && state && isInCheck(variant, state.position)) ? ' alert' : ''}`}
+                  >
+                    {statusText}
+                  </div>
+                  {link.error && <div className="notice">{t(`online.error.${link.error}`)}</div>}
+                </div>
+              )}
+              <PlayerRow
+                variant={variant}
+                color={c}
+                player={HUMAN}
+                label={nameWithRating(c)}
+                position={shown?.position ?? createGame(variant).position}
+                active={playing && state?.position.turn === c}
+                clock={timed ? clock : null}
+                place={i === 0 ? 'top' : 'bottom'}
+                taunt={
+                  prefs.stickers && poppedSticker?.from === c
+                    ? {
+                        key: poppedSticker.key,
+                        tone: `sticker-${poppedSticker.id}`,
+                        who: nameOf(c),
+                        text: t(`sticker.${poppedSticker.id}`),
+                      }
+                    : null
+                }
+              />
+            </Fragment>
           ))}
         </aside>
         <div className="board-col">
@@ -633,7 +651,7 @@ function OnlineGame({
       </section>
 
       <aside className="side">
-        <div className="box game-box">
+        <div className="box game-box side-game-box">
           <div className="box-head">
             <svg className="bolt" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M13 2L4 14h7l-1 8 9-12h-7z" />
