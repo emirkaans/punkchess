@@ -84,6 +84,8 @@ export interface SquareMark {
   readonly kind: string;
   /** Short text in the corner (e.g. turns left), or ''. */
   readonly label: string;
+  /** A secret of one side (a hidden mine): shown only to that side, or to everyone once the game is over. */
+  readonly owner?: Color;
 }
 
 export interface CastlingRights {

@@ -16,6 +16,7 @@ import type {
   VariantExtra,
 } from '../types.ts';
 import { cardMove } from '../types.ts';
+import { codeType } from '../fast/board.ts';
 import type { FastHooks } from '../fast/hooks.ts';
 import {
   QUEEN,
@@ -35,7 +36,7 @@ import {
 // is not part of the position: whoever runs the game deals it, keeps it secret and resolves it
 // (see `resolveChaos`); the position only records whether it was played.
 
-export const TRICKS = ['void', 'pawn', 'ice', 'swap', 'shield', 'wall', 'revive', 'exile'] as const;
+export const TRICKS = ['void', 'pawn', 'ice', 'swap', 'shield', 'wall', 'revive', 'exile', 'truce', 'mine'] as const;
 export type Trick = (typeof TRICKS)[number];
 export const CHAOS_CARDS = ['time', 'ambush', 'traitor', 'nitro', 'demote', 'quake'] as const;
 export type ChaosCard = (typeof CHAOS_CARDS)[number];
@@ -50,6 +51,8 @@ export const CARD_CODES: Readonly<Record<Trick | ChaosCard, string>> = {
   wall: 'BR',
   revive: 'DR',
   exile: 'SG',
+  truce: 'AK',
+  mine: 'MY',
   time: 'ZH',
   ambush: 'PU',
   traitor: 'HN',
@@ -59,12 +62,20 @@ export const CARD_CODES: Readonly<Record<Trick | ChaosCard, string>> = {
 };
 const CARD_OF_CODE = new Map(Object.entries(CARD_CODES).map(([id, code]) => [code, id]));
 
+/** Effect kinds in the FEN field. */
+const EFFECTS = ['ice', 'shield', 'wall', 'nitro', 'truce', 'mine'];
+/** A mine stays until something steps on it (its "expiry" ply is never reached). */
+const MINE_LASTS = 9999;
+
 /** Chaos cards may be played from this move number on. */
 export const CHAOS_FROM_MOVE = 6;
 
-/** A lasting effect. `c`: the frozen / shielded / nitro pieces' colour, or who built the wall. */
+/**
+ * A lasting effect. `c`: the frozen / shielded / nitro pieces' colour, or who built the wall,
+ * called the truce or laid the mine.
+ */
 export interface Effect {
-  readonly k: 'ice' | 'shield' | 'wall' | 'nitro';
+  readonly k: 'ice' | 'shield' | 'wall' | 'nitro' | 'truce' | 'mine';
   readonly c: Color;
   /** Ply (see plyOf) from which the effect is gone. */
   readonly exp: number;
@@ -238,6 +249,12 @@ function trickMoves(pos: Position, trick: Trick): Move[] {
     case 'exile':
       each((p, sq) => !!p && p.color !== me && MINORS.has(p.type) && exileHome(pos, sq) !== null);
       break;
+    case 'truce':
+      out.push(play('truce', []));
+      break;
+    case 'mine':
+      each((p) => !p);
+      break;
   }
   return out;
 }
@@ -300,6 +317,12 @@ function applyCard(pos: Position, move: Move): Position {
     }
     case 'demote':
       for (const s of sq) board[s] = { type: DEMOTED[board[s]!.type], color: board[s]!.color };
+      break;
+    case 'truce':
+      fx.push({ k: 'truce', c: me, exp: ply + 4, sq: [] });
+      break;
+    case 'mine':
+      fx.push({ k: 'mine', c: me, exp: MINE_LASTS, sq });
       break;
     case 'quake':
       if (sq.length === 2) [board[sq[0]], board[sq[1]]] = [board[sq[1]], board[sq[0]]];
@@ -439,14 +462,22 @@ function parseCardSan(san: string): CardPlay | null {
 const effectOn = (pos: Position, k: Effect['k'], sq: number) =>
   extraOf(pos).fx.find((e) => e.k === k && e.sq.includes(sq));
 
-/** Effects run out at their ply; a frozen or shielded piece that is gone takes its effect along. */
-function afterApply(_prev: Position, next: Position, _move: Move): Position {
+/**
+ * Effects run out at their ply; a frozen or shielded piece that is gone takes its effect along.
+ * A piece moving onto the opponent's mine blows up with it (a king only clears the mine).
+ */
+function afterApply(prev: Position, next: Position, move: Move): Position {
   const ex = extraOf(next);
   if (!ex.fx.length) return next;
   const ply = plyOf(next);
   let board: (Piece | null)[] | null = null;
   const keep: Effect[] = [];
   for (const e of ex.fx) {
+    if (e.k === 'mine' && !move.card && e.c !== prev.turn && e.sq[0] === move.to) {
+      board ??= next.board.slice();
+      if (board[move.to]?.type !== 'k') board[move.to] = null;
+      continue;
+    }
     const piece = next.board[e.sq[0]];
     const gone = (e.k === 'ice' || e.k === 'shield') && (!piece || piece.color !== e.c);
     if (e.exp > ply && !gone) {
@@ -476,6 +507,10 @@ function squareMarks(pos: Position): SquareMark[] {
     if (e.k === 'ice') marks.push({ square: e.sq[0], kind: 'ice', label: left });
     if (e.k === 'shield') marks.push({ square: e.sq[0], kind: 'shield', label: '' });
     if (e.k === 'wall') e.sq.forEach((s, i) => marks.push({ square: s, kind: 'wall', label: i === 0 ? left : '' }));
+    if (e.k === 'mine') marks.push({ square: e.sq[0], kind: 'mine', label: '', owner: e.c });
+    // The truce shows on both kings, with its moves left.
+    if (e.k === 'truce')
+      pos.board.forEach((p, s) => p?.type === 'k' && marks.push({ square: s, kind: 'truce', label: left }));
   }
   return marks;
 }
@@ -505,7 +540,7 @@ function parseExtra(field: string | undefined): VariantExtra {
   if (!m) throw new Error(`Invalid Anarşi FEN field: ${field}`);
   const fx = effects.map((e): Effect => {
     const [k, c, exp, sqs = ''] = e.split('.');
-    if (!['ice', 'shield', 'wall', 'nitro'].includes(k) || (c !== 'w' && c !== 'b') || !/^\d+$/.test(exp)) {
+    if (!EFFECTS.includes(k) || (c !== 'w' && c !== 'b') || !/^\d+$/.test(exp)) {
       throw new Error(`Invalid Anarşi effect: ${e}`);
     }
     const sq = (sqs.match(/[a-h][1-8]/g) ?? []).map(parseSquare);
@@ -532,6 +567,8 @@ export const TRICK_NAMES: Readonly<Record<Trick | ChaosCard, string>> = {
   wall: 'Barikat',
   revive: 'Diriliş',
   exile: 'Sürgün',
+  truce: 'Ateşkes',
+  mine: 'Mayın',
   time: 'Zaman Hırsızı',
   ambush: 'Pusu',
   traitor: 'Hain',
@@ -549,6 +586,8 @@ export const TRICK_NAMES_EN: Readonly<Record<Trick | ChaosCard, string>> = {
   wall: 'Barricade',
   revive: 'Revival',
   exile: 'Exile',
+  truce: 'Ceasefire',
+  mine: 'Mine',
   time: 'Time Thief',
   ambush: 'Ambush',
   traitor: 'Traitor',
@@ -566,6 +605,8 @@ const TRICK_DETAILS: Readonly<Record<Trick, string>> = {
   wall: '3 boş kare 3 tur kapanır.',
   revive: 'Yenmiş filin (yoksa atın) ilk sırandaki seçtiğin boş kareye döner.',
   exile: 'Rakibin bir hafif taşı başladığı kareye geri döner.',
+  truce: '2 tur boyunca iki taraf da taş yiyemez (şah çekmek serbest).',
+  mine: 'Boş bir kareye gizli mayın gömersin; oraya basan rakip taş patlar.',
 };
 
 const TRICK_DETAILS_EN: Readonly<Record<Trick, string>> = {
@@ -577,6 +618,8 @@ const TRICK_DETAILS_EN: Readonly<Record<Trick, string>> = {
   wall: '3 empty squares close for 3 turns.',
   revive: 'A bishop of yours that was taken (else a knight) returns to an empty square of your first rank.',
   exile: 'An opponent minor piece goes back to its starting square.',
+  truce: 'For 2 turns neither side can take a piece (checks still count).',
+  mine: 'You bury a hidden mine on an empty square; an opponent piece stepping on it blows up.',
 };
 
 const question = (color: Color): SetupQuestion => ({
@@ -601,10 +644,11 @@ function startPosition(answers: Readonly<Record<string, string>>): string {
 // ---------------------------------------------------------------------------
 // Fast board (bot search): frozen pieces cannot move, a shielded piece cannot be taken; both
 // wear off as the search goes deeper. Walls and nitro pieces stay as they are there.
-// extra: [ice 1, ice 2, shield] as (1 + square + 64 * side, plies left).
+// extra: [ice 1, ice 2, shield] as (1 + square + 64 * side, plies left), then the truce (1, plies left).
+// Mines are not there: the search does not know where they are.
 
 const FAST: FastHooks = {
-  extraSlots: 6,
+  extraSlots: 8,
   readExtra: (b, pos) => {
     const ply = plyOf(pos);
     let ice = 0;
@@ -619,10 +663,14 @@ const FAST: FastHooks = {
         b.extra[4] = code;
         b.extra[5] = e.exp - ply;
       }
+      if (e.k === 'truce') {
+        b.extra[6] = 1;
+        b.extra[7] = e.exp - ply;
+      }
     }
   },
   afterMove: (b) => {
-    for (let i = 1; i < 6; i += 2) {
+    for (let i = 1; i < 8; i += 2) {
       if (b.extra[i] > 0 && --b.extra[i] === 0) b.extra[i - 1] = 0;
     }
   },
@@ -630,8 +678,9 @@ const FAST: FastHooks = {
     const code = 1 + from + 64 * b.side;
     return b.extra[0] === code || b.extra[2] === code;
   },
-  captureAllowed: (b, _from, victimSq) => b.extra[4] === 0 || (b.extra[4] - 1) % 64 !== victimSq,
-  hashExtra: (b) => b.extra[0] ^ (b.extra[2] << 7) ^ (b.extra[4] << 14),
+  captureAllowed: (b, _from, victimSq, victim) =>
+    (b.extra[6] === 0 || b.types[codeType(victim)].royal) && (b.extra[4] === 0 || (b.extra[4] - 1) % 64 !== victimSq),
+  hashExtra: (b) => b.extra[0] ^ (b.extra[2] << 7) ^ (b.extra[4] << 14) ^ (b.extra[6] << 21),
 };
 
 // ---------------------------------------------------------------------------
@@ -643,7 +692,7 @@ export const anarsi: VariantDefinition = defineVariant({
   unrated: true,
   description: [
     'Standart satranç, artı kartlar. Her kart oyunda bir kez, o turun hamlesi yerine oynanır.',
-    'Oyundan önce herkes bir numara seçer: Kara Delik, Piyon Avı, Buz, Işınlanma, Kalkan, Barikat, Diriliş ya da Sürgün. Numara hep sana yarar.',
+    'Oyundan önce herkes bir numara seçer: Kara Delik, Piyon Avı, Buz, Işınlanma, Kalkan, Barikat, Diriliş, Sürgün, Ateşkes ya da Mayın. Numara hep sana yarar.',
     'Herkese bir de gizli kaos kartı gelir: Zaman Hırsızı, Pusu, Hain, Nitro, Rütbe Düşürme ya da Deprem. Oynayınca ya isabet eder (sana yarar) ya geri teper (rakibe yarar).',
     `Kaos kartı ${CHAOS_FROM_MOVE}. hamleden önce oynanmaz. Şah çekiliyken hiçbir kart oynanmaz.`,
     'Geri tepen kart şahını açmaz, rakibe tek hamlede mat fırsatı vermez.',
@@ -663,6 +712,8 @@ export const anarsi: VariantDefinition = defineVariant({
     return ice && ice.c === p.color ? [] : base(pos, from);
   },
   captureAllowed: (pos, _from, victimSquare, _attacker, victim) => {
+    // Ateşkes: nothing is taken, but a king still counts as attacked (check stays check).
+    if (victim.type !== 'k' && extraOf(pos).fx.some((e) => e.k === 'truce')) return false;
     const shield = effectOn(pos, 'shield', victimSquare);
     return !shield || shield.c !== victim.color;
   },
@@ -683,7 +734,7 @@ export const anarsi: VariantDefinition = defineVariant({
     summary: 'Standart satranç, artı bir numara ve bir kaos kartı. Kart oynamak hamle yerine geçer.',
     bullets: [
       'Oyundan önce bir numara seçersin ve oyunda bir kez, hamle yerine oynarsın. Numara hep sana yarar.',
-      'Kara Delik boş bir kareyi oyun sonuna kadar siler; Barikat yan yana 3 boş kareyi 3 tur kapatır. Oralara hiçbir taş giremez, üstünden geçemez.',
+      'Kara Delik boş bir kareyi oyun sonuna kadar siler; Barikat yan yana 3 boş kareyi 3 tur kapatır. Ateşkes 2 tur boyunca yemeyi yasaklar; Mayın, rakibin göremediği bir kareye gömülür ve oraya basan rakip taşı patlatır (şah sadece temizler).',
       'Piyon Avı rakibin iki piyonunu alır; Buz rakibin bir taşını 3 tur dondurur (donan taş yine saldırır ve korur); Sürgün rakibin bir hafif taşını başladığı kareye geri yollar.',
       'Işınlanma kendi iki taşının yerini değiştirir (şah ve piyon olmaz); Kalkan taşını bir tur yenmez yapar; Diriliş yenmiş filini (yoksa atını) ilk sırandaki seçtiğin boş kareye geri getirir.',
       `Gizli kaos kartı (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı 60 saniye, Pusu bir hafif taş, Hain bir piyon, Nitro iki hamlelik vezir gücü, Rütbe Düşürme en değerli taşı bir rütbe indirir, Deprem iki taşın yerini değiştirir. İsabet sana, geri tepme rakibe yarar.`,
@@ -696,7 +747,7 @@ export const anarsi: VariantDefinition = defineVariant({
       name: 'Anarchy',
       description: [
         'Standard chess plus cards. Each card is played once in a game, instead of that turn’s move.',
-        'Before the game each player picks a trick: Black Hole, Pawn Hunt, Ice, Teleport, Shield, Barricade, Revival or Exile. A trick always helps you.',
+        'Before the game each player picks a trick: Black Hole, Pawn Hunt, Ice, Teleport, Shield, Barricade, Revival, Exile, Ceasefire or Mine. A trick always helps you.',
         'Each player also gets a hidden chaos card: Time Thief, Ambush, Traitor, Nitro, Demotion or Earthquake. Played, it either hits (helps you) or backfires (helps the opponent).',
         `A chaos card cannot be played before move ${CHAOS_FROM_MOVE}. No card can be played while in check.`,
         'A backfire never leaves your king open and never hands the opponent a mate in one.',
@@ -706,7 +757,7 @@ export const anarsi: VariantDefinition = defineVariant({
         summary: 'Standard chess plus one trick and one chaos card. Playing a card takes your move.',
         bullets: [
           'Before the game you pick a trick and play it once, instead of a move. A trick always helps you.',
-          'Black Hole takes an empty square off the board for good; Barricade closes 3 empty squares in a row for 3 turns. No piece enters or passes them.',
+          'Black Hole takes an empty square off the board for good; Barricade closes 3 empty squares in a row for 3 turns. Ceasefire forbids taking for 2 turns; Mine is buried where the opponent cannot see it and blows up the opponent piece that steps on it (a king only clears it).',
           'Pawn Hunt takes two opponent pawns; Ice freezes an opponent piece for 3 turns (it still attacks and defends); Exile sends an opponent minor piece back to its starting square.',
           'Teleport swaps two of your pieces (not the king, not pawns); Shield keeps your piece from being taken for a turn; Revival brings back a taken bishop (else a knight) to an empty square of your first rank.',
           `Hidden chaos card (from move ${CHAOS_FROM_MOVE}): Time Thief 60 seconds, Ambush a minor piece, Traitor a pawn, Nitro two queen moves, Demotion takes the best piece one rank down, Earthquake swaps two pieces. A hit helps you, a backfire the opponent.`,

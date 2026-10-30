@@ -323,3 +323,51 @@ describe('Anarşi: nitrolu taşın rozeti', () => {
     expect(v.pieces.b.badge).toBeUndefined();
   });
 });
+
+describe('Anarşi: Ateşkes ve Mayın', () => {
+  it('Ateşkes: 2 tur boyunca kimse taş yiyemez, şah yine şahtır; sonra yeme döner', () => {
+    let g = createGame(v, fen('4k3/8/8/3p4/4P3/8/8/R3K3', 'w', 'truce.-.0000'));
+    expect(cards(g).filter((m) => m.card!.id === 'truce')).toHaveLength(1);
+    g = makeMove(v, g, cardMove({ id: 'truce', squares: [] }));
+    expect(g.moves[0].san).toBe('AK');
+    // Siyah d5 piyonu e4'ü yiyemez.
+    expect(targets(g, 'd5')).toEqual(['d4']);
+    g = playSan(v, g, 'Kd7');
+    expect(targets(g, 'e4')).toEqual(['e5']);
+    // Kale şah çeker: şah hâlâ saldırı altında sayılır.
+    g = playSan(v, g, 'Ra7+');
+    expect(isInCheck(v, g.position)).toBe(true);
+    g = playSan(v, g, 'Kd6');
+    g = playSan(v, g, 'Kf1');
+    // İki tur doldu: yeme serbest.
+    expect(targets(g, 'd5')).toContain('e4');
+  });
+
+  it('Mayın: rakip taş basınca patlar, sahibinin taşı basınca bir şey olmaz; şah sadece temizler', () => {
+    let g = createGame(v, fen('4k3/8/8/8/8/2n5/8/R3K3', 'w', 'mine.-.0000'));
+    g = makeMove(v, g, card('mine', 'b1'));
+    expect(g.moves[0].san).toBe('MY@b1');
+    // Sadece sahibine görünen işaret.
+    expect(v.squareMarks!(g.position)).toEqual([{ square: sq('b1'), kind: 'mine', label: '', owner: 'w' }]);
+    const boom = playSan(v, g, 'Nb1');
+    expect(boom.position.board[sq('b1')]).toBeNull();
+    expect(v.squareMarks!(boom.position)).toEqual([]);
+    // Kendi taşı (beyaz kale) mayına basarsa bir şey olmaz.
+    const safe = playSan(v, g, 'Kd8', 'Rb1');
+    expect(safe.position.board[sq('b1')]).toEqual({ type: 'r', color: 'w' });
+    expect(v.squareMarks!(safe.position)).toHaveLength(1);
+  });
+
+  it('Mayın: rakibe gizli; patlayınca herkes görür', async () => {
+    const { lastCardResult, secretMoves } = await import('../src/ui/cardResult.ts');
+    let g = createGame(v, fen('4k3/8/8/8/8/2n5/8/R3K3', 'w', 'mine.-.0000'));
+    g = makeMove(v, g, card('mine', 'b1'));
+    expect(lastCardResult(v, g, 'b')).toMatchObject({ id: 'mine', hidden: true, changes: [] });
+    expect(lastCardResult(v, g, 'w')).toMatchObject({ id: 'mine', changes: [{ square: sq('b1') }] });
+    expect([...secretMoves(v, g, 'b')]).toEqual([0]);
+    expect([...secretMoves(v, g, 'w')]).toEqual([]);
+    g = playSan(v, g, 'Nb1');
+    expect(lastCardResult(v, g, 'b')).toMatchObject({ id: 'mine', blast: true, color: 'b' });
+    expect([...secretMoves(v, g, 'b')]).toEqual([]);
+  });
+});

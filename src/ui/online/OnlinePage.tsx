@@ -16,7 +16,8 @@ import type { Color, GameState, Move, PieceType, VariantDefinition } from '../..
 import { moveOfWire, wireOf } from '../../online/protocol.ts';
 import type { ClientMessage, GameView, OnlineOutcome, WireMove } from '../../online/protocol.ts';
 import { CardHand } from '../CardHand.tsx';
-import { lastCardResult } from '../cardResult.ts';
+import { lastCardResult, secretMoves } from '../cardResult.ts';
+import type { Viewer } from '../cardResult.ts';
 import { CardResultBubble } from '../CardResultBubble.tsx';
 import { clickTarget, pickTargets } from '../cardPick.ts';
 import type { CardPick } from '../cardPick.ts';
@@ -411,8 +412,10 @@ function OnlineGame({
   // Cards (variants with cards): played on your turn, targets picked on the board.
   const cardColor: Color | null = variant.cards && yourTurn && atEnd && promotion === null ? you : null;
   const cardMoves = cardPick && cardColor && state ? legalMoves(variant, state.position).filter((m) => m.card) : [];
+  // Secrets (a hidden mine) are your own side's; everyone's once the game is over.
+  const viewer: Viewer = view?.phase === 'over' ? 'all' : (you ?? null);
   // The card the shown position was reached by: a bubble under the board, a badge on it.
-  const cardNote = variant.cards ? lastCardResult(shown) : null;
+  const cardNote = variant.cards ? lastCardResult(variant, shown, viewer) : null;
   const onCardTarget = (sq: number) => {
     if (!cardPick) return;
     const r = clickTarget(cardMoves, cardPick, sq);
@@ -423,8 +426,9 @@ function OnlineGame({
       play(r.move);
     }
   };
+  // The chaos card, or a trick with no target (Ateşkes): played from its confirm button.
   const playChaos = () => {
-    const move = cardMoves.find((m) => m.card!.id === CHAOS);
+    const move = cardMoves.find((m) => m.card!.id === (cardPick?.id ?? CHAOS) && m.card!.squares.length === 0);
     setCardPick(null);
     if (move) play(move);
   };
@@ -559,6 +563,7 @@ function OnlineGame({
                 }
                 onCardTarget={onCardTarget}
                 cardNote={cardNote}
+                viewer={viewer}
               />
               {view.outcome && atEnd && (
                 <GameOverOverlay
@@ -803,6 +808,7 @@ function OnlineGame({
             {state ? (
               <MoveList
                 game={state}
+                secret={secretMoves(variant, state, viewer)}
                 cursor={shownIndex}
                 onSelect={(c) => setCursor(c >= states.length - 1 ? null : c)}
               />

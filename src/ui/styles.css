@@ -8707,6 +8707,17 @@ a:focus-visible {
 .mark-label-wall {
   background: #f1eee8;
 }
+/* A buried mine (only its owner sees it): a dashed pink ring with a fuse dot. */
+.square.mark-mine {
+  background-image:
+    radial-gradient(circle at 50% 50%, var(--pink) 0 9%, transparent 10%),
+    radial-gradient(circle at 50% 50%, transparent 0 30%, rgba(255, 46, 147, 0.85) 31% 34%, transparent 35%);
+}
+/* Ateşkes: on both kings, the moves left. */
+.mark-label-truce {
+  background: #f1eee8;
+  outline: 1px solid #0a0a0b;
+}
 .setup-text {
   display: flex;
   flex-direction: column;

@@ -31,7 +31,8 @@ import type { SavedGame } from '../storage/games.ts';
 import { RuleCardModal } from './RuleCardModal.tsx';
 import { PreferencesDialog } from './PreferencesDialog.tsx';
 import { SettingsDialog } from './SettingsDialog.tsx';
-import { lastCardResult } from './cardResult.ts';
+import { lastCardResult, secretMoves } from './cardResult.ts';
+import type { Viewer } from './cardResult.ts';
 import { CardResultBubble } from './CardResultBubble.tsx';
 import { SiteFooter } from './SiteFooter.tsx';
 import { ChallengeInbox } from './ChallengeInbox.tsx';
@@ -515,8 +516,12 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
     if (cardPick) setCardPick(null);
   }
   const cardMoves = cardPick && cardColor ? legalMoves(variant, game.position).filter((m) => m.card) : [];
+  // Secrets (a hidden mine) belong to their side: the one person playing the bot sees theirs,
+  // two players at one screen see the side to move's, and everyone sees all once it is over.
+  const humans = (['w', 'b'] as const).filter((c) => players[c].kind === 'human');
+  const viewer: Viewer = outcome ? 'all' : humans.length === 1 ? humans[0] : humans.length === 2 ? turn : 'all';
   // The card the shown position was reached by: a bubble under the board, a badge on it.
-  const cardNote = variant.cards ? lastCardResult(game) : null;
+  const cardNote = variant.cards ? lastCardResult(variant, game, viewer) : null;
   const onCardTarget = (sq: number) => {
     if (!cardPick) return;
     const r = clickTarget(cardMoves, cardPick, sq);
@@ -527,8 +532,9 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
       play(r.move);
     }
   };
+  // The chaos card, or a trick with no target (Ateşkes): played from its confirm button.
   const playChaos = () => {
-    const move = cardMoves.find((m) => m.card!.id === CHAOS);
+    const move = cardMoves.find((m) => m.card!.id === (cardPick?.id ?? CHAOS) && m.card!.squares.length === 0);
     setCardPick(null);
     if (move) play(move);
   };
@@ -796,6 +802,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                       }
                       onCardTarget={onCardTarget}
                       cardNote={cardNote}
+                      viewer={viewer}
                     />
                     {setup && (
                       <SetupDialog
@@ -967,6 +974,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   {tab === 'moves' && (
                     <MoveList
                       game={view.endState}
+                      secret={secretMoves(variant, view.endState, viewer)}
                       cursor={timeline.cursor}
                       onSelect={vsBot ? () => {} : (cursor) => dispatch({ type: 'goTo', cursor })}
                     />

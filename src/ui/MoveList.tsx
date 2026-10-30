@@ -10,9 +10,11 @@ interface Props {
   onSelect: (cursor: number) => void;
   /** Analysis marks per move (blunder "??", mistake "?"). */
   marks?: readonly MoveMark[];
+  /** Moves whose card target is a secret here (a hidden mine): their squares show as "?". */
+  secret?: ReadonlySet<number>;
 }
 
-export function MoveList({ game, cursor, onSelect, marks = [] }: Props) {
+export function MoveList({ game, cursor, onSelect, marks = [], secret }: Props) {
   const { t } = useI18n();
   // Number moves from the first state's move number and side.
   let first: GameState = game;
@@ -25,7 +27,8 @@ export function MoveList({ game, cursor, onSelect, marks = [] }: Props) {
     const ply = i + (blackFirst ? 1 : 0);
     const n = startNumber + Math.floor(ply / 2);
     if (ply % 2 === 0 || rows.length === 0) rows.push({ n, cells: ply % 2 === 0 ? [] : [null] });
-    rows[rows.length - 1].cells.push({ san: m.san, index: i, outcome: m.move.card?.outcome ?? null });
+    const san = secret?.has(i) ? m.san.replace(/@.*$/, '@?') : m.san;
+    rows[rows.length - 1].cells.push({ san, index: i, outcome: m.move.card?.outcome ?? null });
   });
 
   if (!rows.length) return <p className="muted">{t('moves.none')}</p>;

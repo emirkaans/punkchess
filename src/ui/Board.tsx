@@ -12,7 +12,8 @@ import {
   squareName,
 } from '../engine/index.ts';
 import type { Color, Move, Piece, Position, Square, VariantDefinition } from '../engine/index.ts';
-import type { CardResult } from './cardResult.ts';
+import { sees } from './cardResult.ts';
+import type { CardResult, Viewer } from './cardResult.ts';
 import { cardTone } from './CardResultBubble.tsx';
 import { PieceView } from './PieceView.tsx';
 import { useI18n } from './i18n.tsx';
@@ -65,6 +66,8 @@ interface Props {
   onCardTarget?: (sq: Square) => void;
   /** The card just played: its squares are ringed, the first one gets a before→after badge. */
   cardNote?: CardResult | null;
+  /** Whose secret marks (a hidden mine) are shown: one side, everyone, or nobody. */
+  viewer?: Viewer;
 }
 
 // Badge glyphs (any piece set): the standard pieces, blockers as a dot.
@@ -126,6 +129,7 @@ export function Board({
   cardTargets = null,
   onCardTarget,
   cardNote = null,
+  viewer = 'all',
 }: Props) {
   const { t, vt, locale } = useI18n();
   const texts = vt(variant);
@@ -207,7 +211,10 @@ export function Board({
   const dropsRef = useRef<Set<Square>>(new Set());
   dropsRef.current = new Set([...targets.map((m) => m.to), ...premoveDests]);
 
-  const marks = useMemo(() => variant.squareMarks?.(position) ?? [], [variant, position]);
+  const marks = useMemo(
+    () => (variant.squareMarks?.(position) ?? []).filter((m) => sees(viewer, m.owner)),
+    [variant, position, viewer],
+  );
 
   const checkSquares = useMemo(
     () => (isInCheck(variant, position) ? royalSquares(variant, position, position.turn) : []),

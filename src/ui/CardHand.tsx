@@ -28,7 +28,7 @@ interface Props {
   active: Color | null;
   pick: CardPick | null;
   onPick: (pick: CardPick | null) => void;
-  /** Plays the side to move's chaos card. */
+  /** Plays the picked card that needs no target: the chaos card, or a trick like Ateşkes. */
   onChaos: () => void;
 }
 
@@ -41,10 +41,13 @@ export function CardHand({ variant, game, chaos, colors, active, pick, onPick, o
     used?: Record<Color, boolean>;
     chaos?: Record<Color, boolean>;
   };
-  const playable = useMemo(
-    () => (active ? new Set(legalMoves(variant, pos).flatMap((m) => (m.card ? [m.card.id] : []))) : new Set<string>()),
+  const cardMoves = useMemo(
+    () => (active ? legalMoves(variant, pos).filter((m) => m.card) : []),
     [variant, pos, active],
   );
+  const playable = new Set(cardMoves.map((m) => m.card!.id));
+  // A trick with no target square (Ateşkes) is played from a confirm button, like the chaos card.
+  const untargeted = (id: string) => cardMoves.some((m) => m.card!.id === id && m.card!.squares.length === 0);
   const name = (id: string) => t(`card.name.${id}` as MessageKey);
   const text = (id: string) => t(`card.text.${id}` as MessageKey);
 
@@ -104,7 +107,16 @@ export function CardHand({ variant, game, chaos, colors, active, pick, onPick, o
                 <button onClick={() => onPick(null)}>{t('card.cancel')}</button>
               </div>
             )}
-            {mine && pick && pick.id !== CHAOS && (
+            {mine && pick && pick.id !== CHAOS && untargeted(pick.id) && (
+              <div className="hand-confirm">
+                <span>{t('card.trickConfirm')}</span>
+                <button className="primary" onClick={onChaos}>
+                  {t('card.play')}
+                </button>
+                <button onClick={() => onPick(null)}>{t('card.cancel')}</button>
+              </div>
+            )}
+            {mine && pick && pick.id !== CHAOS && !untargeted(pick.id) && (
               <div className="hand-confirm">
                 <span>{t(pick.picked.length ? 'card.pickSecond' : 'card.pickTarget')}</span>
                 <button onClick={() => onPick(null)}>{t('card.cancel')}</button>
