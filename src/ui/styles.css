@@ -8869,6 +8869,24 @@ a:focus-visible {
   z-index: 8;
   pointer-events: none;
 }
+/* A card's animation (src/ui/CardFx.tsx): effects and ghost pieces over the board. */
+.card-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+}
+.card-fx-ghost {
+  position: absolute;
+  width: 12.5%;
+  height: 12.5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-fx-ghost .piece {
+  cursor: default;
+}
 /* A mine cleared (src/ui/ClearFx.tsx): the disc kicked away, its light out. */
 .clear-fx-disc svg {
   width: 100%;

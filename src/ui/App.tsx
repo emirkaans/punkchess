@@ -825,6 +825,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                       }
                       onCardTarget={onCardTarget}
                       cardNote={cardNote}
+                      cardFxKey={cardNote ? (game?.moves.length ?? 0) : null}
                       viewer={viewer}
                       blast={
                         cardNote?.blast

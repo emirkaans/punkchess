@@ -584,6 +584,7 @@ function OnlineGame({
                 }
                 onCardTarget={onCardTarget}
                 cardNote={cardNote}
+                cardFxKey={cardNote ? (shown?.moves.length ?? 0) : null}
                 viewer={viewer}
                 blast={
                   cardNote?.blast

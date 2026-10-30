@@ -17,6 +17,7 @@ import type { CardResult, Viewer } from './cardResult.ts';
 import { cardTone } from './CardResultBubble.tsx';
 import { BlastFx } from './BlastFx.tsx';
 import { ClearFx } from './ClearFx.tsx';
+import { CardFx } from './CardFx.tsx';
 import { CardIconView } from './CardIconView.tsx';
 import { cardVisual } from './cardVisual.ts';
 import type { BadgePart } from './cardVisual.ts';
@@ -78,6 +79,8 @@ interface Props {
    * when it was only cleared, the mine (`icon`) kicked off the board.
    */
   blast?: { readonly square: Square; readonly key: number; readonly cleared?: boolean; readonly icon?: string } | null;
+  /** The move `cardNote` belongs to: its card's animation plays once per move (none when absent). */
+  cardFxKey?: number | null;
 }
 
 // Badge glyphs (any piece set): the standard pieces, blockers as a dot.
@@ -128,6 +131,7 @@ export function Board({
   cardNote = null,
   viewer = 'all',
   blast = null,
+  cardFxKey = null,
 }: Props) {
   const { t, vt, locale } = useI18n();
   const texts = vt(variant);
@@ -525,6 +529,16 @@ export function Board({
       onContextMenu={(e) => e.preventDefault()}
     >
       {squares}
+      {cardNote && cardFxKey !== null && !cardNote.blast && !cardNote.hidden && !cardNote.empty && (
+        <CardFx
+          key={cardFxKey}
+          variant={variant}
+          result={cardNote}
+          position={position}
+          flipped={flipped}
+          boardRef={boardRef}
+        />
+      )}
       {blast &&
         (blast.cleared && blast.icon ? (
           <ClearFx key={blast.key} square={blast.square} flipped={flipped} icon={blast.icon} />
