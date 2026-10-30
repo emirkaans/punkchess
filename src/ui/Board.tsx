@@ -17,6 +17,9 @@ import type { CardResult, Viewer } from './cardResult.ts';
 import { cardTone } from './CardResultBubble.tsx';
 import { BlastFx } from './BlastFx.tsx';
 import { ClearFx } from './ClearFx.tsx';
+import { CardIconView } from './CardIconView.tsx';
+import { cardVisual } from './cardVisual.ts';
+import type { BadgePart } from './cardVisual.ts';
 import { PieceView } from './PieceView.tsx';
 import { useI18n } from './i18n.tsx';
 import type { MessageKey } from '../i18n/index.ts';
@@ -79,19 +82,6 @@ interface Props {
 
 // Badge glyphs (any piece set): the standard pieces, blockers as a dot.
 const NOTE_GLYPH: Readonly<Record<string, string>> = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
-
-/**
- * The badge on a card's first square: what stood there and what stands there now. A piece
- * with its own badge (a nitro piece's queen) shows that badge.
- */
-function noteBadge(r: CardResult, glyph: (p: Piece | null, after: boolean) => string): string {
-  const [c0, c1] = r.changes;
-  if (!c0 || r.empty) return '';
-  if (r.id === 'swap' || r.id === 'quake') return `${glyph(c0.before, false)}⇄${glyph(c1?.before ?? null, false)}`;
-  if (r.id === 'ice') return '❄';
-  if (r.id === 'shield') return '◈';
-  return `${glyph(c0.before, false)}→${glyph(c0.after, true)}`;
-}
 
 interface Drag {
   from: Square;
@@ -398,7 +388,17 @@ export function Board({
   const noteSquares = cardNote && !cardNote.empty ? cardNote.changes.map((c) => c.square) : [];
   const noteGlyph = (p: Piece | null, after: boolean) =>
     !p ? '×' : ((after ? texts.badge(p.type, position, p.color)?.label : null) ?? NOTE_GLYPH[p.type] ?? '●');
-  const badgeText = cardNote ? noteBadge(cardNote, noteGlyph) : '';
+  // The card's badges (see cardVisual): a piece is a glyph; one with its own badge (a nitro
+  // piece's queen) shows that badge.
+  const noteBadges = cardNote ? cardVisual(variant, cardNote, position).badges : [];
+  const badgePart = (part: BadgePart, i: number) =>
+    part.kind === 'text' ? (
+      part.text
+    ) : part.kind === 'piece' ? (
+      noteGlyph(part.piece, !!part.after)
+    ) : (
+      <CardIconView key={i} icon={part} />
+    );
   const noteClass = cardNote ? `card-note card-note-${cardTone(cardNote)}` : '';
 
   const rect = boardRef.current?.getBoundingClientRect();
@@ -477,11 +477,14 @@ export function Board({
                 </span>
               ),
           )}
-          {cardNote && noteSquares[0] === sq && badgeText && (
-            <span className={`card-badge card-badge-${cardTone(cardNote)}`} aria-hidden="true">
-              {badgeText}
-            </span>
-          )}
+          {cardNote &&
+            noteBadges
+              .filter((b) => b.square === sq)
+              .map((b) => (
+                <span key={b.square} className={`card-badge card-badge-${cardTone(cardNote)}`} aria-hidden="true">
+                  {b.parts.map(badgePart)}
+                </span>
+              ))}
           {col === 0 && <span className="coord rank">{rankOf(sq) + 1}</span>}
           {row === 7 && <span className="coord file">{FILES[fileOf(sq)]}</span>}
         </div>,

@@ -4,6 +4,9 @@ import type { MessageKey } from '../i18n/index.ts';
 import type { CardResult } from './cardResult.ts';
 import { useI18n } from './i18n.tsx';
 import { PieceView } from './PieceView.tsx';
+import { CardIconView } from './CardIconView.tsx';
+import { cardVisual } from './cardVisual.ts';
+import type { Tile } from './cardVisual.ts';
 
 /** hit / backfire for a chaos card, trick for a trick (the colour of everything about it). */
 export const cardTone = (r: CardResult) =>
@@ -55,21 +58,45 @@ export function CardResultBubble({ variant, result, position }: Props) {
   const sentence = useCardSentence(variant, result);
   const tone = cardTone(result);
   const name = t(`card.name.${result.id}` as MessageKey);
-  const [c0, c1] = result.changes;
-  // Swaps show both pieces trading places; everything else the piece before and after.
-  const swap = result.id === 'swap' || result.id === 'quake';
-  const pieces = result.empty || !c0 ? null : swap ? [c0.before, c1?.before ?? null] : [c0.before, c0.after];
-  // The piece after the card wears its badge (a nitro piece: the queen it moves like).
-  const icon = (p: Piece | null, after = false) =>
-    p ? (
-      <span className="cr-piece">
-        <PieceView variant={variant} piece={p} position={after ? position : undefined} />
-      </span>
-    ) : (
-      <span className="cr-piece cr-none" aria-hidden="true">
-        ×
-      </span>
-    );
+  const { tiles } = cardVisual(variant, result, position);
+  const corner = (sq: number | undefined) =>
+    sq === undefined ? null : <span className="cr-square">{squareName(sq)}</span>;
+  // A piece after the card wears its badge (a nitro piece: the queen it moves like).
+  const tile = (x: Tile, i: number) => {
+    switch (x.kind) {
+      case 'sep':
+        return (
+          <span key={i} className="cr-arrow">
+            {x.text}
+          </span>
+        );
+      case 'chip':
+        return (
+          <span key={i} className="cr-chip">
+            {x.text}
+          </span>
+        );
+      case 'icon':
+        return (
+          <span key={i} className={`cr-piece cr-icon cr-icon-${x.icon}`}>
+            <CardIconView icon={x} />
+            {x.label && <span className="cr-icon-label">{x.label}</span>}
+            {corner(x.square)}
+          </span>
+        );
+      default:
+        return x.piece ? (
+          <span key={i} className={`cr-piece${x.struck ? ' cr-struck' : ''}`}>
+            <PieceView variant={variant} piece={x.piece} position={x.after ? position : undefined} />
+            {corner(x.square)}
+          </span>
+        ) : (
+          <span key={i} className="cr-piece cr-none">
+            ×
+          </span>
+        );
+    }
+  };
   return (
     <div className={`card-result ${tone}`} role="status">
       <span className="cr-avatar" aria-hidden="true">
@@ -89,11 +116,9 @@ export function CardResultBubble({ variant, result, position }: Props) {
             {sentence}
           </span>
         </div>
-        {pieces && (pieces[0] || pieces[1]) && (
+        {tiles.length > 0 && (
           <div className="cr-pieces" aria-hidden="true">
-            {icon(pieces[0])}
-            <span className="cr-arrow">{swap ? '⇄' : '→'}</span>
-            {icon(pieces[1], !swap)}
+            {tiles.map(tile)}
           </div>
         )}
       </div>

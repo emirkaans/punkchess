@@ -8606,6 +8606,9 @@ a:focus-visible {
   --note: #8fd8ff;
 }
 .card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   position: absolute;
   bottom: 2px;
   left: 2px;
@@ -8712,6 +8715,100 @@ a:focus-visible {
   justify-content: center;
   border-radius: 4px;
   background: var(--light);
+}
+.cr-piece {
+  position: relative;
+}
+/* A square name in a tile's corner (Piyon Avı, a buried mine). */
+.cr-square {
+  position: absolute;
+  right: 1px;
+  bottom: 0;
+  font:
+    700 9px/1 'Space Mono',
+    monospace;
+  color: #3a3f48;
+  pointer-events: none;
+}
+/* A piece taken by the card (Piyon Avı): struck out. */
+.cr-struck::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: linear-gradient(135deg, transparent 46%, var(--pink) 46%, var(--pink) 54%, transparent 54%);
+}
+.cr-chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--note);
+  color: #0a0a0b;
+  font:
+    700 11px/18px 'Space Mono',
+    monospace;
+  white-space: nowrap;
+}
+/* A card's picture in a tile: Buz and Kalkan on ice blue, a mine on the square colour. */
+.cr-icon-snow,
+.cr-icon-shield {
+  background: #cfeeff;
+}
+.cr-icon-snow {
+  width: auto;
+  min-width: 36px;
+  padding: 0 6px;
+  gap: 2px;
+}
+.cr-icon .cv-icon {
+  width: 24px;
+  height: 24px;
+}
+.cr-icon-mine .cv-icon {
+  width: 30px;
+  height: 30px;
+}
+.cr-icon-label {
+  font:
+    700 14px/1 'Space Mono',
+    monospace;
+  color: #0a3a55;
+}
+/* Card pictures (src/ui/CardIconView.tsx), in badges and tiles. */
+.cv-icon {
+  position: relative;
+  display: inline-flex;
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+}
+.cv-icon svg,
+.cv-svg,
+.cv-svg svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.cv-icon > svg {
+  fill: none;
+  stroke: #0a3a55;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.card-badge .cv-icon > svg {
+  stroke: #0a0a0b;
+}
+/* A cleared mine: its light out, struck through. */
+.cv-mine.struck .mine-led {
+  fill: #6d6873;
+}
+.cv-mine.struck circle[opacity] {
+  opacity: 0;
+}
+.cv-mine.struck::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 44%, var(--pink) 44%, var(--pink) 56%, transparent 56%);
 }
 .cr-piece .piece {
   cursor: default;
