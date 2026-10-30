@@ -48,10 +48,17 @@ describe('Anarşi: numaralar', () => {
     expect(cards(g).filter((x) => x.card!.id === 'void')).toHaveLength(0);
   });
 
-  it('Piyon Avı: rakip piyonu kalkar', () => {
-    const g = makeMove(v, createGame(v, fen('4k3/3p4/8/8/8/8/8/4K3', 'w', 'pawn.-.0000')), card('pawn', 'd7'));
+  it('Piyon Avı: rakibin iki piyonu kalkar; tek piyon kaldıysa o', () => {
+    let g = createGame(v, fen('4k3/3pp3/8/7p/8/8/8/4K3', 'w', 'pawn.-.0000'));
+    expect(cards(g).filter((m) => m.card!.id === 'pawn')).toHaveLength(3);
+    g = makeMove(v, g, card('pawn', 'd7', 'e7'));
     expect(g.position.board[sq('d7')]).toBeNull();
-    expect(g.moves[0].san).toBe('PA@d7');
+    expect(g.position.board[sq('e7')]).toBeNull();
+    expect(g.position.board[sq('h5')]).toEqual({ type: 'p', color: 'b' });
+    expect(g.moves[0].san).toBe('PA@d7-e7');
+    const one = makeMove(v, createGame(v, fen('4k3/3p4/8/8/8/8/8/4K3', 'w', 'pawn.-.0000')), card('pawn', 'd7'));
+    expect(one.position.board[sq('d7')]).toBeNull();
+    expect(one.moves[0].san).toBe('PA@d7');
   });
 
   it('Buz: donan taş 3 tur oynayamaz ama şah çeker; sayaç tam hamle sayar', () => {

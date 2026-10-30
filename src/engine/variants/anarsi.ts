@@ -200,9 +200,15 @@ function trickMoves(pos: Position, trick: Trick): Move[] {
     case 'void':
       each((p) => !p);
       break;
-    case 'pawn':
-      each((p) => p?.type === 'p' && p.color !== me);
+    case 'pawn': {
+      // Two opponent pawns; just the one when only one is left.
+      const pawns: number[] = [];
+      for (let sq = 0; sq < 64; sq++) if (board[sq]?.type === 'p' && board[sq]!.color !== me) pawns.push(sq);
+      if (pawns.length === 1) out.push(play('pawn', pawns));
+      for (let i = 0; i < pawns.length; i++)
+        for (let j = i + 1; j < pawns.length; j++) out.push(play('pawn', [pawns[i], pawns[j]]));
       break;
+    }
     case 'ice':
       each((p) => isPlain(p) && p.color !== me);
       break;
@@ -266,7 +272,7 @@ function applyCard(pos: Position, move: Move): Position {
       board[sq[0]] = { type: 'x', color: me };
       break;
     case 'pawn':
-      board[sq[0]] = null;
+      for (const s of sq) board[s] = null;
       removed = true;
       break;
     case 'ice':
@@ -553,7 +559,7 @@ export const TRICK_NAMES_EN: Readonly<Record<Trick | ChaosCard, string>> = {
 
 const TRICK_DETAILS: Readonly<Record<Trick, string>> = {
   void: 'Boş bir kare oyun sonuna kadar silinir.',
-  pawn: 'Rakibin bir piyonu tahtadan alınır.',
+  pawn: 'Rakibin iki piyonu tahtadan alınır.',
   ice: 'Rakibin bir taşı 3 tur oynayamaz.',
   swap: 'Kendi iki taşının yeri değişir.',
   shield: 'Taşın bir tur yenemez.',
@@ -564,7 +570,7 @@ const TRICK_DETAILS: Readonly<Record<Trick, string>> = {
 
 const TRICK_DETAILS_EN: Readonly<Record<Trick, string>> = {
   void: 'An empty square leaves the board for good.',
-  pawn: 'One opponent pawn leaves the board.',
+  pawn: 'Two opponent pawns leave the board.',
   ice: 'An opponent piece cannot move for 3 turns.',
   swap: 'Two of your pieces swap places.',
   shield: 'Your piece cannot be taken for a turn.',
@@ -678,7 +684,7 @@ export const anarsi: VariantDefinition = defineVariant({
     bullets: [
       'Oyundan önce bir numara seçersin ve oyunda bir kez, hamle yerine oynarsın. Numara hep sana yarar.',
       'Kara Delik boş bir kareyi oyun sonuna kadar siler; Barikat yan yana 3 boş kareyi 3 tur kapatır. Oralara hiçbir taş giremez, üstünden geçemez.',
-      'Piyon Avı rakibin bir piyonunu alır; Buz rakibin bir taşını 3 tur dondurur (donan taş yine saldırır ve korur); Sürgün rakibin bir hafif taşını başladığı kareye geri yollar.',
+      'Piyon Avı rakibin iki piyonunu alır; Buz rakibin bir taşını 3 tur dondurur (donan taş yine saldırır ve korur); Sürgün rakibin bir hafif taşını başladığı kareye geri yollar.',
       'Işınlanma kendi iki taşının yerini değiştirir (şah ve piyon olmaz); Kalkan taşını bir tur yenmez yapar; Diriliş yenmiş filini (yoksa atını) ilk sırandaki seçtiğin boş kareye geri getirir.',
       `Gizli kaos kartı (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı 60 saniye, Pusu bir hafif taş, Hain bir piyon, Nitro bir hamlelik vezir gücü, Rütbe Düşürme en değerli taşı bir rütbe indirir, Deprem iki taşın yerini değiştirir. İsabet sana, geri tepme rakibe yarar.`,
       'Şah çekiliyken kart oynanmaz. Geri tepen kart şahını açmaz, rakibe tek hamlede mat fırsatı vermez.',
@@ -701,7 +707,7 @@ export const anarsi: VariantDefinition = defineVariant({
         bullets: [
           'Before the game you pick a trick and play it once, instead of a move. A trick always helps you.',
           'Black Hole takes an empty square off the board for good; Barricade closes 3 empty squares in a row for 3 turns. No piece enters or passes them.',
-          'Pawn Hunt takes an opponent pawn; Ice freezes an opponent piece for 3 turns (it still attacks and defends); Exile sends an opponent minor piece back to its starting square.',
+          'Pawn Hunt takes two opponent pawns; Ice freezes an opponent piece for 3 turns (it still attacks and defends); Exile sends an opponent minor piece back to its starting square.',
           'Teleport swaps two of your pieces (not the king, not pawns); Shield keeps your piece from being taken for a turn; Revival brings back a taken bishop (else a knight) to an empty square of your first rank.',
           `Hidden chaos card (from move ${CHAOS_FROM_MOVE}): Time Thief 60 seconds, Ambush a minor piece, Traitor a pawn, Nitro one queen move, Demotion takes the best piece one rank down, Earthquake swaps two pieces. A hit helps you, a backfire the opponent.`,
           'No card while in check. A backfire never leaves your king open or hands the opponent a mate in one.',

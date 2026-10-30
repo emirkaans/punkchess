@@ -21,6 +21,7 @@ export function useCardSentence(variant: VariantDefinition, r: CardResult): stri
     square: c0 ? squareName(c0.square) : '',
     square2: c1 ? squareName(c1.square) : '',
     last: last ? squareName(last.square) : '',
+    squares: r.changes.map((c) => squareName(c.square)).join(', '),
     piece: piece(c0?.before ?? c0?.after),
     side: side(owner),
   };
