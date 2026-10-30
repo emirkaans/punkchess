@@ -57,12 +57,13 @@ export function cardVisual(v: VariantDefinition, r: CardResult, position: Positi
         const svg = markAt(c0.square, 'mine')?.icon;
         return svg ? { badges: [], tiles: [{ kind: 'icon', icon: 'mine', svg, square: c0.square }] } : NONE;
       }
-      // Frozen: a snowflake and the moves left.
+      // Frozen: a snowflake; the bubble adds the moves left (the square's own mark shows them too).
       case 'ice': {
         const left = markAt(c0.square, 'ice')?.label ?? '';
-        const parts: BadgePart[] = [{ kind: 'icon', icon: 'snow' }];
-        if (left) parts.push({ kind: 'text', text: left });
-        return { badges: [{ square: c0.square, parts }], tiles: [{ kind: 'icon', icon: 'snow', label: left }] };
+        return {
+          badges: [{ square: c0.square, parts: [{ kind: 'icon', icon: 'snow' }] }],
+          tiles: [{ kind: 'icon', icon: 'snow', label: left }],
+        };
       }
       case 'shield':
         return {

@@ -28,10 +28,10 @@ describe('kart sonucu resmi', () => {
     expect(r.tiles).toMatchObject([{ kind: 'icon', icon: 'mine', square: sq('b1') }]);
   });
 
-  it('Buz: rozette kar tanesi ve kalan tur, balonda kar tanesi', () => {
+  it('Buz: rozette kar tanesi, balonda kar tanesi ve kalan tur', () => {
     const g = makeMove(v, createGame(v, fen('4k3/8/8/8/8/8/1r6/4K3', 'w', 'ice.-.0000')), card('ice', 'b2'));
     const r = visual(g);
-    expect(r.badges).toMatchObject([{ square: sq('b2'), parts: [{ icon: 'snow' }, { kind: 'text', text: '3' }] }]);
+    expect(r.badges).toMatchObject([{ square: sq('b2'), parts: [{ icon: 'snow' }] }]);
     expect(r.tiles).toMatchObject([{ kind: 'icon', icon: 'snow', label: '3' }]);
   });
 
