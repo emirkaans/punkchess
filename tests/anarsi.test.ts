@@ -359,6 +359,24 @@ describe('Anarşi: Ateşkes ve Mayın', () => {
     expect(v.squareMarks!(safe.position)).toHaveLength(1);
   });
 
+  it('Mayın: hamlenin yasallığı mayına bağlı değil; şahı açacak taş patlamaz, mayını temizler', () => {
+    let g = createGame(v, fen('4kb2/7p/8/8/3Q4/8/8/7K', 'w', 'mine.-.0000'));
+    g = makeMove(v, g, card('mine', 'e7'));
+    g = playSan(v, g, 'h6', 'Qe4+');
+    // e7'yi kapatmak yasal: mayın şahın yasal hamlelerinden belli olmaz.
+    expect(targets(g, 'f8')).toContain('e7');
+    const block = playSan(v, g, 'Be7');
+    expect(block.position.board[sq('e7')]).toEqual({ type: 'b', color: 'b' });
+    expect(v.squareMarks!(block.position)).toEqual([]);
+  });
+
+  it('Mayın: bot rakibin mayınını bilmez', () => {
+    let g = createGame(v, fen('4k3/8/8/8/8/2n5/8/R3K3', 'w', 'mine.-.0000'));
+    g = makeMove(v, g, card('mine', 'b1'));
+    expect(v.squareMarks!(v.withoutSecrets!(g.position, 'b'))).toEqual([]);
+    expect(v.squareMarks!(v.withoutSecrets!(g.position, 'w'))).toHaveLength(1);
+  });
+
   it('Mayın: rakibe gizli; patlayınca herkes görür', async () => {
     const { lastCardResult, secretMoves } = await import('../src/ui/cardResult.ts');
     let g = createGame(v, fen('4k3/8/8/8/8/2n5/8/R3K3', 'w', 'mine.-.0000'));

@@ -331,6 +331,11 @@ export interface VariantDefinition {
   /** Optional marks the board draws on squares (lasting effects). */
   readonly squareMarks?: (pos: Position) => readonly SquareMark[];
   /**
+   * Optional: the position as `viewer` knows it, the opponent's secrets (a buried mine) left
+   * out. The bot plays from it, so it never uses what its opponent hid.
+   */
+  readonly withoutSecrets?: (pos: Position, viewer: Color) => Position;
+  /**
    * Optional game-over override. Receives the default result (null = game continues)
    * and may replace it.
    */

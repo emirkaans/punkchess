@@ -478,7 +478,9 @@ const effectOn = (pos: Position, k: Effect['k'], sq: number) =>
 
 /**
  * Effects run out at their ply; a frozen or shielded piece that is gone takes its effect along.
- * A piece moving onto the opponent's mine blows up with it (a king only clears the mine).
+ * A piece moving onto the opponent's mine blows up with it. A king only clears the mine, and so
+ * does a piece whose loss would leave its own king in check: whether a move is legal never
+ * depends on a mine, so trying moves cannot find one.
  */
 function afterApply(prev: Position, next: Position, move: Move): Position {
   const ex = extraOf(next);
@@ -489,7 +491,11 @@ function afterApply(prev: Position, next: Position, move: Move): Position {
   for (const e of ex.fx) {
     if (e.k === 'mine' && !move.card && e.c !== prev.turn && e.sq[0] === move.to) {
       board ??= next.board.slice();
-      if (board[move.to]?.type !== 'k') board[move.to] = null;
+      if (board[move.to]?.type !== 'k') {
+        const piece = board[move.to];
+        board[move.to] = null;
+        if (isInCheck(anarsi, { ...next, board }, prev.turn)) board[move.to] = piece;
+      }
       continue;
     }
     const piece = next.board[e.sq[0]];
@@ -509,6 +515,13 @@ function afterApply(prev: Position, next: Position, move: Move): Position {
   }
   if (keep.length === ex.fx.length) return next;
   return { ...next, board: board ?? next.board, extra: asExtra({ ...ex, fx: keep }) };
+}
+
+/** The position as `viewer` knows it: the opponent's mines are not there. */
+function withoutSecrets(pos: Position, viewer: Color): Position {
+  const ex = extraOf(pos);
+  const fx = ex.fx.filter((e) => e.k !== 'mine' || e.c === viewer);
+  return fx.length === ex.fx.length ? pos : { ...pos, extra: asExtra({ ...ex, fx }) };
 }
 
 function squareMarks(pos: Position): SquareMark[] {
@@ -741,6 +754,7 @@ export const anarsi: VariantDefinition = defineVariant({
   },
   afterApply,
   squareMarks,
+  withoutSecrets,
   fast: FAST,
   emblem: '<circle cx="24" cy="24" r="18"/><path d="M14 38L24 9l10 29M16 28h21"/>',
   rules: {
@@ -748,7 +762,7 @@ export const anarsi: VariantDefinition = defineVariant({
     summary: 'Standart satranç, artı bir numara ve bir kaos kartı. Kart oynamak hamle yerine geçer.',
     bullets: [
       'Oyundan önce bir numara seçersin ve oyunda bir kez, hamle yerine oynarsın. Numara hep sana yarar.',
-      'Kara Delik boş bir kareyi oyun sonuna kadar siler; Barikat yan yana 3 boş kareyi 3 tur kapatır. Ateşkes 2 tur boyunca yemeyi yasaklar; Mayın, rakibin göremediği bir kareye gömülür ve oraya basan rakip taşı patlatır (şah sadece temizler).',
+      'Kara Delik boş bir kareyi oyun sonuna kadar siler; Barikat yan yana 3 boş kareyi 3 tur kapatır. Ateşkes 2 tur boyunca yemeyi yasaklar; Mayın, rakibin göremediği bir kareye gömülür ve oraya basan rakip taşı patlatır (şah ve kendi şahını açacak taş sadece temizler).',
       'Piyon Avı rakibin iki piyonunu alır; Buz rakibin bir taşını 3 tur dondurur (donan taş yine saldırır ve korur); Sürgün rakibin bir hafif taşını başladığı kareye geri yollar.',
       'Işınlanma kendi iki taşının yerini değiştirir (şah ve piyon olmaz); Kalkan taşını bir tur yenmez yapar; Diriliş yenmiş filini (yoksa atını) ilk sırandaki seçtiğin boş kareye geri getirir.',
       `Gizli kaos kartı (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı 60 saniye, Pusu bir hafif taş, Hain bir piyon, Nitro iki hamlelik vezir gücü, Rütbe Düşürme en değerli taşı bir rütbe indirir, Deprem iki taşın yerini değiştirir. İsabet sana, geri tepme rakibe yarar.`,
@@ -771,7 +785,7 @@ export const anarsi: VariantDefinition = defineVariant({
         summary: 'Standard chess plus one trick and one chaos card. Playing a card takes your move.',
         bullets: [
           'Before the game you pick a trick and play it once, instead of a move. A trick always helps you.',
-          'Black Hole takes an empty square off the board for good; Barricade closes 3 empty squares in a row for 3 turns. Ceasefire forbids taking for 2 turns; Mine is buried where the opponent cannot see it and blows up the opponent piece that steps on it (a king only clears it).',
+          'Black Hole takes an empty square off the board for good; Barricade closes 3 empty squares in a row for 3 turns. Ceasefire forbids taking for 2 turns; Mine is buried where the opponent cannot see it and blows up the opponent piece that steps on it (a king, or a piece whose loss would expose its own king, only clears it).',
           'Pawn Hunt takes two opponent pawns; Ice freezes an opponent piece for 3 turns (it still attacks and defends); Exile sends an opponent minor piece back to its starting square.',
           'Teleport swaps two of your pieces (not the king, not pawns); Shield keeps your piece from being taken for a turn; Revival brings back a taken bishop (else a knight) to an empty square of your first rank.',
           `Hidden chaos card (from move ${CHAOS_FROM_MOVE}): Time Thief 60 seconds, Ambush a minor piece, Traitor a pawn, Nitro two queen moves, Demotion takes the best piece one rank down, Earthquake swaps two pieces. A hit helps you, a backfire the opponent.`,

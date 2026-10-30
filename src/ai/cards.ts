@@ -46,7 +46,10 @@ export function chooseWithCards(
   chaos: string | null,
   opts: ChooseOptions = {},
 ): BotMove {
-  const pos = state.position;
+  // The bot plays from what it knows: the opponent's hidden mine is left out. Moves legal there
+  // are legal in the real position too (a mine never makes a move illegal).
+  const pos = v.withoutSecrets?.(state.position, state.position.turn) ?? state.position;
+  if (pos !== state.position) state = { ...state, position: pos };
   const legal = legalMoves(v, pos);
   const cards = legal.filter((m) => m.card && (m.card.id !== CHAOS || (chaos && v.cards)));
   const pieceMoves = legal.some((m) => !m.card);
