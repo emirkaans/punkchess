@@ -62,6 +62,20 @@ export const CARD_CODES: Readonly<Record<Trick | ChaosCard, string>> = {
 };
 const CARD_OF_CODE = new Map(Object.entries(CARD_CODES).map(([id, code]) => [code, id]));
 
+/** A buried mine as its owner sees it: a flat studded disc with a blinking pink light. */
+const MINE_ICON =
+  '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+  '<ellipse cx="50" cy="58" rx="40" ry="22" fill="#0a0a0b"/>' +
+  '<ellipse cx="50" cy="52" rx="40" ry="22" fill="#2a2530" stroke="#0a0a0b" stroke-width="2"/>' +
+  '<ellipse cx="50" cy="50" rx="28" ry="14" fill="#141016" stroke="#c9c5cf" stroke-width="1.5"/>' +
+  Array.from({ length: 10 }, (_, i) => {
+    const a = (i / 10) * Math.PI * 2;
+    return `<circle cx="${(50 + Math.cos(a) * 34).toFixed(1)}" cy="${(52 + Math.sin(a) * 18).toFixed(1)}" r="2.6" fill="#c9c5cf" stroke="#0a0a0b" stroke-width=".8"/>`;
+  }).join('') +
+  '<circle cx="50" cy="48" r="7" fill="#ff2e93" opacity=".35"/>' +
+  '<circle class="mine-led" cx="50" cy="48" r="4" fill="#ff2e93"/>' +
+  '</svg>';
+
 /** Effect kinds in the FEN field. */
 const EFFECTS = ['ice', 'shield', 'wall', 'nitro', 'truce', 'mine'];
 /** A mine stays until something steps on it (its "expiry" ply is never reached). */
@@ -507,7 +521,7 @@ function squareMarks(pos: Position): SquareMark[] {
     if (e.k === 'ice') marks.push({ square: e.sq[0], kind: 'ice', label: left });
     if (e.k === 'shield') marks.push({ square: e.sq[0], kind: 'shield', label: '' });
     if (e.k === 'wall') e.sq.forEach((s, i) => marks.push({ square: s, kind: 'wall', label: i === 0 ? left : '' }));
-    if (e.k === 'mine') marks.push({ square: e.sq[0], kind: 'mine', label: '', owner: e.c });
+    if (e.k === 'mine') marks.push({ square: e.sq[0], kind: 'mine', label: '', owner: e.c, icon: MINE_ICON });
     // The truce shows on both kings, with its moves left.
     if (e.k === 'truce')
       pos.board.forEach((p, s) => p?.type === 'k' && marks.push({ square: s, kind: 'truce', label: left }));

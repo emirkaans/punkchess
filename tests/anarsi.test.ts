@@ -348,7 +348,8 @@ describe('Anarşi: Ateşkes ve Mayın', () => {
     g = makeMove(v, g, card('mine', 'b1'));
     expect(g.moves[0].san).toBe('MY@b1');
     // Sadece sahibine görünen işaret.
-    expect(v.squareMarks!(g.position)).toEqual([{ square: sq('b1'), kind: 'mine', label: '', owner: 'w' }]);
+    expect(v.squareMarks!(g.position)).toMatchObject([{ square: sq('b1'), kind: 'mine', label: '', owner: 'w' }]);
+    expect(v.squareMarks!(g.position)[0].icon).toContain('<svg');
     const boom = playSan(v, g, 'Nb1');
     expect(boom.position.board[sq('b1')]).toBeNull();
     expect(v.squareMarks!(boom.position)).toEqual([]);

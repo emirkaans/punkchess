@@ -2,7 +2,8 @@
 // short wooden "tok"s like a piece put down on a board: a noise click for the
 // contact plus a low body that drops in pitch.
 
-export type SoundKind = 'move' | 'capture' | 'check' | 'captureCheck' | 'end' | 'mate' | 'lowtime' | 'start' | 'spray';
+export type SoundKind =
+  'move' | 'capture' | 'check' | 'captureCheck' | 'end' | 'mate' | 'lowtime' | 'start' | 'spray' | 'blast';
 
 /** Sound of a played move: a capture always cracks (with a check ping on top when it also checks). */
 export const moveSound = (captured: boolean, check: boolean): SoundKind =>
@@ -127,6 +128,22 @@ function spray(ac: AudioContext, start: number) {
   src.stop(t + 1.2);
 }
 
+/** A mine going off: low noise whose filter closes as it dies, over a deep falling boom. */
+function boom(ac: AudioContext, start: number) {
+  const src = ac.createBufferSource();
+  src.buffer = noiseBuffer(ac);
+  src.loop = true;
+  const low = ac.createBiquadFilter();
+  low.type = 'lowpass';
+  low.Q.value = 0.7;
+  low.frequency.setValueAtTime(3500, start);
+  low.frequency.exponentialRampToValueAtTime(80, start + 1.2);
+  src.connect(low).connect(envelope(ac, start, 0.9, 1.2));
+  src.start(start);
+  src.stop(start + 1.3);
+  tone(ac, 95, start, 1, 'sine', 0.9, 30);
+}
+
 export function playSound(kind: SoundKind): void {
   const ac = audio();
   if (!ac) return;
@@ -137,6 +154,9 @@ export function playSound(kind: SoundKind): void {
       break;
     case 'spray':
       spray(ac, t);
+      break;
+    case 'blast':
+      boom(ac, t);
       break;
     case 'capture':
       // Only the crack, like a nutshell breaking (no "tok" of a plain move).

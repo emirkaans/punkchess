@@ -280,7 +280,9 @@ function OnlineGame({
     if (over && !before.over) playSound(view.outcome?.reason === 'checkmate' ? 'mate' : 'end');
     else if (moveCount > before.moves && played) {
       const lastMove = played.moves.at(-1)?.move;
-      playSound(moveSound(lastMove?.captured !== undefined, isInCheck(variant, played.position)));
+      // A move that set off a mine booms instead.
+      if (lastCardResult(variant, played, 'all')?.blast) playSound('blast');
+      else playSound(moveSound(lastMove?.captured !== undefined, isInCheck(variant, played.position)));
     }
   }, [view, moveCount, prefs.sound, played, variant]);
 
@@ -564,6 +566,7 @@ function OnlineGame({
                 onCardTarget={onCardTarget}
                 cardNote={cardNote}
                 viewer={viewer}
+                blast={cardNote?.blast ? { square: cardNote.changes[0].square, key: shown?.moves.length ?? 0 } : null}
               />
               {view.outcome && atEnd && (
                 <GameOverOverlay

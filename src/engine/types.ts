@@ -86,6 +86,8 @@ export interface SquareMark {
   readonly label: string;
   /** A secret of one side (a hidden mine): shown only to that side, or to everyone once the game is over. */
   readonly owner?: Color;
+  /** A picture drawn on the square: SVG markup in a 100×100 box (a mine). */
+  readonly icon?: string;
 }
 
 export interface CastlingRights {

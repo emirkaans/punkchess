@@ -12,6 +12,7 @@ import { isInCheck, opposite, toFen } from '../../engine/index.ts';
 import type { GameState, Square } from '../../engine/index.ts';
 import { storeGame } from '../../storage/games.ts';
 import { FLUSH_UPLOAD, uploadRecord, useWatcherCount } from '../online/connection.ts';
+import { lastCardResult } from '../cardResult.ts';
 import { moveSound } from '../sound.ts';
 import type { SoundKind } from '../sound.ts';
 import { gameReducer } from './reducer.ts';
@@ -157,7 +158,9 @@ export function useGameFeedback(session: GameSession, view: SessionView, sound: 
     const { view: v, sound: play } = latest.current;
     const end = v.endState;
     if (end.result) return; // the end sound plays instead
-    play(moveSound(end.moves.at(-1)?.move.captured !== undefined, isInCheck(v.variant, end.position)));
+    // A move that set off a mine booms instead.
+    if (lastCardResult(v.variant, end, 'all')?.blast) play('blast');
+    else play(moveSound(end.moves.at(-1)?.move.captured !== undefined, isInCheck(v.variant, end.position)));
   }, [key, length, latest]);
 
   const finalOutcome = view.finalOutcome;

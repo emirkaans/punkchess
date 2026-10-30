@@ -15,6 +15,7 @@ import type { Color, Move, Piece, Position, Square, VariantDefinition } from '..
 import { sees } from './cardResult.ts';
 import type { CardResult, Viewer } from './cardResult.ts';
 import { cardTone } from './CardResultBubble.tsx';
+import { BlastFx } from './BlastFx.tsx';
 import { PieceView } from './PieceView.tsx';
 import { useI18n } from './i18n.tsx';
 import type { MessageKey } from '../i18n/index.ts';
@@ -68,6 +69,8 @@ interface Props {
   cardNote?: CardResult | null;
   /** Whose secret marks (a hidden mine) are shown: one side, everyone, or nobody. */
   viewer?: Viewer;
+  /** A mine that just went off: a shock wave on its square (keyed so it plays once). */
+  blast?: { readonly square: Square; readonly key: number } | null;
 }
 
 // Badge glyphs (any piece set): the standard pieces, blockers as a dot.
@@ -130,6 +133,7 @@ export function Board({
   onCardTarget,
   cardNote = null,
   viewer = 'all',
+  blast = null,
 }: Props) {
   const { t, vt, locale } = useI18n();
   const texts = vt(variant);
@@ -455,6 +459,12 @@ export function Board({
           {cardTarget && <span className={piece ? 'hint capture card-hint' : 'hint card-hint'} />}
           {squareMarks.map(
             (m) =>
+              m.icon && (
+                <span key={`icon-${m.kind}`} className="mark-icon" dangerouslySetInnerHTML={{ __html: m.icon }} />
+              ),
+          )}
+          {squareMarks.map(
+            (m) =>
               m.label && (
                 <span key={m.kind} className={`mark-label mark-label-${m.kind}`}>
                   {m.label}
@@ -506,6 +516,7 @@ export function Board({
       onContextMenu={(e) => e.preventDefault()}
     >
       {squares}
+      {blast && <BlastFx key={blast.key} square={blast.square} flipped={flipped} boardRef={boardRef} />}
       {(allArrows.length > 0 || shapes.circles.length > 0) && (
         <ShapeLayer arrows={allArrows} circles={shapes.circles} preview={drawing} flipped={flipped} />
       )}
