@@ -543,7 +543,15 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const lastPlayed = view.endState.moves.at(-1);
   const mover = view.endState.position.turn === 'w' ? 'b' : 'w';
   const announcement = [
-    lastPlayed ? t('announceMove', { color: t(`color.${mover}`), san: lastPlayed.san }) : '',
+    lastPlayed
+      ? t('announceMove', {
+          color: t(`color.${mover}`),
+          // A secret card's squares are not read out either.
+          san: secretMoves(variant, view.endState, viewer).has(view.endState.moves.length - 1)
+            ? lastPlayed.san.replace(/@.*$/, '@?')
+            : lastPlayed.san,
+        })
+      : '',
     view.finalOutcome ? outcomeText(view.finalOutcome, t) : '',
   ]
     .filter(Boolean)

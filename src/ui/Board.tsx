@@ -389,6 +389,8 @@ export function Board({
     return [top ? 'band-top' : '', bottom ? 'band-bottom' : ''].join(' ');
   };
 
+  // A card's squares are shown by its own ring (or kept secret, a hidden mine): never as the last move.
+  const lastSquares = lastMove && !lastMove.card ? [lastMove.from, lastMove.to] : [];
   const noteSquares = cardNote && !cardNote.empty ? cardNote.changes.map((c) => c.square) : [];
   const noteGlyph = (p: Piece | null, after: boolean) =>
     !p ? '×' : ((after ? texts.badge(p.type, position, p.color)?.label : null) ?? NOTE_GLYPH[p.type] ?? '●');
@@ -410,7 +412,7 @@ export function Board({
       const classes = [
         'square',
         light ? 'light' : 'dark',
-        lastMove && (lastMove.from === sq || lastMove.to === sq) ? 'last' : '',
+        lastSquares.includes(sq) ? 'last' : '',
         selected === sq ? 'selected' : '',
         premove && (premove.from === sq || premove.to === sq) ? 'premove' : '',
         checkSquares.includes(sq) ? 'check' : '',
@@ -433,7 +435,7 @@ export function Board({
         selected === sq ? t('square.selected') : '',
         target || premoveDest || cardTarget ? t('square.reachable') : '',
         ...squareMarks.map((m) => t(`square.mark.${m.kind}` as MessageKey)),
-        lastMove && (lastMove.from === sq || lastMove.to === sq) ? t('square.lastMove') : '',
+        lastSquares.includes(sq) ? t('square.lastMove') : '',
         checkSquares.includes(sq) ? t('square.inCheck') : '',
         highlight.includes(sq) && texts.highlightLabel ? texts.highlightLabel.toLocaleLowerCase(locale) : '',
       ]
