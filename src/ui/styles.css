@@ -8772,6 +8772,19 @@ a:focus-visible {
   z-index: 8;
   pointer-events: none;
 }
+/* A mine cleared (src/ui/ClearFx.tsx): the disc kicked away, its light out. */
+.clear-fx-disc svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+.clear-fx-disc .mine-led {
+  fill: #6d6873;
+}
+.clear-fx-disc circle[opacity] {
+  opacity: 0;
+}
 /* Ateşkes: on both kings, the moves left. */
 .mark-label-truce {
   background: #f1eee8;

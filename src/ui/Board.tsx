@@ -16,6 +16,7 @@ import { sees } from './cardResult.ts';
 import type { CardResult, Viewer } from './cardResult.ts';
 import { cardTone } from './CardResultBubble.tsx';
 import { BlastFx } from './BlastFx.tsx';
+import { ClearFx } from './ClearFx.tsx';
 import { PieceView } from './PieceView.tsx';
 import { useI18n } from './i18n.tsx';
 import type { MessageKey } from '../i18n/index.ts';
@@ -69,8 +70,11 @@ interface Props {
   cardNote?: CardResult | null;
   /** Whose secret marks (a hidden mine) are shown: one side, everyone, or nobody. */
   viewer?: Viewer;
-  /** A mine that just went off: a shock wave on its square (keyed so it plays once). */
-  blast?: { readonly square: Square; readonly key: number } | null;
+  /**
+   * A mine that was just stepped on (keyed so it plays once): a shock wave on its square, or,
+   * when it was only cleared, the mine (`icon`) kicked off the board.
+   */
+  blast?: { readonly square: Square; readonly key: number; readonly cleared?: boolean; readonly icon?: string } | null;
 }
 
 // Badge glyphs (any piece set): the standard pieces, blockers as a dot.
@@ -518,7 +522,12 @@ export function Board({
       onContextMenu={(e) => e.preventDefault()}
     >
       {squares}
-      {blast && <BlastFx key={blast.key} square={blast.square} flipped={flipped} boardRef={boardRef} />}
+      {blast &&
+        (blast.cleared && blast.icon ? (
+          <ClearFx key={blast.key} square={blast.square} flipped={flipped} icon={blast.icon} />
+        ) : (
+          <BlastFx key={blast.key} square={blast.square} flipped={flipped} boardRef={boardRef} />
+        ))}
       {(allArrows.length > 0 || shapes.circles.length > 0) && (
         <ShapeLayer arrows={allArrows} circles={shapes.circles} preview={drawing} flipped={flipped} />
       )}

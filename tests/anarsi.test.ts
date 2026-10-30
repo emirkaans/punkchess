@@ -370,6 +370,18 @@ describe('Anarşi: Ateşkes ve Mayın', () => {
     expect(v.squareMarks!(block.position)).toEqual([]);
   });
 
+  it('Mayın: temizlenince balon "temizlendi" der, patlayınca demez', async () => {
+    const { lastCardResult } = await import('../src/ui/cardResult.ts');
+    let g = createGame(v, fen('4kb2/7p/8/8/3Q4/8/8/7K', 'w', 'mine.-.0000'));
+    g = makeMove(v, g, card('mine', 'e7'));
+    g = playSan(v, g, 'h6', 'Qe4+', 'Be7');
+    expect(lastCardResult(v, g, 'all')).toMatchObject({ blast: true, cleared: true });
+    expect(lastCardResult(v, g, 'all')?.icon).toContain('<svg');
+    let h = createGame(v, fen('4k3/8/8/8/8/2n5/8/R3K3', 'w', 'mine.-.0000'));
+    h = playSan(v, makeMove(v, h, card('mine', 'b1')), 'Nb1');
+    expect(lastCardResult(v, h, 'all')).toMatchObject({ blast: true, cleared: false });
+  });
+
   it('Mayın: bot rakibin mayınını bilmez', () => {
     let g = createGame(v, fen('4k3/8/8/8/8/2n5/8/R3K3', 'w', 'mine.-.0000'));
     g = makeMove(v, g, card('mine', 'b1'));

@@ -280,8 +280,9 @@ function OnlineGame({
     if (over && !before.over) playSound(view.outcome?.reason === 'checkmate' ? 'mate' : 'end');
     else if (moveCount > before.moves && played) {
       const lastMove = played.moves.at(-1)?.move;
-      // A move that set off a mine booms instead.
-      if (lastCardResult(variant, played, 'all')?.blast) playSound('blast');
+      // A move that set off a mine booms instead (or, a mine only cleared, kicks it away).
+      const mine = lastCardResult(variant, played, 'all');
+      if (mine?.blast) playSound(mine.cleared ? 'clear' : 'blast');
       else playSound(moveSound(lastMove?.captured !== undefined, isInCheck(variant, played.position)));
     }
   }, [view, moveCount, prefs.sound, played, variant]);
@@ -584,7 +585,16 @@ function OnlineGame({
                 onCardTarget={onCardTarget}
                 cardNote={cardNote}
                 viewer={viewer}
-                blast={cardNote?.blast ? { square: cardNote.changes[0].square, key: shown?.moves.length ?? 0 } : null}
+                blast={
+                  cardNote?.blast
+                    ? {
+                        square: cardNote.changes[0].square,
+                        key: shown?.moves.length ?? 0,
+                        cleared: cardNote.cleared,
+                        icon: cardNote.icon,
+                      }
+                    : null
+                }
               />
               {view.outcome && atEnd && (
                 <GameOverOverlay

@@ -3,7 +3,7 @@
 // contact plus a low body that drops in pitch.
 
 export type SoundKind =
-  'move' | 'capture' | 'check' | 'captureCheck' | 'end' | 'mate' | 'lowtime' | 'start' | 'spray' | 'blast';
+  'move' | 'capture' | 'check' | 'captureCheck' | 'end' | 'mate' | 'lowtime' | 'start' | 'spray' | 'blast' | 'clear';
 
 /** Sound of a played move: a capture always cracks (with a check ping on top when it also checks). */
 export const moveSound = (captured: boolean, check: boolean): SoundKind =>
@@ -144,6 +144,46 @@ function boom(ac: AudioContext, start: number) {
   tone(ac, 95, start, 1, 'sine', 0.9, 30);
 }
 
+/** Band-passed noise sweeping from `from` to `to` Hz, fading in over `attack` (wind, a whoosh). */
+function whoosh(ac: AudioContext, start: number, from: number, to: number, dur: number, peak: number, attack: number) {
+  const src = ac.createBufferSource();
+  src.buffer = noiseBuffer(ac);
+  src.loop = true;
+  const band = ac.createBiquadFilter();
+  band.type = 'bandpass';
+  band.Q.value = 2;
+  band.frequency.setValueAtTime(from, start);
+  band.frequency.exponentialRampToValueAtTime(to, start + dur);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(peak, start + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+  g.connect(ac.destination);
+  src.connect(band).connect(g);
+  src.start(start, Math.random() * 0.2);
+  src.stop(start + dur + 0.05);
+}
+
+/** A mine kicked away (cleared, not set off): a kick, a whoosh going away, a falling whistle. */
+function kickAway(ac: AudioContext, start: number) {
+  tone(ac, 180, start, 0.12, 'sine', 0.6, 60);
+  click(ac, start, 900, 0.3, 0.04);
+  whoosh(ac, start + 0.05, 700, 3200, 0.4, 0.3, 0.12);
+  whoosh(ac, start + 0.45, 3200, 500, 0.55, 0.22, 0.02);
+  const osc = ac.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(1800, start + 0.15);
+  osc.frequency.exponentialRampToValueAtTime(500, start + 0.95);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, start + 0.15);
+  g.gain.exponentialRampToValueAtTime(0.08, start + 0.2);
+  g.gain.exponentialRampToValueAtTime(0.0001, start + 0.95);
+  g.connect(ac.destination);
+  osc.connect(g);
+  osc.start(start + 0.15);
+  osc.stop(start + 1);
+}
+
 export function playSound(kind: SoundKind): void {
   const ac = audio();
   if (!ac) return;
@@ -157,6 +197,9 @@ export function playSound(kind: SoundKind): void {
       break;
     case 'blast':
       boom(ac, t);
+      break;
+    case 'clear':
+      kickAway(ac, t);
       break;
     case 'capture':
       // Only the crack, like a nutshell breaking (no "tok" of a plain move).

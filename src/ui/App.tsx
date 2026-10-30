@@ -827,7 +827,14 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                       cardNote={cardNote}
                       viewer={viewer}
                       blast={
-                        cardNote?.blast ? { square: cardNote.changes[0].square, key: game?.moves.length ?? 0 } : null
+                        cardNote?.blast
+                          ? {
+                              square: cardNote.changes[0].square,
+                              key: game?.moves.length ?? 0,
+                              cleared: cardNote.cleared,
+                              icon: cardNote.icon,
+                            }
+                          : null
                       }
                     />
                     {setup && (

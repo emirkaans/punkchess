@@ -27,6 +27,10 @@ export interface CardResult {
   readonly hidden?: boolean;
   /** Not a card: a move set off the opponent's hidden mark (a mine went off). */
   readonly blast?: boolean;
+  /** A blast where the piece stayed: the mine was only cleared (a king, or a piece shielding it). */
+  readonly cleared?: boolean;
+  /** For a blast: the mark's picture, if it has one. */
+  readonly icon?: string;
 }
 
 /** Who sees a side's secrets (hidden marks): one side, everyone (game over, analysis) or nobody. */
@@ -87,6 +91,8 @@ export function lastCardResult(v: VariantDefinition, game: GameState | null, vie
     changes: [{ square: to, before: before.board[last.move.from] ?? null, after: game.position.board[to] ?? null }],
     empty: false,
     blast: true,
+    cleared: !!game.position.board[to],
+    icon: hit.icon,
   };
 }
 

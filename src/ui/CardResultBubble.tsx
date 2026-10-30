@@ -7,7 +7,7 @@ import { PieceView } from './PieceView.tsx';
 
 /** hit / backfire for a chaos card, trick for a trick (the colour of everything about it). */
 export const cardTone = (r: CardResult) =>
-  r.outcome === '+' ? 'hit' : r.outcome === '-' || r.blast ? 'backfire' : 'trick';
+  r.outcome === '+' ? 'hit' : r.outcome === '-' || (r.blast && !r.cleared) ? 'backfire' : 'trick';
 
 /** One sentence: what the card did, on which squares. */
 export function useCardSentence(variant: VariantDefinition, r: CardResult): string {
@@ -79,7 +79,7 @@ export function CardResultBubble({ variant, result, position }: Props) {
         <div className="cr-text">
           <strong className="cr-title">
             {result.blast
-              ? t('card.result.blast')
+              ? t(result.cleared ? 'card.result.cleared' : 'card.result.blast')
               : result.chaos
                 ? t(result.outcome === '+' ? 'card.result.hit' : 'card.result.backfire')
                 : name}

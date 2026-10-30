@@ -158,8 +158,9 @@ export function useGameFeedback(session: GameSession, view: SessionView, sound: 
     const { view: v, sound: play } = latest.current;
     const end = v.endState;
     if (end.result) return; // the end sound plays instead
-    // A move that set off a mine booms instead.
-    if (lastCardResult(v.variant, end, 'all')?.blast) play('blast');
+    // A move that set off a mine booms instead (or, a mine only cleared, kicks it away).
+    const mine = lastCardResult(v.variant, end, 'all');
+    if (mine?.blast) play(mine.cleared ? 'clear' : 'blast');
     else play(moveSound(end.moves.at(-1)?.move.captured !== undefined, isInCheck(v.variant, end.position)));
   }, [key, length, latest]);
 
