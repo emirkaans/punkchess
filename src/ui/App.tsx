@@ -464,7 +464,9 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   });
 
   // The running game is kept in the browser, so a reload (/<gameId>) carries on with it.
+  // Not the untouched placeholder session the page starts with (key 1): it would overwrite the kept game.
   useEffect(() => {
+    if (session.key <= 1 && session.timeline.states.length < 2) return;
     const kept = saveSession(session, Date.now());
     if (kept) saveJSON(CURRENT_GAME, kept);
   }, [session]);

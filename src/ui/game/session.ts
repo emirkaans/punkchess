@@ -206,13 +206,28 @@ export interface SavedSession {
   readonly savedAt: number;
   /** The hidden chaos cards (variants with cards). */
   readonly chaos?: Readonly<Record<Color, string>> | null;
+  /** Saved while the setup questions were still being asked: they are asked again. */
+  readonly setup?: boolean;
 }
 
-/** A started game, ready to store (null before the first move or while setup questions are asked). */
+/** The game, ready to store: from the moment it is opened, setup questions and all. */
 export function saveSession(s: GameSession, now: number): SavedSession | null {
   const states = s.timeline.states;
-  if (s.setup || states.length < 2) return null;
   const v = getVariant(s.settings.variantId);
+  if (s.setup) {
+    return {
+      gameId: s.gameId,
+      settings: s.settings,
+      players: s.players,
+      startFen: '',
+      moves: [],
+      outcome: null,
+      clock: s.clock,
+      savedAt: now,
+      chaos: s.chaos,
+      setup: true,
+    };
+  }
   return {
     gameId: s.gameId,
     settings: s.settings,
@@ -232,6 +247,13 @@ export function saveSession(s: GameSession, now: number): SavedSession | null {
  */
 export function restoreSession(saved: SavedSession, key: number, now: number): GameSession | null {
   try {
+    if (saved.setup) {
+      // The questions start over, with the same sides (the human keeps their colour) and cards.
+      const humans = (['w', 'b'] as const).filter((c) => saved.players[c].kind === 'human');
+      const humanColor = humans.length === 1 ? humans[0] : saved.settings.humanColor;
+      const base = newSession({ ...saved.settings, humanColor }, key);
+      return { ...base, gameId: saved.gameId, players: saved.players, chaos: saved.chaos ?? base.chaos };
+    }
     const v = getVariant(saved.settings.variantId);
     const states = [createGame(v, saved.startFen)];
     for (const san of saved.moves) states.push(playSan(v, states[states.length - 1], san));
