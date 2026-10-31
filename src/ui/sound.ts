@@ -2,12 +2,35 @@
 // short wooden "tok"s like a piece put down on a board: a noise click for the
 // contact plus a low body that drops in pitch.
 
+import { CHAOS } from '../engine/index.ts';
+import type { Move } from '../engine/index.ts';
+import { playCardSound } from './cardSounds.ts';
+
+/** A sound; `card:<id>` is that card's own sound (Anarşi), played instead of the move sound. */
 export type SoundKind =
-  'move' | 'capture' | 'check' | 'captureCheck' | 'end' | 'mate' | 'lowtime' | 'start' | 'spray' | 'blast' | 'clear';
+  | 'move'
+  | 'capture'
+  | 'check'
+  | 'captureCheck'
+  | 'end'
+  | 'mate'
+  | 'lowtime'
+  | 'start'
+  | 'spray'
+  | 'blast'
+  | 'clear'
+  | `card:${string}`;
 
 /** Sound of a played move: a capture always cracks (with a check ping on top when it also checks). */
 export const moveSound = (captured: boolean, check: boolean): SoundKind =>
   captured ? (check ? 'captureCheck' : 'capture') : check ? 'check' : 'move';
+
+/** A card move's own sound (a chaos card: what it turned out to be), or null for a piece move. */
+export const cardSound = (move: Move | undefined): SoundKind | null => {
+  const card = move?.card;
+  if (!card) return null;
+  return `card:${card.id === CHAOS ? (card.kind ?? CHAOS) : card.id}`;
+};
 
 let ctx: AudioContext | null = null;
 let noise: AudioBuffer | null = null;
@@ -188,6 +211,11 @@ export function playSound(kind: SoundKind): void {
   const ac = audio();
   if (!ac) return;
   const t = ac.currentTime + 0.005;
+  if (kind.startsWith('card:')) {
+    // A card without a sound of its own gets the plain move sound.
+    if (!playCardSound(ac, kind.slice(5), t)) tok(ac, t);
+    return;
+  }
   switch (kind) {
     case 'move':
       tok(ac, t);

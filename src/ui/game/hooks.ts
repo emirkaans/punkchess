@@ -13,7 +13,7 @@ import type { GameState, Square } from '../../engine/index.ts';
 import { storeGame } from '../../storage/games.ts';
 import { FLUSH_UPLOAD, uploadRecord, useWatcherCount } from '../online/connection.ts';
 import { lastCardResult } from '../cardResult.ts';
-import { moveSound } from '../sound.ts';
+import { cardSound, moveSound } from '../sound.ts';
 import type { SoundKind } from '../sound.ts';
 import { gameReducer } from './reducer.ts';
 import type { GameAction } from './reducer.ts';
@@ -160,8 +160,9 @@ export function useGameFeedback(session: GameSession, view: SessionView, sound: 
     if (end.result) return; // the end sound plays instead
     // A move that set off a mine booms instead (or, a mine only cleared, kicks it away).
     const mine = lastCardResult(v.variant, end, 'all');
+    const last = end.moves.at(-1)?.move;
     if (mine?.blast) play(mine.cleared ? 'clear' : 'blast');
-    else play(moveSound(end.moves.at(-1)?.move.captured !== undefined, isInCheck(v.variant, end.position)));
+    else play(cardSound(last) ?? moveSound(last?.captured !== undefined, isInCheck(v.variant, end.position)));
   }, [key, length, latest]);
 
   const finalOutcome = view.finalOutcome;

@@ -44,7 +44,7 @@ import type { MessageKey } from '../../i18n/index.ts';
 import { directMove } from '../prefs.ts';
 import type { Prefs } from '../prefs.ts';
 import type { Mode } from '../settings.ts';
-import { moveSound, playSound } from '../sound.ts';
+import { cardSound, moveSound, playSound } from '../sound.ts';
 import { ApiError, joinOnlineGame, loadTicket, saveTicket, useOnlineGame } from './connection.ts';
 import { playerIdentity } from './lobbyConnection.ts';
 import { useAccount } from '../account.ts';
@@ -285,7 +285,10 @@ function OnlineGame({
       // A move that set off a mine booms instead (or, a mine only cleared, kicks it away).
       const mine = lastCardResult(variant, played, 'all');
       if (mine?.blast) playSound(mine.cleared ? 'clear' : 'blast');
-      else playSound(moveSound(lastMove?.captured !== undefined, isInCheck(variant, played.position)));
+      else
+        playSound(
+          cardSound(lastMove) ?? moveSound(lastMove?.captured !== undefined, isInCheck(variant, played.position)),
+        );
     }
   }, [view, moveCount, prefs.sound, played, variant]);
 
