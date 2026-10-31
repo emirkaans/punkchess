@@ -2616,6 +2616,53 @@ button.primary:hover:not(:disabled) {
 
 .modal.setup {
   max-width: min(92vw, 420px);
+  /* On the board: never taller than it; the options scroll if a page still does not fit. */
+  max-height: calc(var(--board) - 16px);
+  display: flex;
+  flex-direction: column;
+}
+.setup-options {
+  min-height: 0;
+  overflow-y: auto;
+}
+.setup-options.paged .setup-option:first-child {
+  grid-column: auto;
+}
+.setup-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+.setup-pager .pager-arrow {
+  min-width: 44px;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 20px;
+  line-height: 1;
+}
+.setup-dots {
+  display: flex;
+  gap: 4px;
+}
+.setup-dot {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  position: relative;
+}
+.setup-dot::after {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.setup-dot.on::after {
+  background: var(--pink);
 }
 .setup-options {
   display: grid;
