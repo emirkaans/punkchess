@@ -4,7 +4,7 @@ import { useI18n } from './i18n.tsx';
 import { PieceView } from './PieceView.tsx';
 import { useDialogFocus } from './useDialogFocus.ts';
 
-/** Options per page: long lists (Anarşi's tricks) are paged so the dialog fits on the board. */
+/** Options per page: long lists of described options (Anarşi's tricks) are paged so the dialog fits on the board. */
 const PAGE = 6;
 
 interface Props {
@@ -21,7 +21,8 @@ export function SetupDialog({ variant, question: original, step, total, onPick }
   const question = vt(variant).question(original);
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocus(dialogRef);
-  const pages = Math.ceil(question.options.length / PAGE);
+  // Only cards with a description take that much room; short choices (Jester's pieces) stay on one page.
+  const pages = question.options.some((o) => o.detail) ? Math.ceil(question.options.length / PAGE) : 1;
   // Each question starts on the page with its default option.
   const [paging, setPaging] = useState({ step, page: 0 });
   const startPage = Math.max(0, Math.floor(question.options.findIndex((o) => o.id === question.defaultOption) / PAGE));
