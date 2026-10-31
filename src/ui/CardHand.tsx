@@ -77,11 +77,13 @@ export function CardHand({ variant, game, chaos, colors, active, pick, onPick, o
                   disabled={!trickOn}
                   aria-pressed={pick?.id === trick && mine}
                   onClick={() => onPick(pick?.id === trick ? null : { id: trick, picked: [] })}
+                  title={text(trick)}
                 >
-                  <span className="card-kind">{t('card.trick')}</span>
                   {art(trick)}
-                  <span className="card-name">{name(trick)}</span>
-                  <span className="card-text">{text(trick)}</span>
+                  <span className="card-label">
+                    <span className="card-kind">{t('card.trick')}</span>
+                    <span className="card-name">{name(trick)}</span>
+                  </span>
                   {trickUsed && <span className="card-stamp">{t('card.used')}</span>}
                 </button>
               )}
@@ -91,12 +93,15 @@ export function CardHand({ variant, game, chaos, colors, active, pick, onPick, o
                   disabled={!chaosOn}
                   aria-pressed={pick?.id === CHAOS && mine}
                   onClick={() => onPick(pick?.id === CHAOS ? null : { id: CHAOS, picked: [] })}
+                  title={text(kind)}
                 >
-                  <span className="card-kind">{t('card.chaos')}</span>
                   {art(kind)}
-                  <span className="card-name">{name(kind)}</span>
-                  <span className="card-text">
-                    {played ? t(played.outcome === '+' ? 'card.hit' : 'card.backfire') : text(kind)}
+                  <span className="card-label">
+                    <span className="card-kind">
+                      {t('card.chaos')}
+                      {played && ` · ${t(played.outcome === '+' ? 'card.hitShort' : 'card.backfireShort')}`}
+                    </span>
+                    <span className="card-name">{name(kind)}</span>
                   </span>
                 </button>
               ) : (
@@ -110,9 +115,11 @@ export function CardHand({ variant, game, chaos, colors, active, pick, onPick, o
                   <span className="card-back-q" aria-hidden="true">
                     ?
                   </span>
-                  <span className="sr-only">
-                    {t('card.chaos')}: {t('card.hidden')}
+                  <span className="card-label">
+                    <span className="card-kind">{t('card.chaos')}</span>
+                    <span className="card-name">{t('card.hiddenShort')}</span>
                   </span>
+                  <span className="sr-only">{t('card.hidden')}</span>
                 </button>
               )}
             </div>
