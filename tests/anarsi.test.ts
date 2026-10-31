@@ -92,12 +92,16 @@ describe('Anarşi: numaralar', () => {
     expect(g.moves[0].san).toBe('IS@a1-g1');
   });
 
-  it('Kalkan: rakibin bir sonraki hamlesinde yenmez, sonra yenir', () => {
+  it('Kalkan: rakibin sonraki iki hamlesinde yenmez, sonra yenir', () => {
     let g = createGame(v, fen('3rk3/8/8/8/3N4/8/8/4K3', 'w', 'shield.-.0000'));
     g = makeMove(v, g, card('shield', 'd4'));
     expect(targets(g, 'd8')).not.toContain('d4');
+    expect(v.squareMarks!(g.position).find((m) => m.kind === 'shield')?.label).toBe('2');
     g = playSan(v, g, 'Rd7', 'Kf1');
-    expect(targets(g, 'd7')).toContain('d4');
+    expect(targets(g, 'd7')).not.toContain('d4');
+    expect(v.squareMarks!(g.position).find((m) => m.kind === 'shield')?.label).toBe('1');
+    g = playSan(v, g, 'Rd6', 'Kg1');
+    expect(targets(g, 'd6')).toContain('d4');
   });
 
   it('Barikat: 3 kare 3 tur kapalı, sonra açılır', () => {
