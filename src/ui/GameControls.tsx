@@ -21,6 +21,8 @@ interface Props {
   onResign: () => void;
   onRun: (run: Run) => void;
   onToggleHighlight: () => void;
+  /** Card variants (Anarşi): opens the card guide; its button takes the hint's place. */
+  onCards?: (() => void) | null;
 }
 
 /** Stroke icon from one or more path strings. */
@@ -36,6 +38,7 @@ function Icon({ d, className = '' }: { d: string | string[]; className?: string 
 
 const ICONS = {
   undo: ['M9 14L4 9l5-5', 'M4 9h10a6 6 0 0 1 0 12h-3'],
+  cards: ['M4 7.5l7-2 2.8 10-7 2z', 'M13 4.5h7v11h-7'],
   hint: ['M9 18h6M10 21h4', 'M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z'],
   draw: 'M5 10h14M5 15h14',
   resign: ['M5 21V4', 'M5 4h12l-3 4 3 4H5'],
@@ -85,10 +88,16 @@ export function GameControls(p: Props) {
           {t('controls.undo')}
         </ControlButton>
       )}
-      {p.vsBot && (
-        <ControlButton icon={ICONS.hint} className="lime" onClick={p.onHint} disabled={!p.hintEnabled || p.hintBusy}>
-          {p.hintBusy ? t('controls.hintBusy') : t('controls.hint')}
+      {p.onCards ? (
+        <ControlButton icon={ICONS.cards} className="lime" onClick={p.onCards}>
+          {t('controls.cards')}
         </ControlButton>
+      ) : (
+        p.vsBot && (
+          <ControlButton icon={ICONS.hint} className="lime" onClick={p.onHint} disabled={!p.hintEnabled || p.hintBusy}>
+            {p.hintBusy ? t('controls.hintBusy') : t('controls.hint')}
+          </ControlButton>
+        )
       )}
       {p.vsBot && (
         <ControlButton icon={ICONS.draw} onClick={p.onDraw} disabled={p.over || p.setupPending}>

@@ -1,22 +1,11 @@
 import { useMemo } from 'react';
-import { CHAOS, legalMoves, opposite } from '../engine/index.ts';
+import { CHAOS, legalMoves } from '../engine/index.ts';
 import type { Color, GameState, VariantDefinition } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import { cardArt } from './cardArt.ts';
+import { playedChaos } from './cardsInPlay.ts';
 import type { CardPick } from './cardPick.ts';
 import { useI18n } from './i18n.tsx';
-
-/** What a side's played chaos card turned out to be, read from the moves. */
-function playedChaos(game: GameState, color: Color): { kind: string; outcome: '+' | '-' } | null {
-  const n = game.moves.length;
-  for (let i = 0; i < n; i++) {
-    const card = game.moves[i].move.card;
-    // The last move was made by the side not to move now; earlier ones alternate back from there.
-    const mover = (n - 1 - i) % 2 === 0 ? opposite(game.position.turn) : game.position.turn;
-    if (card?.id === CHAOS && card.kind && mover === color) return { kind: card.kind, outcome: card.outcome! };
-  }
-  return null;
-}
 
 interface Props {
   variant: VariantDefinition;

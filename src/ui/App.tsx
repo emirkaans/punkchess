@@ -4,6 +4,7 @@ import { CHAOS, getVariant, isInCheck, legalMoves, listVariants, opposite, toFen
 import type { Color, Move, PieceType } from '../engine/index.ts';
 import type { AnalysisSeed } from './AnalysisPage.tsx';
 import { Board } from './Board.tsx';
+import { CardGuide } from './CardGuide.tsx';
 import { CardHand } from './CardHand.tsx';
 import { clickTarget, pickTargets } from './cardPick.ts';
 import type { CardPick } from './cardPick.ts';
@@ -151,6 +152,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   /** Settings the new game dialog opens with (null: closed). */
   const [newGame, setNewGame] = useState<GameSettings | null>(null);
   const [showRules, setShowRules] = useState(false);
+  const [showCardGuide, setShowCardGuide] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   // A variant picked in the footer: the home page opens its card.
@@ -968,7 +970,19 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                 onResign={resign}
                 onRun={(run) => dispatch({ type: 'run', run })}
                 onToggleHighlight={() => setShowHighlight((h) => !h)}
+                onCards={variant.cards && session.chaos && !setup ? () => setShowCardGuide(true) : null}
               />
+              {showCardGuide && variant.cards && session.chaos && (
+                <CardGuide
+                  variant={variant}
+                  game={game}
+                  chaos={{
+                    w: players.w.kind === 'human' || watching ? session.chaos.w : null,
+                    b: players.b.kind === 'human' || watching ? session.chaos.b : null,
+                  }}
+                  onClose={() => setShowCardGuide(false)}
+                />
+              )}
               {view.finalOutcome && view.endState.moves.length > 0 && (
                 <button className="primary analyse-button" onClick={() => openReview(postGameReview(), 'game')}>
                   {t('analysis.button')}

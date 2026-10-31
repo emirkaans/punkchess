@@ -15,6 +15,7 @@ import {
 import type { Color, GameState, Move, PieceType, VariantDefinition } from '../../engine/index.ts';
 import { moveOfWire, wireOf } from '../../online/protocol.ts';
 import type { ClientMessage, GameView, OnlineOutcome, WireMove } from '../../online/protocol.ts';
+import { CardGuide } from '../CardGuide.tsx';
 import { CardHand } from '../CardHand.tsx';
 import { lastCardResult, secretMoves } from '../cardResult.ts';
 import type { Viewer } from '../cardResult.ts';
@@ -199,6 +200,7 @@ function OnlineGame({
     window.addEventListener('beforeunload', ask);
     return () => window.removeEventListener('beforeunload', ask);
   }, [phase, seat, gameId]);
+  const [showCardGuide, setShowCardGuide] = useState(false);
   const [stickerMenu, setStickerMenu] = useState(false);
   // The sticker on screen: the last one flashed, until its time is up.
   const [poppedSticker, setPoppedSticker] = useState(link.sticker);
@@ -710,6 +712,14 @@ function OnlineGame({
           </div>
         )}
 
+        {showCardGuide && variant.cards && shown && (
+          <CardGuide
+            variant={variant}
+            game={shown}
+            chaos={{ w: you === 'w' ? (view.chaos ?? null) : null, b: you === 'b' ? (view.chaos ?? null) : null }}
+            onClose={() => setShowCardGuide(false)}
+          />
+        )}
         {canJoin && <JoinCard gameId={gameId} host={view} onJoined={setTicket} />}
 
         {away.map((c) => (
@@ -736,6 +746,11 @@ function OnlineGame({
                 onClick={() => send({ t: 'draw', action: 'offer' })}
               >
                 {view.drawOffer === you ? t('online.drawOffered') : t('controls.draw')}
+              </button>
+            )}
+            {variant.cards && shown && (
+              <button className="control lime" onClick={() => setShowCardGuide(true)}>
+                {t('controls.cards')}
               </button>
             )}
             <button
