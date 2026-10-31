@@ -9016,6 +9016,9 @@ a:focus-visible {
 }
 .play-card:not(:disabled):hover {
   transform: translateX(3px);
+  /* Keeps its own colours (not the site-wide pink hover). */
+  border-color: var(--card);
+  color: var(--fg);
 }
 .play-card.on {
   box-shadow:
@@ -9145,10 +9148,24 @@ a:focus-visible {
 .guide-info.chaos {
   --card: var(--lime);
 }
-.guide-chip[aria-pressed='true'] {
-  box-shadow:
-    0 0 0 2px var(--card),
-    0 0 12px color-mix(in srgb, var(--card) 55%, transparent);
+/* Hover tints in the card's own colour (not the site-wide pink text); the picked card is
+   filled with it, its picture and name turning dark. */
+.guide-chip:hover:not(:disabled) {
+  border-color: var(--card);
+  color: var(--fg);
+  background: color-mix(in srgb, var(--card) 12%, #141016);
+}
+.guide-chip[aria-pressed='true'],
+.guide-chip[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--card);
+  color: #0a0a0b;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--card) 55%, transparent);
+}
+.guide-chip[aria-pressed='true'] .guide-art {
+  color: #0a0a0b;
+}
+.guide-chip[aria-pressed='true'] .guide-q {
+  border-color: #0a0a0b;
 }
 .guide-art {
   flex: none;
