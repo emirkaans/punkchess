@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { CHAOS, legalMoves, opposite } from '../engine/index.ts';
 import type { Color, GameState, VariantDefinition } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
+import { cardArt } from './cardArt.ts';
 import type { CardPick } from './cardPick.ts';
 import { useI18n } from './i18n.tsx';
 
@@ -50,6 +51,7 @@ export function CardHand({ variant, game, chaos, colors, active, pick, onPick, o
   const untargeted = (id: string) => cardMoves.some((m) => m.card!.id === id && m.card!.squares.length === 0);
   const name = (id: string) => t(`card.name.${id}` as MessageKey);
   const text = (id: string) => t(`card.text.${id}` as MessageKey);
+  const art = (id: string) => <span className="card-art" dangerouslySetInnerHTML={{ __html: cardArt(id) ?? '' }} />;
 
   return (
     <div className="box card-hand">
@@ -77,26 +79,42 @@ export function CardHand({ variant, game, chaos, colors, active, pick, onPick, o
                   onClick={() => onPick(pick?.id === trick ? null : { id: trick, picked: [] })}
                 >
                   <span className="card-kind">{t('card.trick')}</span>
+                  {art(trick)}
                   <span className="card-name">{name(trick)}</span>
-                  <span className="card-text">{trickUsed ? t('card.used') : text(trick)}</span>
+                  <span className="card-text">{text(trick)}</span>
+                  {trickUsed && <span className="card-stamp">{t('card.used')}</span>}
                 </button>
               )}
-              <button
-                className={`play-card chaos${pick?.id === CHAOS && mine ? ' on' : ''}${chaosUsed ? ' used' : ''}`}
-                disabled={!chaosOn}
-                aria-pressed={pick?.id === CHAOS && mine}
-                onClick={() => onPick(pick?.id === CHAOS ? null : { id: CHAOS, picked: [] })}
-              >
-                <span className="card-kind">{t('card.chaos')}</span>
-                <span className="card-name">{kind ? name(kind) : '?'}</span>
-                <span className="card-text">
-                  {played
-                    ? t(played.outcome === '+' ? 'card.hit' : 'card.backfire')
-                    : kind
-                      ? text(kind)
-                      : t('card.hidden')}
-                </span>
-              </button>
+              {kind ? (
+                <button
+                  className={`play-card chaos${pick?.id === CHAOS && mine ? ' on' : ''}${played ? (played.outcome === '+' ? ' hit' : ' backfire') : ''}`}
+                  disabled={!chaosOn}
+                  aria-pressed={pick?.id === CHAOS && mine}
+                  onClick={() => onPick(pick?.id === CHAOS ? null : { id: CHAOS, picked: [] })}
+                >
+                  <span className="card-kind">{t('card.chaos')}</span>
+                  {art(kind)}
+                  <span className="card-name">{name(kind)}</span>
+                  <span className="card-text">
+                    {played ? t(played.outcome === '+' ? 'card.hit' : 'card.backfire') : text(kind)}
+                  </span>
+                </button>
+              ) : (
+                // A chaos card nobody here may see yet: its back.
+                <button
+                  className={`play-card chaos back${pick?.id === CHAOS && mine ? ' on' : ''}`}
+                  disabled={!chaosOn}
+                  aria-pressed={pick?.id === CHAOS && mine}
+                  onClick={() => onPick(pick?.id === CHAOS ? null : { id: CHAOS, picked: [] })}
+                >
+                  <span className="card-back-q" aria-hidden="true">
+                    ?
+                  </span>
+                  <span className="sr-only">
+                    {t('card.chaos')}: {t('card.hidden')}
+                  </span>
+                </button>
+              )}
             </div>
             {mine && pick?.id === CHAOS && (
               <div className="hand-confirm">
