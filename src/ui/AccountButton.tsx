@@ -132,12 +132,6 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
               {t('profile.mine')}
             </a>
           )}
-          {user && (
-            <a role="menuitem" className="account-row" href="/character">
-              <span>{t('character.mine')}</span>
-              <Chevron />
-            </a>
-          )}
           {user?.role && (
             <a role="menuitem" className="account-row" href="/admin">
               <span>{t('admin.title')}</span>
