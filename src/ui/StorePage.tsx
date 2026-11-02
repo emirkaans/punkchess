@@ -15,6 +15,14 @@ interface StoreState {
   readonly balance: number;
 }
 
+/** Each kind's icon for the phone rail (24×24 strokes). */
+const SLOT_ICONS: Readonly<Record<OutfitSlot, string>> = {
+  jacket: 'M8 3l-5 4 2 4 2-1v11h10V10l2 1 2-4-5-4-2 3h-4z',
+  pants: 'M6 3h12l1 18h-5l-2-10-2 10H5z',
+  hat: 'M4 16c0-6 4-10 8-10s8 4 8 10zM2 16h20',
+  acc: 'M7 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM17 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM11 13h2',
+};
+
 const Figure = ({ svg, className }: { svg: string; className: string }) => (
   <span className={className} dangerouslySetInnerHTML={{ __html: svg }} />
 );
@@ -129,17 +137,19 @@ export function StorePage() {
         <aside className="store-booth">
           <span className="store-label">{t('store.booth')}</span>
           <Figure svg={figureSvg(avatar, shown)} className="store-figure" />
-          {tried ? (
-            <>
-              <b className="store-tried">{name(tried.id)}</b>
-              {button(tried)}
-            </>
-          ) : (
-            <span className="store-label">{t('store.pick')}</span>
-          )}
-          <p className={msg?.bad ? 'store-msg bad' : 'store-msg'} role="status">
-            {msg?.text ?? ''}
-          </p>
+          <div className="store-booth-foot">
+            {tried ? (
+              <>
+                <b className="store-tried">{name(tried.id)}</b>
+                {button(tried)}
+              </>
+            ) : (
+              <span className="store-label">{t('store.pick')}</span>
+            )}
+            <p className={msg?.bad ? 'store-msg bad' : 'store-msg'} role="status">
+              {msg?.text ?? ''}
+            </p>
+          </div>
         </aside>
         <section className="store-shop">
           <div className="store-top">
@@ -160,9 +170,22 @@ export function StorePage() {
                 className={slot === s ? 'on' : ''}
                 onClick={() => setSlot(s)}
               >
-                {t(`store.slot.${s}` as MessageKey)}
+                {/* Phones: an icon and a short name in a narrow rail; wider screens: the full name. */}
+                <svg className="cp-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d={SLOT_ICONS[s]} />
+                </svg>
+                <span className="cp-full">{t(`store.slot.${s}` as MessageKey)}</span>
+                <span className="cp-short" aria-hidden="true">
+                  {t(`store.short.${s}` as MessageKey)}
+                </span>
               </button>
             ))}
+            {store && (
+              <span className="store-rail-balance" title={t('coins.balance', { n: String(store.balance) })}>
+                <CoinIcon />
+                {store.balance}
+              </span>
+            )}
           </div>
           <div className="store-grid" role="tabpanel">
             {STORE_ITEMS.filter((i) => i.slot === slot).map((item) => (
@@ -201,6 +224,21 @@ export function StorePage() {
             ))}
           </div>
         </section>
+        {/* Phones: the picked item and its button stay at the bottom. */}
+        <div className="store-bar">
+          <div className="store-bar-text">
+            <b>{tried ? name(tried.id) : t('store.pick')}</b>
+            <span className={msg?.bad ? 'store-msg bad' : 'store-msg'}>
+              {msg?.text ??
+                (tried
+                  ? store?.owned.has(tried.id)
+                    ? t('store.owned')
+                    : t('coins.balance', { n: String(tried.price) })
+                  : '')}
+            </span>
+          </div>
+          {tried && button(tried)}
+        </div>
       </div>
     </main>
   );

@@ -9822,19 +9822,144 @@ a:focus-visible {
   border-color: var(--lime);
   color: var(--lime);
 }
+/* Phone-only parts: the rail's balance and the bottom bar. */
+.store-rail-balance,
+.store-bar {
+  display: none;
+}
+.store-booth-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+/* Phones (design "Yan Ray"): the kinds as an icon rail on the left (the balance under them),
+   the figure above a 3-column grid of small pictures on the right, the picked item and its
+   button in a bar at the bottom; the whole store fits the screen. */
 @media (max-width: 760px) {
+  .store-page {
+    padding: 8px 10px 10px;
+  }
   .store {
-    grid-template-columns: 1fr;
-    height: auto;
+    grid-template-columns: 62px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'rail booth'
+      'rail grid'
+      'bar bar';
+    height: calc(100dvh - var(--store-top-phone, 96px));
+    min-height: 480px;
+  }
+  .store-shop {
+    display: contents;
+  }
+  .store-top,
+  .store-booth-foot,
+  .store-booth .store-label {
+    display: none;
   }
   .store-booth {
+    grid-area: booth;
     border-right: 0;
-    border-bottom: 1px solid var(--border);
+    padding: 8px;
   }
   .store-figure {
-    width: 150px;
+    max-width: 100%;
+  }
+  .store-tabs {
+    grid-area: rail;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    padding: 8px 6px;
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+  }
+  .store-tabs button {
+    height: 56px;
+    min-height: 0;
+    padding: 2px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 11px;
+  }
+  .store-tabs .cp-full {
+    display: none;
+  }
+  .store-tabs .cp-icon,
+  .store-tabs .cp-short {
+    display: block;
+  }
+  .store-rail-balance {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 2px;
+    border: 1px solid var(--lime);
+    border-radius: 10px;
+    font:
+      700 11px/1 'Space Mono',
+      monospace;
+    color: var(--lime);
   }
   .store-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-area: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 0 8px 8px;
+    max-height: 40dvh;
+  }
+  .store-card {
+    padding: 4px;
+    gap: 2px;
+    align-items: center;
+  }
+  .store-card b,
+  .store-card .store-buy {
+    display: none;
+  }
+  .store-card .store-row {
+    justify-content: center;
+  }
+  .store-pic {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+  .store-bar {
+    grid-area: bar;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-top: 1px solid var(--border);
+  }
+  .store-bar-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .store-bar-text b {
+    font: 400 18px/1 var(--display);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .store-bar .store-msg {
+    text-align: left;
+    min-height: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .store-bar .store-buy {
+    min-height: 44px;
   }
 }
