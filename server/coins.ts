@@ -2,18 +2,14 @@
 // player earned, the balance being its sum. Every entry is unique per (player, reason, ref),
 // so a game or a puzzle never pays twice; daily ceilings cut an entry down (or out).
 //
-//   GET  /api/me/coins                               the balance, today's earnings, the latest entries
-//   POST /api/me/coins/bot { variantId, startFen, moves, color, level }
-//                                                    a won game against the bot: replayed, then paid
+//   GET  /api/me/coins   the balance, today's earnings, the latest entries
 
-import { DAILY_COIN_CAP, botWinCoins, COIN_RULES, dailyMax } from '../src/coins/rules.ts';
-import { wonBotGame } from '../src/coins/botGame.ts';
+import { DAILY_COIN_CAP, COIN_RULES, dailyMax } from '../src/coins/rules.ts';
 import type { CoinReason, CoinsResponse } from '../src/coins/rules.ts';
 import { dailyDay } from '../src/online/daily.ts';
 import type { Color } from '../src/engine/index.ts';
 import type { AuthEnv } from './auth.ts';
-import { currentUser, sameOrigin } from './auth.ts';
-import { sha256hex } from './auth-util.ts';
+import { currentUser } from './auth.ts';
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -70,7 +66,7 @@ export async function coinBalance(
   return { balance: row?.balance ?? 0, today: row?.today ?? 0 };
 }
 
-/** Coins for a finished online game, for each signed-in player (0 when too short or capped). */
+/** Coins for a finished online game: its winner's, when signed in (none when too short or capped). */
 export async function grantGameCoins(
   db: D1Database,
   gameId: string,
@@ -81,13 +77,10 @@ export async function grantGameCoins(
 ): Promise<Partial<Record<Color, number>>> {
   const out: Partial<Record<Color, number>> = {};
   if (plies < COIN_RULES.online.minPlies) return out;
-  for (const c of ['w', 'b'] as const) {
-    const id = players[c];
-    if (!id) continue;
-    const amount = COIN_RULES.online.play + (winner === c ? COIN_RULES.online.win : 0);
-    const paid = await grantCoins(db, id, 'online', gameId, amount, now);
-    if (paid) out[c] = paid;
-  }
+  const id = winner ? players[winner] : undefined;
+  if (!winner || !id) return out;
+  const paid = await grantCoins(db, id, 'online', gameId, COIN_RULES.online.win, now);
+  if (paid) out[winner] = paid;
   return out;
 }
 
@@ -105,35 +98,13 @@ export async function handleCoins(request: Request, env: AuthEnv, url: URL): Pro
       'SELECT amount, reason, created_at FROM coin_ledger WHERE user_id = ?1 ORDER BY id DESC LIMIT 20',
     )
       .bind(user.id)
-      .all<{ amount: number; reason: CoinReason; created_at: number }>();
+      .all<{ amount: number; reason: CoinsResponse['history'][number]['reason']; created_at: number }>();
     return json({
       balance,
       today,
       cap: DAILY_COIN_CAP,
       history: rows.results.map((r) => ({ amount: r.amount, reason: r.reason, at: r.created_at })),
     } satisfies CoinsResponse);
-  }
-
-  if (url.pathname === '/api/me/coins/bot' && request.method === 'POST') {
-    if (!sameOrigin(request, env.PUBLIC_ORIGIN || url.origin, url)) return json({ error: 'forbidden' }, 403);
-    const user = await currentUser(request, env);
-    if (!user) return json({ error: 'signed-out' }, 401);
-    const body = (await request.json().catch(() => ({}))) as {
-      variantId?: unknown;
-      startFen?: unknown;
-      moves?: unknown;
-      color?: unknown;
-      level?: unknown;
-    };
-    if (!wonBotGame(body)) return json({ error: 'bad-request' }, 400);
-    const level = typeof body.level === 'number' ? body.level : 1;
-    // The same game (start and moves) pays once.
-    const ref = (await sha256hex(`${body.variantId}|${body.startFen}|${(body.moves as string[]).join(' ')}`)).slice(
-      0,
-      32,
-    );
-    const coins = await grantCoins(env.DB, user.id, 'bot', ref, botWinCoins(level), now);
-    return json({ coins, ...(await coinBalance(env.DB, user.id, now)) });
   }
 
   return json({ error: 'not-found' }, 404);
