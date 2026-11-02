@@ -30,6 +30,7 @@ export type Page =
   | 'contact'
   | 'character'
   | 'store'
+  | 'barber'
   | 'loading';
 
 interface Props {
@@ -166,8 +167,8 @@ export function Toolbar({
             {t('menu.analysis')}
           </button>
           <button
-            className={page === 'store' ? 'on menu-store' : 'menu-store'}
-            aria-current={page === 'store' ? 'page' : undefined}
+            className={page === 'store' || page === 'barber' ? 'on menu-store' : 'menu-store'}
+            aria-current={page === 'store' || page === 'barber' ? 'page' : undefined}
             onClick={close(onStore)}
           >
             {t('menu.store')}

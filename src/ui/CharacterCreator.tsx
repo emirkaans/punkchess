@@ -35,14 +35,20 @@ export function AvatarView({
   avatar,
   outfit = null,
   className = '',
+  view,
 }: {
   avatar: Avatar;
-  /** What they wear: a hat, glasses or headphones show on the head. */
+  /** What they wear on the head: a cut, colour or beard from the barber, a hat, glasses, headphones. */
   outfit?: Outfit | null;
   className?: string;
+  /** The SVG view box (room above the head for tall cuts). */
+  view?: string;
 }) {
   return (
-    <span className={`char-avatar ${className}`} dangerouslySetInnerHTML={{ __html: avatarSvg(avatar, outfit) }} />
+    <span
+      className={`char-avatar ${className}`}
+      dangerouslySetInnerHTML={{ __html: avatarSvg(avatar, outfit, view) }}
+    />
   );
 }
 

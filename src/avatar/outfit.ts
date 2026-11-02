@@ -1,8 +1,10 @@
-// The store's goods (src/ui/StorePage.tsx) and how they are drawn. An outfit is one item per
-// slot (or none), stored as a short JSON of item ids like the character itself; items only
-// change looks. Prices are in punk coins (src/coins/rules.ts). Pure: no DOM.
+// The shops' goods and how clothes are drawn: the store (src/ui/StorePage.tsx) sells clothes,
+// the barber (src/ui/BarberPage.tsx, drawn in src/avatar/barber.ts) cuts, hair colours and
+// beards. An outfit is one item per slot (or none), stored as a short JSON of item ids like the
+// character itself; items only change looks. Prices are in punk coins (src/coins/rules.ts).
+// Pure: no DOM.
 
-export type OutfitSlot = 'jacket' | 'pants' | 'hat' | 'acc';
+export type OutfitSlot = 'jacket' | 'pants' | 'hat' | 'acc' | 'cut' | 'color' | 'beard';
 
 export interface StoreItem {
   readonly id: string;
@@ -13,7 +15,10 @@ export interface StoreItem {
 /** What the player wears: an item id per slot, or null. */
 export type Outfit = Readonly<Record<OutfitSlot, string | null>>;
 
-export const OUTFIT_SLOTS: readonly OutfitSlot[] = ['jacket', 'pants', 'hat', 'acc'];
+export const OUTFIT_SLOTS: readonly OutfitSlot[] = ['jacket', 'pants', 'hat', 'acc', 'cut', 'color', 'beard'];
+/** What each shop sells. */
+export const STORE_SLOTS: readonly OutfitSlot[] = ['jacket', 'pants', 'hat', 'acc'];
+export const BARBER_SLOTS: readonly OutfitSlot[] = ['cut', 'color', 'beard'];
 
 /** The catalogue. New items can be added; an item must never be removed once sold (hide it instead). */
 export const STORE_ITEMS: readonly StoreItem[] = [
@@ -34,11 +39,38 @@ export const STORE_ITEMS: readonly StoreItem[] = [
   { id: 'choker', slot: 'acc', price: 100 },
   { id: 'shades', slot: 'acc', price: 90 },
   { id: 'phones', slot: 'acc', price: 150 },
+  { id: 'giant', slot: 'cut', price: 260 },
+  { id: 'double', slot: 'cut', price: 220 },
+  { id: 'liberty', slot: 'cut', price: 300 },
+  { id: 'dreads', slot: 'cut', price: 240 },
+  { id: 'half', slot: 'cut', price: 160 },
+  { id: 'afro', slot: 'cut', price: 200 },
+  { id: 'quiff', slot: 'cut', price: 180 },
+  { id: 'braid', slot: 'cut', price: 280 },
+  { id: 'fringe', slot: 'cut', price: 140 },
+  { id: 'bun', slot: 'cut', price: 150 },
+  { id: 'long', slot: 'cut', price: 130 },
+  { id: 'flame', slot: 'cut', price: 320 },
+  { id: 'grad', slot: 'color', price: 120 },
+  { id: 'split', slot: 'color', price: 100 },
+  { id: 'neon', slot: 'color', price: 150 },
+  { id: 'full', slot: 'beard', price: 110 },
+  { id: 'goatee', slot: 'beard', price: 70 },
+  { id: 'handlebar', slot: 'beard', price: 90 },
+  { id: 'chops', slot: 'beard', price: 60 },
 ];
 
 export const storeItem = (id: string): StoreItem | undefined => STORE_ITEMS.find((i) => i.id === id);
 
-export const EMPTY_OUTFIT: Outfit = { jacket: null, pants: null, hat: null, acc: null };
+export const EMPTY_OUTFIT: Outfit = {
+  jacket: null,
+  pants: null,
+  hat: null,
+  acc: null,
+  cut: null,
+  color: null,
+  beard: null,
+};
 
 /** An outfit from anything (stored JSON, a request): unknown items or items in the wrong slot are dropped. */
 export function parseOutfit(input: unknown): Outfit {

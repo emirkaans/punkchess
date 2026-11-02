@@ -20,7 +20,7 @@ export function figureSvg(avatar: Avatar, outfit: Outfit, view = FULL): string {
     pantsSvg(outfit.pants, skin) +
     jacketSvg(outfit.jacket, skin) +
     neckAccessorySvg(outfit.acc) +
-    `<svg x="40" y="2" width="120" height="120" viewBox="0 0 200 200">${head}</svg>` +
+    `<svg x="40" y="2" width="120" height="120" viewBox="0 0 200 200" overflow="visible">${head}</svg>` +
     `</svg>`
   );
 }

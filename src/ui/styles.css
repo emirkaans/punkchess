@@ -9963,3 +9963,309 @@ a:focus-visible {
     min-height: 44px;
   }
 }
+
+/* The barber ("Salon Koltuğu"): cuts in a priced list on the left, the barber's mirror and pole
+   in the middle, colours and beards on the right; it fits the screen like the store. */
+.barber {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 280px;
+  height: calc(100dvh - var(--store-top, 160px));
+  min-height: 460px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.barber-tabs {
+  display: none;
+}
+.barber-cuts {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--border);
+}
+.barber-cuts .store-title {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.barber-list {
+  min-height: 0;
+  overflow-y: auto;
+}
+.barber-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  padding: 6px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  text-align: left;
+}
+.barber-row:hover:not(:disabled),
+.barber-opt:hover:not(:disabled) {
+  color: var(--fg);
+  background: #1f1b22;
+}
+.barber-row[aria-pressed='true'],
+.barber-row[aria-pressed='true']:hover:not(:disabled) {
+  background: #2a1424;
+}
+.barber-row .char-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #1b1a1f;
+}
+.barber-row b {
+  font: 400 19px/1 var(--display);
+  letter-spacing: 0.04em;
+}
+.barber-chair {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  padding: 16px;
+  background: radial-gradient(circle at 50% 35%, #2b2532, #141016 70%);
+}
+.barber-chair-top {
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+/* The mirror takes the height left and stays round. */
+.barber-mirror {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: 340px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 8px solid #3a3440;
+  box-shadow:
+    0 0 0 2px var(--pink),
+    inset 0 0 40px rgba(0, 0, 0, 0.6);
+  background: #1b1a1f;
+}
+.barber-mirror .char-avatar {
+  width: 100%;
+  height: 100%;
+}
+.barber-pole {
+  flex: none;
+  width: 18px;
+  height: 60px;
+  border-radius: 9px;
+  border: 2px solid #0a0a0b;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--pink) 0 8px,
+    #f1eee8 8px 16px,
+    #4aa8ff 16px 24px,
+    #f1eee8 24px 32px
+  );
+  background-size: 100% 200%;
+  animation: barber-pole 2s linear infinite;
+}
+@keyframes barber-pole {
+  to {
+    background-position: 0 -45px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .barber-pole {
+    animation: none;
+  }
+}
+.barber-side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+  border-left: 1px solid var(--border);
+}
+.barber-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.barber-panel h2 {
+  margin: 0;
+  text-align: left;
+}
+.barber-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.barber-swatch {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid var(--panel);
+  box-shadow: 0 0 0 2px var(--border);
+}
+.barber-swatch:hover:not(:disabled) {
+  border-color: var(--panel);
+  box-shadow: 0 0 0 2px var(--muted);
+}
+.barber-swatch[aria-pressed='true'],
+.barber-swatch[aria-pressed='true']:hover:not(:disabled) {
+  box-shadow: 0 0 0 3px var(--fg);
+}
+.barber-lock {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: #0a0a0b;
+  color: var(--lime);
+  font:
+    700 9px/1.4 'Space Mono',
+    monospace;
+}
+.barber-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.barber-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 0;
+  padding: 6px;
+  border-radius: 8px;
+  background: #1b1a1f;
+}
+.barber-opt[aria-pressed='true'],
+.barber-opt[aria-pressed='true']:hover:not(:disabled) {
+  border-color: var(--pink);
+  background: #2a1424;
+}
+.barber-opt .char-avatar {
+  width: 100%;
+  aspect-ratio: 1;
+}
+.barber-opt b {
+  font: 400 16px/1 var(--display);
+  letter-spacing: 0.04em;
+}
+/* Phones (design "Yan Ray", like the store): the kinds as an icon rail with the pole and the
+   balance, the mirror above a 3-column grid of the picked kind, the tried item in a bottom bar. */
+@media (max-width: 760px) {
+  .barber {
+    grid-template-columns: 62px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'rail chair'
+      'rail panel'
+      'bar bar';
+    height: calc(100dvh - var(--store-top-phone, 96px));
+    min-height: 480px;
+  }
+  .barber-tabs {
+    display: flex;
+  }
+  .barber-tabs .barber-pole {
+    align-self: center;
+    width: 12px;
+    height: 46px;
+    margin-top: auto;
+  }
+  .barber-tabs .store-rail-balance {
+    margin-top: 6px;
+  }
+  /* Only the mirror shows here: it takes the largest round size that fits. */
+  .barber-chair {
+    grid-area: chair;
+    justify-content: center;
+    padding: 8px;
+    container-type: size;
+  }
+  .barber-chair-top,
+  .barber-chair .barber-pole {
+    display: none;
+  }
+  .barber-mirror {
+    flex: none;
+    width: min(100cqw - 16px, 100cqh - 16px);
+    max-height: none;
+    border-width: 6px;
+  }
+  .barber-side {
+    display: contents;
+  }
+  .barber-panel {
+    grid-area: panel;
+    min-height: 0;
+    padding: 0 8px 8px;
+    border: 0;
+  }
+  .barber-panel:not(.on) {
+    display: none;
+  }
+  .barber-cuts .store-title,
+  .barber-panel h2,
+  .barber-row b,
+  .barber-opt b {
+    display: none;
+  }
+  .barber-list,
+  .barber-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: max-content;
+    gap: 6px;
+    max-height: 36dvh;
+    overflow-y: auto;
+  }
+  .barber-row {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 2px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #1b1a1f;
+  }
+  .barber-row[aria-pressed='true'] {
+    border-color: var(--pink);
+  }
+  .barber-row .char-avatar {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    border-radius: 6px;
+  }
+  .barber-opt {
+    padding: 4px;
+  }
+  .barber-swatches {
+    justify-content: center;
+    gap: 22px;
+    padding: 18px 0;
+  }
+  .barber-swatch {
+    width: 56px;
+    height: 56px;
+  }
+}

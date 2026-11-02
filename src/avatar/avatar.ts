@@ -3,6 +3,7 @@
 // to the lists freely; a stored id that is no longer offered is still drawn when its drawing
 // stays (only `offered: false`), and an unknown one falls back to the default. Pure: no DOM.
 
+import { beardSvg, cutBack, cutFront, hairPaint, painted } from './barber.ts';
 import { hatSvg, headAccessorySvg } from './outfit.ts';
 import type { Outfit } from './outfit.ts';
 
@@ -208,16 +209,23 @@ function extra(kind: string): string {
   }
 }
 
+/** A view with room above the head for the tallest cuts (the barber's mirror). */
+export const TALL_VIEW = '-25 -50 250 250';
+
 /**
  * The avatar as an SVG string (200×200 view box, scales to its box). With an outfit, its head
- * items (a hat, glasses, headphones) are drawn on top.
+ * items are drawn: a barber's cut (in place of the hair), colour and beard, then a hat, glasses
+ * or headphones on top. Tall cuts reach above the box; `view` can make room for them.
  */
-export function avatarSvg(a: Avatar, outfit: Outfit | null = null): string {
+export function avatarSvg(a: Avatar, outfit: Outfit | null = null, view = '0 0 200 200'): string {
   const skin = colorOf('skin', a.skin);
-  const hair = colorOf('hairColor', a.hairColor);
+  const paint = hairPaint(outfit?.color ?? null, colorOf('hairColor', a.hairColor));
+  const hair = paint.fill;
+  const cut = outfit?.cut ?? null;
   return (
-    `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">` +
-    hairBack(a.hair, hair) +
+    `<svg viewBox="${view}" overflow="visible" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">` +
+    (paint.defs ? `<defs>${paint.defs}</defs>` : '') +
+    painted(cut ? cutBack(cut, hair) : hairBack(a.hair, hair), paint) +
     `<path d="M72 168c6 10 50 10 56 0l6 32H66z" fill="${shade(skin, 0.85)}" stroke="${INK}" stroke-width="3"/>` +
     `<ellipse cx="46" cy="114" rx="8" ry="12" fill="${skin}" stroke="${INK}" stroke-width="3"/>` +
     `<ellipse cx="154" cy="114" rx="8" ry="12" fill="${skin}" stroke="${INK}" stroke-width="3"/>` +
@@ -226,7 +234,8 @@ export function avatarSvg(a: Avatar, outfit: Outfit | null = null): string {
     eyes(a.eyes) +
     mouth(a.mouth) +
     extra(a.extra) +
-    hairFront(a.hair, hair, skin) +
+    beardSvg(outfit?.beard ?? null) +
+    painted(cut ? cutFront(cut, hair) : hairFront(a.hair, hair, skin), paint) +
     (outfit ? hatSvg(outfit.hat) + headAccessorySvg(outfit.acc) : '') +
     `</svg>`
   );

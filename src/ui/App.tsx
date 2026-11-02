@@ -78,6 +78,7 @@ const AnalysisPage = lazy(() => import('./AnalysisPage.tsx').then((m) => ({ defa
 const ReviewPage = lazy(() => import('./ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
 const SignupPage = lazy(() => import('./SignupPage.tsx').then((m) => ({ default: m.SignupPage })));
 const StorePage = lazy(() => import('./StorePage.tsx').then((m) => ({ default: m.StorePage })));
+const BarberPage = lazy(() => import('./BarberPage.tsx').then((m) => ({ default: m.BarberPage })));
 const CharacterCreator = lazy(() => import('./CharacterCreator.tsx').then((m) => ({ default: m.CharacterCreator })));
 const ProfilePage = lazy(() => import('./ProfilePage.tsx').then((m) => ({ default: m.ProfilePage })));
 const PuzzlePage = lazy(() => import('./PuzzlePage.tsx').then((m) => ({ default: m.PuzzlePage })));
@@ -351,7 +352,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         r.kind === 'licenses' ||
         r.kind === 'contact' ||
         r.kind === 'character' ||
-        r.kind === 'store'
+        r.kind === 'store' ||
+        r.kind === 'barber'
       )
         return setPage(r.kind);
       if (r.kind === 'online') {
@@ -722,8 +724,14 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           />
         ) : page === 'contact' ? (
           <ContactPage />
-        ) : page === 'store' ? (
-          <StorePage />
+        ) : page === 'store' || page === 'barber' ? (
+          (() => {
+            const open = (path: string) => {
+              history.pushState(null, '', path);
+              applyRouteRef.current(parseRoute(path));
+            };
+            return page === 'store' ? <StorePage onOpen={open} /> : <BarberPage onOpen={open} />;
+          })()
         ) : page === 'character' ? (
           <CharacterCreator
             next={afterCharacter}
