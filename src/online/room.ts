@@ -3,6 +3,8 @@
 // disconnect rule. Pure: the caller passes the time (`now`) and randomness.
 // The Durable Object in server/ persists a Room and calls these functions.
 
+import { parseOutfit } from '../avatar/outfit.ts';
+import { parseAvatar } from '../avatar/avatar.ts';
 import {
   TIME_CARD_MS,
   addTime,
@@ -82,6 +84,12 @@ export interface Room {
   readonly newPatches?: Readonly<Partial<Record<Color, readonly string[]>>>;
   /** Spray tag styles of the signed-in players (src/achievements/tags.ts), sprayed on a checkmate. */
   readonly tags?: Readonly<Partial<Record<Color, string>>>;
+  /** Punk coins the game paid each signed-in player (src/coins/rules.ts). */
+  readonly newCoins?: Readonly<Partial<Record<Color, number>>>;
+  /** The signed-in players' characters as stored (src/avatar/avatar.ts), loaded with the tags. */
+  readonly avatars?: Readonly<Partial<Record<Color, string>>>;
+  /** … and their outfits as stored (src/avatar/outfit.ts). */
+  readonly outfits?: Readonly<Partial<Record<Color, string>>>;
   /** The arena tournament the game belongs to (server/tournament.ts): no rematch, the result is reported there. */
   readonly tournamentId?: string;
   /** Each player's hidden chaos card (variants with cards), dealt when the game starts. */
@@ -428,7 +436,11 @@ export function viewOf(
       provisional: rating?.provisional ?? false,
       diff: room.ratingDiff?.[c] ?? null,
       newPatches: room.newPatches?.[c] ?? [],
+      ...(room.newCoins?.[c] ? { newCoins: room.newCoins[c] } : {}),
       tag: room.tags?.[c] ?? null,
+      // Only when they have one: guests and players without a character get no field.
+      ...(room.avatars?.[c] ? { avatar: parseAvatar(room.avatars[c]) } : {}),
+      ...(room.outfits?.[c] ? { outfit: parseOutfit(room.outfits[c]) } : {}),
     };
   };
   const finite = (ms: number) => (Number.isFinite(ms) ? ms : null);

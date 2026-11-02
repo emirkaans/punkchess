@@ -2,6 +2,7 @@
 // and recording a finished game (the game row and both ratings in one batch,
 // so a game never counts twice or half).
 
+import { grantGameCoins } from './coins.ts';
 import { recordOfRoom } from '../src/online/record.ts';
 import type { GameRecord } from '../src/online/record.ts';
 import { ABORT_PLIES, ratedRoom } from '../src/online/room.ts';
@@ -47,16 +48,19 @@ export async function currentRatings(
   return out;
 }
 
-/** A room gets its signed-in players' spray tag styles (once both seats are taken), for a checkmate. */
+/**
+ * A room gets its signed-in players' spray tag styles (once both seats are taken), for a
+ * checkmate, and their characters, for the player cards.
+ */
 export async function withTags(room: Room, db: D1Database | undefined): Promise<Room> {
   const w = room.seats.w?.account?.id;
   const b = room.seats.b?.account?.id;
   if (!db || room.tags || !room.seats.w || !room.seats.b || (!w && !b)) return room;
   try {
     const rows = await db
-      .prepare('SELECT id, tag FROM users WHERE id IN (?1, ?2)')
+      .prepare('SELECT id, tag, avatar, outfit FROM users WHERE id IN (?1, ?2)')
       .bind(w ?? '', b ?? '')
-      .all<{ id: string; tag: string | null }>();
+      .all<{ id: string; tag: string | null; avatar: string | null; outfit: string | null }>();
     const of = (id: string | undefined) => {
       const row = id ? rows.results.find((r) => r.id === id) : undefined;
       return row ? tagById(row.tag).id : undefined;
@@ -66,7 +70,17 @@ export async function withTags(room: Room, db: D1Database | undefined): Promise<
     const tb = of(b);
     if (tw) tags.w = tw;
     if (tb) tags.b = tb;
-    return { ...room, tags };
+    const avatars: Partial<Record<Color, string>> = {};
+    const outfits: Partial<Record<Color, string>> = {};
+    for (const [c, id] of [
+      ['w', w],
+      ['b', b],
+    ] as const) {
+      const row = id ? rows.results.find((r) => r.id === id) : undefined;
+      if (row?.avatar) avatars[c] = row.avatar;
+      if (row?.outfit) outfits[c] = row.outfit;
+    }
+    return { ...room, tags, avatars, outfits };
   } catch {
     return room; // no tags: nothing is sprayed
   }
@@ -229,11 +243,16 @@ export async function settleGame(room: Room, db: D1Database | undefined, now: nu
   }
 
   await db.batch(statements);
+  // Punk coins for playing (and winning); after the game row, so a retry pays nothing twice.
+  const coins = await grantGameCoins(db, room.id, { w: w?.id, b: b?.id }, winner, room.moves.length, now).catch(
+    () => ({}),
+  );
   return {
     ...room,
     recorded: true,
     ...(diff ? { ratingDiff: diff } : {}),
     ...(Object.keys(earned).length ? { newPatches: earned } : {}),
+    ...(Object.keys(coins).length ? { newCoins: coins } : {}),
   };
 }
 

@@ -13,6 +13,8 @@
 //   GET  /og/:id.png              link-preview picture of a game
 // Game pages (/<id>, /<id>/analysis) get link-preview tags for that game.
 
+import { handleStore } from './store.ts';
+import { handleCoins } from './coins.ts';
 import { GAME_ID } from '../src/online/protocol.ts';
 import type { Env } from './game-room.ts';
 import type { GameInfo } from '../src/online/record.ts';
@@ -121,6 +123,10 @@ export default {
 
     const auth = await handleAuth(request, env, url);
     if (auth) return auth;
+    const coins = await handleCoins(request, env, url);
+    if (coins) return coins;
+    const store = await handleStore(request, env, url);
+    if (store) return store;
     const profile = await handleProfiles(request, env, url);
     if (profile) return profile;
     const puzzles = await handlePuzzles(request, env, url);

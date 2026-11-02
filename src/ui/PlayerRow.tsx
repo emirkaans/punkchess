@@ -1,3 +1,4 @@
+import type { Outfit } from '../avatar/outfit.ts';
 import type { ReactNode } from 'react';
 import type { ClockState } from '../clock/clock.ts';
 import type { Color, Position, VariantDefinition } from '../engine/index.ts';
@@ -8,6 +9,8 @@ import { useI18n } from './i18n.tsx';
 import { materialDiff } from './material.ts';
 import { PieceView } from './PieceView.tsx';
 import { Avatar } from './Punk.tsx';
+import type { Avatar as Character } from '../avatar/avatar.ts';
+import { AvatarView } from './CharacterCreator.tsx';
 
 interface Props {
   variant: VariantDefinition;
@@ -27,10 +30,26 @@ interface Props {
    * the clock). `key` restarts its animation; `tone` is its sticker's colour class.
    */
   taunt?: { key: number | string; tone: string; who: string; text: string } | null;
+  /** The player's character (a signed-in player who made one); else the skull. */
+  character?: Character | null;
+  /** … and what they wear (head items show on the card). */
+  outfit?: Outfit | null;
 }
 
-/** One player card left of the board: skull avatar, who plays, the material lead, clock. */
-export function PlayerRow({ variant, color, player, position, active, clock, place, label, taunt }: Props) {
+/** One player card left of the board: their character (or a skull), who plays, the material lead, clock. */
+export function PlayerRow({
+  variant,
+  color,
+  player,
+  position,
+  active,
+  clock,
+  place,
+  label,
+  taunt,
+  character,
+  outfit = null,
+}: Props) {
   const { t } = useI18n();
   // Only the difference, as on lichess: one short line that never pushes the board around.
   const diff = materialDiff(variant, position);
@@ -38,8 +57,8 @@ export function PlayerRow({ variant, color, player, position, active, clock, pla
   const lead = diff.lead[color];
   return (
     <div className={`player-row ${place}${active ? ' turn' : ''}`}>
-      <span className="avatar">
-        <Avatar bot={player.kind === 'bot'} />
+      <span className={character ? 'avatar has-character' : 'avatar'}>
+        {character ? <AvatarView avatar={character} outfit={outfit} /> : <Avatar bot={player.kind === 'bot'} />}
       </span>
       <div className="player-info">
         <div className="player-head">

@@ -29,6 +29,7 @@ import {
 import type { Room } from '../src/online/room.ts';
 import { liveOf } from '../src/online/record.ts';
 import { usernameProblem } from '../src/online/account.ts';
+import { DEFAULT_AVATAR } from '../src/avatar/avatar.ts';
 
 const mv = (from: string, to: string, promotion?: string): WireMove =>
   promotion
@@ -57,6 +58,13 @@ const code = (f: () => unknown) => {
 };
 
 describe('online oda', () => {
+  it('oyuncu kutusu: karakteri olan oyuncunun karakteri gelir, olmayanınki gelmez', () => {
+    const room = { ...newGame(), avatars: { w: JSON.stringify({ ...DEFAULT_AVATAR, hair: 'spikes' }) } };
+    const view = viewOf(room, 'w', { w: true, b: true }, 0);
+    expect(view.players.w?.avatar?.hair).toBe('spikes');
+    expect(view.players.b?.avatar).toBeUndefined();
+  });
+
   it('kurulum: ikinci oyuncu boş koltuğa oturur, üçüncüsü giremez, isimler temizlenir', () => {
     const room = newGame();
     expect(room.phase).toBe('playing');

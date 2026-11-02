@@ -1,6 +1,8 @@
 // Accounts, shared by the browser and the Worker: the username rules and the
 // shapes of the account API. Pure: no React, no DOM, no storage.
 
+import type { Outfit } from '../avatar/outfit.ts';
+import type { Avatar } from '../avatar/avatar.ts';
 import { offensiveName } from './badwords.ts';
 
 /** A signed-in player. */
@@ -10,6 +12,10 @@ export interface AccountUser {
   readonly rating: number | null;
   /** The spray tag style (src/achievements/tags.ts), sprayed when they checkmate. */
   readonly tag?: string;
+  /** The player's character (src/avatar/avatar.ts); null until they have made one. */
+  readonly avatar?: Avatar | null;
+  /** What they wear from the store (src/avatar/outfit.ts). */
+  readonly outfit?: Outfit | null;
   /** Staff only (src/online/admin.ts): opens /admin. */
   readonly role?: 'admin' | 'moderator';
 }

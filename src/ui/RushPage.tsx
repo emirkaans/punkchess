@@ -1,3 +1,4 @@
+import { noteCoins } from './coins.ts';
 import { useEffect, useRef, useState } from 'react';
 import { RUSH_LIVES, RUSH_MS } from '../online/puzzle.ts';
 import type { PuzzleData, RushResponse, RushSaved } from '../online/puzzle.ts';
@@ -64,6 +65,7 @@ export function RushPage({ prefs }: { prefs: Prefs }) {
           setNewBest(final > 0 && r.best === final && (best ?? 0) < final);
           setBest(r.best);
           setPatches(r.newPatches);
+          noteCoins(r.coins);
         })
         .catch(() => {});
     } else {

@@ -10,9 +10,11 @@
 //   POST /api/auth/logout
 //   POST /api/auth/delete                  deletes the signed-in account (and its sign-in link, sessions)
 
+import { parseOutfit } from '../src/avatar/outfit.ts';
 import { suggestUsername, usernameProblem } from '../src/online/account.ts';
 import { isStaffRole } from '../src/online/admin.ts';
 import { tagById } from '../src/achievements/tags.ts';
+import { parseAvatar } from '../src/avatar/avatar.ts';
 import type { AccountUser, MeResponse, UsernameProblem } from '../src/online/account.ts';
 import {
   base64url,
@@ -76,11 +78,19 @@ export async function currentUser(request: Request, env: AuthEnv): Promise<Accou
   const token = parseCookies(request.headers.get('cookie'))[SESSION_COOKIE];
   if (!token) return null;
   const row = await env.DB.prepare(
-    `SELECT u.id, u.username, u.rating, u.role, u.tag FROM sessions s JOIN users u ON u.id = s.user_id
+    `SELECT u.id, u.username, u.rating, u.role, u.tag, u.avatar, u.outfit FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.id = ?1 AND s.expires_at > ?2 AND u.banned_at IS NULL`,
   )
     .bind(await sha256hex(token), Date.now())
-    .first<{ id: string; username: string; rating: number | null; role: string | null; tag: string | null }>();
+    .first<{
+      id: string;
+      username: string;
+      rating: number | null;
+      role: string | null;
+      tag: string | null;
+      avatar: string | null;
+      outfit: string | null;
+    }>();
   if (!row) return null;
   const role = isStaffRole(row.role) ? row.role : null;
   return {
@@ -88,6 +98,8 @@ export async function currentUser(request: Request, env: AuthEnv): Promise<Accou
     username: row.username,
     rating: row.rating,
     tag: tagById(row.tag).id,
+    avatar: row.avatar ? parseAvatar(row.avatar) : null,
+    outfit: row.outfit ? parseOutfit(row.outfit) : null,
     ...(role ? { role } : {}),
   };
 }

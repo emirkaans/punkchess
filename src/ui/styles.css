@@ -9243,3 +9243,1218 @@ a:focus-visible {
   margin: 0;
   font-size: 12px;
 }
+
+/* The character creator (src/ui/CharacterCreator.tsx, design "Ayna"): parts, a round mirror, options. */
+.char-avatar {
+  display: block;
+}
+.char-avatar svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.character-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.character-title {
+  margin: 0;
+  font: 400 clamp(40px, 7vw, 64px)/0.95 var(--display);
+  letter-spacing: 0.02em;
+}
+.character-lede {
+  margin: 0;
+  max-width: 60ch;
+}
+.character-creator {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 20px;
+  align-items: start;
+  padding: 18px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.character-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.character-parts button {
+  min-height: 46px;
+  padding: 0 12px;
+  text-align: left;
+  font: 400 21px/1 var(--display);
+  letter-spacing: 0.05em;
+}
+.character-parts button.on,
+.character-parts button.on:hover:not(:disabled) {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--on-pink);
+}
+.character-mirror {
+  justify-self: center;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, #2b2532, #141016 70%);
+  border: 6px solid #2a2530;
+  box-shadow:
+    inset 0 0 40px rgba(0, 0, 0, 0.7),
+    0 0 0 2px var(--pink);
+}
+.character-mirror .char-avatar {
+  width: 100%;
+  height: 100%;
+}
+.character-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.character-picked {
+  font:
+    700 11px/1.2 'Space Mono',
+    monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.character-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.character-option {
+  aspect-ratio: 1;
+  padding: 4px;
+  border-radius: 8px;
+  background: #1b1a1f;
+}
+.character-option .char-avatar {
+  width: 100%;
+  height: 100%;
+}
+.character-option[aria-pressed='true'],
+.character-option[aria-pressed='true']:hover:not(:disabled) {
+  border-color: var(--pink);
+  background: #2a1424;
+  box-shadow: 0 0 0 2px var(--pink);
+}
+.character-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.character-swatch {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid var(--panel);
+  box-shadow: 0 0 0 2px var(--border);
+}
+.character-swatch[aria-pressed='true'],
+.character-swatch:hover:not(:disabled) {
+  border-color: var(--panel);
+  box-shadow: 0 0 0 3px var(--fg);
+}
+.character-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.character-actions button {
+  min-height: 46px;
+  padding: 0 18px;
+}
+.character-skip {
+  align-self: flex-start;
+}
+/* The rail's icons and short names are for phones only. */
+.cp-icon,
+.cp-short {
+  display: none;
+}
+.cp-icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Tablets: the parts go above, the rest stacks. */
+@media (max-width: 860px) and (min-width: 761px) {
+  .character-creator {
+    grid-template-columns: 1fr;
+  }
+  .character-parts {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .character-mirror {
+    max-width: 260px;
+  }
+}
+/* Phones (design "Yan Ray"): a narrow icon rail on the left, the mirror above the options on the
+   right, the buttons at the bottom; the whole creator fits the screen, nothing to scroll. */
+@media (max-width: 760px) {
+  .character-page {
+    padding: 8px 10px 10px;
+    gap: 6px;
+  }
+  .character-title {
+    font-size: 30px;
+  }
+  .character-lede {
+    display: none;
+  }
+  .character-creator {
+    grid-template-columns: 62px minmax(0, 1fr);
+    /* The mirror takes the room left over; the options and buttons sit under it. */
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 8px 10px;
+    padding: 8px;
+    height: calc(100dvh - var(--character-top, 120px));
+    min-height: 460px;
+  }
+  .character-parts {
+    grid-row: 1 / 3;
+    gap: 6px;
+  }
+  .character-parts button {
+    min-height: 0;
+    height: 52px;
+    padding: 4px 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-align: center;
+    font-size: 12px;
+  }
+  .cp-full {
+    display: none;
+  }
+  .cp-icon,
+  .cp-short {
+    display: block;
+  }
+  .character-mirror {
+    width: auto;
+    height: 100%;
+    /* Never wider than its column (the screen less the rail and paddings): it stays a circle. */
+    max-height: min(280px, calc(100vw - 110px));
+    max-width: 100%;
+    align-self: center;
+    border-width: 4px;
+  }
+  .character-side {
+    min-height: 0;
+    gap: 8px;
+  }
+  /* The option area keeps one height whatever the part (two rows of three previews), so the
+     mirror above never moves; a part with more options scrolls inside it. */
+  .character-picked {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .character-options,
+  .character-swatches {
+    --tile: calc((100vw - 110px - 12px) / 3);
+    height: calc(var(--tile) * 2 + 6px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .character-options {
+    gap: 6px;
+    grid-auto-rows: var(--tile);
+  }
+  .character-swatches {
+    align-content: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .character-swatch {
+    width: 46px;
+    height: 46px;
+  }
+  .character-actions {
+    flex-wrap: nowrap;
+  }
+  .character-actions button {
+    flex: 1;
+    padding: 0 10px;
+    white-space: nowrap;
+  }
+  .character-actions .primary {
+    flex: 2;
+  }
+  .character-skip {
+    align-self: center;
+  }
+}
+/* The character beside the name on a profile. */
+.profile-avatar {
+  flex: none;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, #2b2532, #141016 70%);
+  box-shadow: 0 0 0 2px var(--pink);
+}
+.profile-edit-character {
+  align-self: flex-start;
+  font-size: 12px;
+}
+/* A player card's character (src/ui/PlayerRow.tsx): round, filling the avatar box. */
+.avatar.has-character {
+  overflow: hidden;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #2b2532, #141016 70%);
+}
+.avatar.has-character .char-avatar {
+  width: 100%;
+  height: 100%;
+}
+/* The character on the top bar's account button. */
+.account-avatar {
+  width: 28px;
+  height: 28px;
+  margin: -6px 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #1b1a1f;
+  box-shadow: 0 0 0 1.5px var(--lime);
+}
+/* Punk coins (src/ui/coins.ts): the balance on the account button, the "+N" toast. */
+.coin-ic {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.account-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+  font:
+    700 13px/1 'Space Mono',
+    monospace;
+  color: var(--lime);
+}
+.coin-toast {
+  position: fixed;
+  top: calc(76px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 2px solid #0a0a0b;
+  border-radius: 999px;
+  background: var(--lime);
+  color: #0a0a0b;
+  font: 400 20px/1 var(--display);
+  letter-spacing: 0.05em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  transform: translateX(-50%);
+  animation: coin-pop 3.5s ease-out forwards;
+  pointer-events: none;
+}
+.coin-toast .coin-ic {
+  width: 24px;
+  height: 24px;
+}
+.coin-toast b {
+  font: 400 26px/1 var(--display);
+}
+@keyframes coin-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -12px) scale(0.8);
+  }
+  8% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.06);
+  }
+  14%,
+  85% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coin-toast {
+    animation: none;
+  }
+}
+/* The store (src/ui/StorePage.tsx, design "Butik"): the fitting room, the goods. */
+.menu .menu-store {
+  color: var(--lime);
+}
+.store-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 16px 24px;
+}
+/* The store fits the screen under the top bar: the figure shrinks with it, and only the goods
+   scroll (inside) when there are more than fit. */
+.store {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  height: calc(100dvh - var(--store-top, 160px));
+  min-height: 460px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.store-booth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+  padding: 16px;
+  border-right: 1px solid var(--border);
+  background: radial-gradient(circle at 50% 30%, #2b2532, #141016 75%);
+}
+.store-label {
+  font:
+    700 10px/1.3 'Space Mono',
+    monospace;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-transform: uppercase;
+  text-align: center;
+}
+.store-figure {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 230px;
+}
+.store-figure svg,
+.store-pic svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.store-tried {
+  font: 400 22px/1 var(--display);
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.store-msg {
+  margin: 0;
+  min-height: 1.4em;
+  font-size: 12px;
+  text-align: center;
+  color: var(--lime);
+}
+.store-msg.bad {
+  color: var(--pink);
+}
+.store-shop {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  min-width: 0;
+  min-height: 0;
+}
+.store-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.store-title {
+  margin: 0;
+  font: 400 36px/1 var(--marker);
+  color: var(--pink);
+}
+.store-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--lime);
+  border-radius: 999px;
+  font:
+    700 15px/1 'Space Mono',
+    monospace;
+  color: var(--lime);
+}
+.store-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.store-tabs button {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font: 400 19px/1 var(--display);
+  letter-spacing: 0.05em;
+}
+.store-tabs button:hover:not(:disabled) {
+  border-color: var(--fg);
+  color: var(--fg);
+}
+.store-tabs button.on,
+.store-tabs button.on:hover:not(:disabled) {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--on-pink);
+}
+.store-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-content: start;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+}
+.store-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #1b1a1f;
+  cursor: pointer;
+}
+.store-card.on {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 1px var(--pink);
+}
+.store-card:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+.store-pic {
+  display: block;
+  height: clamp(80px, 14dvh, 120px);
+  border-radius: 6px;
+  background: #141016;
+}
+.store-card b {
+  font: 400 20px/1 var(--display);
+  letter-spacing: 0.04em;
+}
+.store-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.store-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font:
+    700 13px/1 'Space Mono',
+    monospace;
+  color: var(--lime);
+}
+.store-price .coin-ic {
+  width: 15px;
+  height: 15px;
+}
+.store-owned {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--lime);
+  color: #0a0a0b;
+  font:
+    700 9px/1.6 'Space Mono',
+    monospace;
+  letter-spacing: 0.1em;
+}
+.store-buy {
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border-color: var(--pink);
+  background: var(--pink);
+  color: var(--on-pink);
+  font:
+    700 12px/1 'Space Mono',
+    monospace;
+}
+.store-buy:hover:not(:disabled) {
+  color: var(--on-pink);
+  filter: brightness(1.1);
+}
+.store-buy.wear {
+  background: var(--lime);
+  border-color: var(--lime);
+}
+.store-buy.worn,
+.store-buy.worn:hover:not(:disabled) {
+  background: transparent;
+  border-color: var(--lime);
+  color: var(--lime);
+}
+/* Phone-only parts: the rail's balance and the bottom bar. */
+.store-rail-balance,
+.store-bar {
+  display: none;
+}
+.store-booth-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+/* Phones (design "Yan Ray"): the kinds as an icon rail on the left (the balance under them),
+   the figure above a 3-column grid of small pictures on the right, the picked item and its
+   button in a bar at the bottom; the whole store fits the screen. */
+@media (max-width: 760px) {
+  .store-page {
+    padding: 8px 10px 10px;
+  }
+  .store {
+    grid-template-columns: 62px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'rail booth'
+      'rail grid'
+      'bar bar';
+    height: calc(100dvh - var(--store-top-phone, 96px));
+    min-height: 480px;
+  }
+  .store-shop {
+    display: contents;
+  }
+  .store-top,
+  .store-booth-foot,
+  .store-booth .store-label {
+    display: none;
+  }
+  .store-booth {
+    grid-area: booth;
+    border-right: 0;
+    padding: 8px;
+  }
+  .store-figure {
+    max-width: 100%;
+  }
+  .store-tabs {
+    grid-area: rail;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    padding: 8px 6px;
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+  }
+  .store-tabs button {
+    height: 56px;
+    min-height: 0;
+    padding: 2px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 11px;
+  }
+  .store-tabs .cp-full {
+    display: none;
+  }
+  .store-tabs .cp-icon,
+  .store-tabs .cp-short {
+    display: block;
+  }
+  .store-rail-balance {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 2px;
+    border: 1px solid var(--lime);
+    border-radius: 10px;
+    font:
+      700 11px/1 'Space Mono',
+      monospace;
+    color: var(--lime);
+  }
+  .store-grid {
+    grid-area: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 0 8px 8px;
+    max-height: 40dvh;
+  }
+  .store-card {
+    padding: 4px;
+    gap: 2px;
+    align-items: center;
+  }
+  .store-card b,
+  .store-card .store-buy {
+    display: none;
+  }
+  .store-card .store-row {
+    justify-content: center;
+  }
+  .store-pic {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+  .store-bar {
+    grid-area: bar;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-top: 1px solid var(--border);
+  }
+  .store-bar-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .store-bar-text b {
+    font: 400 18px/1 var(--display);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .store-bar .store-msg {
+    text-align: left;
+    min-height: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .store-bar .store-buy {
+    min-height: 44px;
+  }
+}
+
+/* The barber ("Salon Koltuğu"): cuts in a priced list on the left, the barber's mirror and pole
+   in the middle, colours and beards on the right; it fits the screen like the store. */
+.barber {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 280px;
+  height: calc(100dvh - var(--store-top, 160px));
+  min-height: 460px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.barber-tabs {
+  display: none;
+}
+.barber-cuts {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--border);
+}
+.barber-cuts .store-title {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.barber-list {
+  min-height: 0;
+  overflow-y: auto;
+}
+.barber-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  padding: 6px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  text-align: left;
+}
+.barber-row:hover:not(:disabled),
+.barber-opt:hover:not(:disabled) {
+  color: var(--fg);
+  background: #1f1b22;
+}
+.barber-row[aria-pressed='true'],
+.barber-row[aria-pressed='true']:hover:not(:disabled) {
+  background: #2a1424;
+}
+.barber-row .char-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #1b1a1f;
+}
+.barber-row b {
+  font: 400 19px/1 var(--display);
+  letter-spacing: 0.04em;
+}
+.barber-chair {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  padding: 16px;
+  background: radial-gradient(circle at 50% 35%, #2b2532, #141016 70%);
+}
+.barber-chair-top {
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+/* The mirror takes the height left and stays round. */
+.barber-mirror {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: 340px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 8px solid #3a3440;
+  box-shadow:
+    0 0 0 2px var(--pink),
+    inset 0 0 40px rgba(0, 0, 0, 0.6);
+  background: #1b1a1f;
+}
+.barber-mirror .char-avatar {
+  width: 100%;
+  height: 100%;
+}
+.barber-pole {
+  flex: none;
+  width: 18px;
+  height: 60px;
+  border-radius: 9px;
+  border: 2px solid #0a0a0b;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--pink) 0 8px,
+    #f1eee8 8px 16px,
+    #4aa8ff 16px 24px,
+    #f1eee8 24px 32px
+  );
+  background-size: 100% 200%;
+  animation: barber-pole 2s linear infinite;
+}
+@keyframes barber-pole {
+  to {
+    background-position: 0 -45px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .barber-pole {
+    animation: none;
+  }
+}
+.barber-side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+  border-left: 1px solid var(--border);
+}
+.barber-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.barber-panel h2 {
+  margin: 0;
+  text-align: left;
+}
+.barber-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.barber-swatch {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid var(--panel);
+  box-shadow: 0 0 0 2px var(--border);
+}
+.barber-swatch:hover:not(:disabled) {
+  border-color: var(--panel);
+  box-shadow: 0 0 0 2px var(--muted);
+}
+.barber-swatch[aria-pressed='true'],
+.barber-swatch[aria-pressed='true']:hover:not(:disabled) {
+  box-shadow: 0 0 0 3px var(--fg);
+}
+.barber-lock {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: #0a0a0b;
+  color: var(--lime);
+  font:
+    700 9px/1.4 'Space Mono',
+    monospace;
+}
+.barber-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.barber-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 0;
+  padding: 6px;
+  border-radius: 8px;
+  background: #1b1a1f;
+}
+.barber-opt[aria-pressed='true'],
+.barber-opt[aria-pressed='true']:hover:not(:disabled) {
+  border-color: var(--pink);
+  background: #2a1424;
+}
+.barber-opt .char-avatar {
+  width: 100%;
+  aspect-ratio: 1;
+}
+.barber-opt b {
+  font: 400 16px/1 var(--display);
+  letter-spacing: 0.04em;
+}
+/* Phones (design "Yan Ray", like the store): the kinds as an icon rail with the pole and the
+   balance, the mirror above a 3-column grid of the picked kind, the tried item in a bottom bar. */
+@media (max-width: 760px) {
+  .barber {
+    grid-template-columns: 62px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'rail chair'
+      'rail panel'
+      'bar bar';
+    height: calc(100dvh - var(--store-top-phone, 96px));
+    min-height: 480px;
+  }
+  .barber-tabs {
+    display: flex;
+  }
+  .barber-tabs .barber-pole {
+    align-self: center;
+    width: 12px;
+    height: 46px;
+    margin-top: auto;
+  }
+  .barber-tabs .store-rail-balance {
+    margin-top: 6px;
+  }
+  /* Only the mirror shows here: it takes the largest round size that fits. */
+  .barber-chair {
+    grid-area: chair;
+    justify-content: center;
+    padding: 8px;
+    container-type: size;
+  }
+  .barber-chair-top,
+  .barber-chair .barber-pole {
+    display: none;
+  }
+  .barber-mirror {
+    flex: none;
+    width: min(100cqw - 16px, 100cqh - 16px);
+    max-height: none;
+    border-width: 6px;
+  }
+  .barber-side {
+    display: contents;
+  }
+  .barber-panel {
+    grid-area: panel;
+    min-height: 0;
+    padding: 0 8px 8px;
+    border: 0;
+  }
+  .barber-panel:not(.on) {
+    display: none;
+  }
+  .barber-cuts .store-title,
+  .barber-panel h2,
+  .barber-row b,
+  .barber-opt b {
+    display: none;
+  }
+  .barber-list,
+  .barber-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: max-content;
+    gap: 6px;
+    max-height: 36dvh;
+    overflow-y: auto;
+  }
+  .barber-row {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 2px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #1b1a1f;
+  }
+  .barber-row[aria-pressed='true'] {
+    border-color: var(--pink);
+  }
+  .barber-row .char-avatar {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    border-radius: 6px;
+  }
+  .barber-opt {
+    padding: 4px;
+  }
+  .barber-swatches {
+    justify-content: center;
+    gap: 22px;
+    padding: 18px 0;
+  }
+  .barber-swatch {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* Main menu groups (design "Sokak Tabelası"): Play and Community open a list of their pages
+   (icon, name, one line) while the pointer is on them; Street opens the shops' storefronts on a
+   kerb, the ones still to open dim. Phones: every group's pages under its title in the ☰ menu. */
+.menu-group {
+  position: relative;
+  display: flex;
+}
+.menu .menu-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.menu-group.open > .menu-top {
+  color: var(--pink);
+}
+.menu-caret {
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-3px) rotate(45deg);
+  transition: transform 0.15s;
+}
+.menu-group.open .menu-caret {
+  transform: translateY(2px) rotate(-135deg);
+}
+.menu-drop {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: -12px;
+  z-index: 50;
+  min-width: 290px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--pink);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+}
+.menu-group.open > .menu-drop {
+  display: block;
+}
+.menu-drop-title {
+  display: none;
+}
+.menu-drop-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.menu .menu-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 2px 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  text-align: left;
+  font: inherit;
+}
+.menu .menu-row:hover:not(:disabled),
+.menu .menu-row.on {
+  background: var(--panel-2);
+  color: var(--fg);
+}
+.menu-ic {
+  grid-row: span 2;
+  width: 36px;
+  height: 36px;
+  padding: 7px;
+  border-radius: 8px;
+  background: #1b1a1f;
+  fill: none;
+  stroke: var(--pink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.menu-row b {
+  font: 400 21px/1 var(--display);
+  letter-spacing: 0.04em;
+}
+.menu-row.on b {
+  color: var(--pink);
+}
+.menu-row span,
+.menu-shop span {
+  font:
+    400 11px/1.3 'Space Mono',
+    monospace;
+  color: var(--muted);
+}
+.menu-street {
+  width: 600px;
+  padding: 14px 16px 16px;
+  border-top-color: var(--lime);
+}
+.menu-street .menu-drop-title {
+  display: block;
+  margin-bottom: 12px;
+  font: 400 26px/1 var(--marker);
+  color: var(--lime);
+}
+.menu-street .menu-drop-items {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+  padding-bottom: 10px;
+  border-bottom: 6px solid #2a2a2e;
+}
+.menu .menu-shop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  text-align: center;
+  font: inherit;
+}
+.menu-front,
+.menu-front svg {
+  display: block;
+  width: 100%;
+}
+.menu-shop b {
+  font: 400 17px/1 var(--display);
+  letter-spacing: 0.05em;
+}
+.menu .menu-shop:hover:not(:disabled),
+.menu .menu-shop.on {
+  color: var(--lime);
+}
+.menu .menu-shop:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+@media (max-width: 760px) {
+  .menu-group {
+    flex-direction: column;
+  }
+  .menu .menu-top {
+    display: none;
+  }
+  .menu-drop,
+  .menu-street {
+    display: block;
+    position: static;
+    width: auto;
+    min-width: 0;
+    padding: 0 0 6px;
+    background: none;
+    border: 0;
+    box-shadow: none;
+  }
+  .menu-drop-title,
+  .menu-street .menu-drop-title {
+    display: block;
+    margin: 0;
+    padding: 12px 0 4px;
+    font:
+      700 10px/1.3 'Space Mono',
+      monospace;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .menu .menu-row {
+    border-radius: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 6px 2px;
+  }
+  .menu-ic {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+  }
+  .menu-street .menu-drop-items {
+    gap: 8px;
+    border-bottom-width: 4px;
+  }
+}

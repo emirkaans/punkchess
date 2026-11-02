@@ -1,3 +1,5 @@
+import { DEFAULT_AVATAR } from '../avatar/avatar.ts';
+import { AvatarView } from './CharacterCreator.tsx';
 import { useEffect, useState } from 'react';
 import { getVariant, listVariants } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
@@ -168,6 +170,7 @@ export function ProfilePage({ username, onOpen }: Props) {
   return (
     <main className="profile-page">
       <header className="profile-head">
+        <AvatarView avatar={profile.avatar ?? DEFAULT_AVATAR} outfit={profile.outfit} className="profile-avatar" />
         <button
           className="jacket-thumb"
           onClick={() => setShowJacket(true)}
@@ -184,6 +187,11 @@ export function ProfilePage({ username, onOpen }: Props) {
         </button>
         <div className="profile-title">
           <h1 className="profile-name">{profile.username}</h1>
+          {mine && (
+            <button className="link-button profile-edit-character" onClick={() => onOpen('/character')}>
+              {t('character.edit')}
+            </button>
+          )}
           {profile.gang && (
             <a
               className="gang-badge"

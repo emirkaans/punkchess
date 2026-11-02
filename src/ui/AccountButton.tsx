@@ -1,9 +1,12 @@
+import { CoinIcon } from './CoinToast.tsx';
+import { useCoins } from './coins.ts';
 import { useEffect, useRef, useState } from 'react';
 import { LOCALES } from '../i18n/index.ts';
 import type { Locale } from '../i18n/index.ts';
 import { signInWithGoogle, signOut, useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
 import { GearIcon } from './Punk.tsx';
+import { AvatarView } from './CharacterCreator.tsx';
 
 function PersonIcon() {
   return (
@@ -39,6 +42,7 @@ interface Props {
 export function AccountButton({ locale, onLocale, onSettings, onPreferences }: Props) {
   const { t } = useI18n();
   const account = useAccount();
+  const coins = useCoins();
   const [open, setOpen] = useState(false);
   // The menu itself, or its list of languages.
   const [view, setView] = useState<'main' | 'language'>('main');
@@ -77,8 +81,18 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
           onClick={toggle}
           title={user.username}
         >
-          <PersonIcon />
+          {user.avatar ? (
+            <AvatarView avatar={user.avatar} outfit={user.outfit} className="account-avatar" />
+          ) : (
+            <PersonIcon />
+          )}
           <span className="account-label">{user.username}</span>
+          {coins.balance !== null && (
+            <span className="account-coins" title={t('coins.balance', { n: String(coins.balance) })}>
+              <CoinIcon />
+              {coins.balance}
+            </span>
+          )}
         </button>
       ) : (
         <button

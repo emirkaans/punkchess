@@ -5,6 +5,8 @@
 //
 // Rush results do not change the puzzle rating.
 
+import { rushCoins } from '../src/coins/rules.ts';
+import { grantCoins } from './coins.ts';
 import { listVariants } from '../src/engine/index.ts';
 import { dailyDay } from '../src/online/daily.ts';
 import { RUSH_COUNT, RUSH_START, RUSH_STEP } from '../src/online/puzzle.ts';
@@ -95,7 +97,8 @@ export async function handleRush(request: Request, env: AuthEnv, url: URL): Prom
       .bind(user.id)
       .first<{ best: number }>();
     const newPatches = await awardPuzzlePatches(env.DB, user.id, dailyDay(now), now);
-    return json({ best: row?.best ?? score, newPatches } satisfies RushSaved);
+    const coins = await grantCoins(env.DB, user.id, 'rush', String(now), rushCoins(score), now);
+    return json({ best: row?.best ?? score, newPatches, coins } satisfies RushSaved);
   }
 
   return json({ error: 'not-found' }, 404);

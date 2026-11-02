@@ -1,3 +1,5 @@
+import { noteCoins, refreshCoins } from './coins.ts';
+import { CoinToast } from './CoinToast.tsx';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { CHAOS, getVariant, isInCheck, legalMoves, listVariants, opposite, toFen } from '../engine/index.ts';
@@ -75,6 +77,9 @@ import type { SoundKind } from './sound.ts';
 const AnalysisPage = lazy(() => import('./AnalysisPage.tsx').then((m) => ({ default: m.AnalysisPage })));
 const ReviewPage = lazy(() => import('./ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
 const SignupPage = lazy(() => import('./SignupPage.tsx').then((m) => ({ default: m.SignupPage })));
+const StorePage = lazy(() => import('./StorePage.tsx').then((m) => ({ default: m.StorePage })));
+const BarberPage = lazy(() => import('./BarberPage.tsx').then((m) => ({ default: m.BarberPage })));
+const CharacterCreator = lazy(() => import('./CharacterCreator.tsx').then((m) => ({ default: m.CharacterCreator })));
 const ProfilePage = lazy(() => import('./ProfilePage.tsx').then((m) => ({ default: m.ProfilePage })));
 const PuzzlePage = lazy(() => import('./PuzzlePage.tsx').then((m) => ({ default: m.PuzzlePage })));
 const DailyPage = lazy(() => import('./DailyPage.tsx').then((m) => ({ default: m.DailyPage })));
@@ -153,6 +158,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const [newGame, setNewGame] = useState<GameSettings | null>(null);
   const [showRules, setShowRules] = useState(false);
   const [showCardGuide, setShowCardGuide] = useState(false);
+  /** After signing up: where to go once the character is made. */
+  const [afterCharacter, setAfterCharacter] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   // A variant picked in the footer: the home page opens its card.
@@ -343,7 +350,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         r.kind === 'privacy' ||
         r.kind === 'terms' ||
         r.kind === 'licenses' ||
-        r.kind === 'contact'
+        r.kind === 'contact' ||
+        r.kind === 'character' ||
+        r.kind === 'store' ||
+        r.kind === 'barber'
       )
         return setPage(r.kind);
       if (r.kind === 'online') {
@@ -477,6 +487,36 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
     showReviewRef.current = () => openReview(postGameReview(), 'game');
   });
   const finished = !!view.finalOutcome;
+  // Punk coins: the balance once signed in; a won game against the bot is sent to be paid
+  // (the server replays it first), once per game.
+  const userId = account.user?.id ?? null;
+  useEffect(() => {
+    if (userId) void refreshCoins();
+  }, [userId]);
+  const claimed = useRef<string | null>(null);
+  const won = view.finalOutcome?.reason === 'checkmate' && view.finalOutcome.winner;
+  useEffect(() => {
+    if (!userId || !vsBot || !won || players[won].kind !== 'human' || claimed.current === session.gameId) return;
+    claimed.current = session.gameId;
+    const end = view.endState;
+    const first = session.timeline.states[0];
+    void fetch('/api/me/coins/bot', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        variantId: variant.id,
+        startFen: toFen(variant, first.position),
+        moves: end.moves.map((m) => m.san),
+        color: won,
+        level: session.settings.botLevel,
+      }),
+    })
+      .then((res) => (res.ok ? (res.json() as Promise<{ coins: number }>) : null))
+      .then((r) => noteCoins(r?.coins))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [won, userId, vsBot, session.gameId]);
   useEffect(() => {
     if (pendingReview && pendingReview === session.gameId && finished) {
       setPendingReview(null);
@@ -587,6 +627,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
 
   return (
     <div className="app">
+      <CoinToast />
       <Toolbar
         page={page}
         prefs={prefs}
@@ -603,6 +644,14 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         })}
         onLeaderboard={leaveGame(() => setPage('leaderboard'))}
         onTv={leaveGame(() => setPage('tv'))}
+        onStore={leaveGame(() => {
+          history.pushState(null, '', '/store');
+          setPage('store');
+        })}
+        onBarber={leaveGame(() => {
+          history.pushState(null, '', '/barber');
+          setPage('barber');
+        })}
         onGangs={leaveGame(() => {
           setGangTag(null);
           setPage('gangs');
@@ -679,6 +728,23 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           />
         ) : page === 'contact' ? (
           <ContactPage />
+        ) : page === 'store' || page === 'barber' ? (
+          (() => {
+            const open = (path: string) => {
+              history.pushState(null, '', path);
+              applyRouteRef.current(parseRoute(path));
+            };
+            return page === 'store' ? <StorePage onOpen={open} /> : <BarberPage onOpen={open} />;
+          })()
+        ) : page === 'character' ? (
+          <CharacterCreator
+            next={afterCharacter}
+            onOpen={(path) => {
+              setAfterCharacter(null);
+              history.pushState(null, '', path);
+              applyRouteRef.current(parseRoute(path));
+            }}
+          />
         ) : page === 'admin' ? (
           <AdminPage />
         ) : page === 'tournaments' ? (
@@ -732,8 +798,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         ) : page === 'signup' ? (
           <SignupPage
             onDone={(to) => {
-              history.replaceState(null, '', to);
-              applyRouteRef.current(parseRoute(new URL(to, location.origin).pathname));
+              // A new account makes its character first, then goes where it was headed.
+              setAfterCharacter(to);
+              history.replaceState(null, '', '/character');
+              applyRouteRef.current({ kind: 'character' });
             }}
           />
         ) : page === 'analysis' ? (
@@ -776,6 +844,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   active={!outcome && !setup && turn === top}
                   clock={timed ? session.clock : null}
                   place="top"
+                  character={vsBot && players[top].kind === 'human' ? account.user?.avatar : null}
+                  outfit={vsBot && players[top].kind === 'human' ? account.user?.outfit : null}
                 />
                 {/* Wide screens: the variant and the game state, small, between the two clocks. */}
                 <div className="players-mid">
@@ -801,6 +871,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   active={!outcome && !setup && turn === bottom}
                   clock={timed ? session.clock : null}
                   place="bottom"
+                  character={vsBot && players[bottom].kind === 'human' ? account.user?.avatar : null}
+                  outfit={vsBot && players[bottom].kind === 'human' ? account.user?.outfit : null}
                 />
               </aside>
               <div className="board-col">
