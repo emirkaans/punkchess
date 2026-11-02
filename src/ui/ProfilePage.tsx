@@ -170,7 +170,7 @@ export function ProfilePage({ username, onOpen }: Props) {
   return (
     <main className="profile-page">
       <header className="profile-head">
-        <AvatarView avatar={profile.avatar ?? DEFAULT_AVATAR} className="profile-avatar" />
+        <AvatarView avatar={profile.avatar ?? DEFAULT_AVATAR} outfit={profile.outfit} className="profile-avatar" />
         <button
           className="jacket-thumb"
           onClick={() => setShowJacket(true)}

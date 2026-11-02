@@ -81,7 +81,11 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
           onClick={toggle}
           title={user.username}
         >
-          {user.avatar ? <AvatarView avatar={user.avatar} className="account-avatar" /> : <PersonIcon />}
+          {user.avatar ? (
+            <AvatarView avatar={user.avatar} outfit={user.outfit} className="account-avatar" />
+          ) : (
+            <PersonIcon />
+          )}
           <span className="account-label">{user.username}</span>
           {coins.balance !== null && (
             <span className="account-coins" title={t('coins.balance', { n: String(coins.balance) })}>

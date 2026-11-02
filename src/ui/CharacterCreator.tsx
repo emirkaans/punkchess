@@ -1,3 +1,4 @@
+import type { Outfit } from '../avatar/outfit.ts';
 import { useEffect, useState } from 'react';
 import {
   AVATAR_OPTIONS,
@@ -29,9 +30,20 @@ interface Props {
   onOpen: (path: string) => void;
 }
 
-/** The avatar drawn from its parts. */
-export function AvatarView({ avatar, className = '' }: { avatar: Avatar; className?: string }) {
-  return <span className={`char-avatar ${className}`} dangerouslySetInnerHTML={{ __html: avatarSvg(avatar) }} />;
+/** The avatar drawn from its parts (and what it wears on its head). */
+export function AvatarView({
+  avatar,
+  outfit = null,
+  className = '',
+}: {
+  avatar: Avatar;
+  /** What they wear: a hat, glasses or headphones show on the head. */
+  outfit?: Outfit | null;
+  className?: string;
+}) {
+  return (
+    <span className={`char-avatar ${className}`} dangerouslySetInnerHTML={{ __html: avatarSvg(avatar, outfit) }} />
+  );
 }
 
 /**

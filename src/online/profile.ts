@@ -1,5 +1,6 @@
 // Shapes of the profile API (server/profiles.ts), shared with the browser. Pure.
 
+import type { Outfit } from '../avatar/outfit.ts';
 import type { Avatar } from '../avatar/avatar.ts';
 import type { JacketStats } from '../achievements/jackets.ts';
 
@@ -47,6 +48,8 @@ export interface ProfileResponse {
   readonly tag: string;
   /** The player's character (src/avatar/avatar.ts); null until they have made one. */
   readonly avatar: Avatar | null;
+  /** What they wear from the store. */
+  readonly outfit?: Outfit | null;
   /** What earns the other jackets. */
   readonly stats: JacketStats;
 }

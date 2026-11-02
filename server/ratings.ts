@@ -58,9 +58,9 @@ export async function withTags(room: Room, db: D1Database | undefined): Promise<
   if (!db || room.tags || !room.seats.w || !room.seats.b || (!w && !b)) return room;
   try {
     const rows = await db
-      .prepare('SELECT id, tag, avatar FROM users WHERE id IN (?1, ?2)')
+      .prepare('SELECT id, tag, avatar, outfit FROM users WHERE id IN (?1, ?2)')
       .bind(w ?? '', b ?? '')
-      .all<{ id: string; tag: string | null; avatar: string | null }>();
+      .all<{ id: string; tag: string | null; avatar: string | null; outfit: string | null }>();
     const of = (id: string | undefined) => {
       const row = id ? rows.results.find((r) => r.id === id) : undefined;
       return row ? tagById(row.tag).id : undefined;
@@ -71,14 +71,16 @@ export async function withTags(room: Room, db: D1Database | undefined): Promise<
     if (tw) tags.w = tw;
     if (tb) tags.b = tb;
     const avatars: Partial<Record<Color, string>> = {};
+    const outfits: Partial<Record<Color, string>> = {};
     for (const [c, id] of [
       ['w', w],
       ['b', b],
     ] as const) {
-      const stored = id ? rows.results.find((r) => r.id === id)?.avatar : null;
-      if (stored) avatars[c] = stored;
+      const row = id ? rows.results.find((r) => r.id === id) : undefined;
+      if (row?.avatar) avatars[c] = row.avatar;
+      if (row?.outfit) outfits[c] = row.outfit;
     }
-    return { ...room, tags, avatars };
+    return { ...room, tags, avatars, outfits };
   } catch {
     return room; // no tags: nothing is sprayed
   }

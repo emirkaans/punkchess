@@ -3,6 +3,9 @@
 // to the lists freely; a stored id that is no longer offered is still drawn when its drawing
 // stays (only `offered: false`), and an unknown one falls back to the default. Pure: no DOM.
 
+import { hatSvg, headAccessorySvg } from './outfit.ts';
+import type { Outfit } from './outfit.ts';
+
 export interface Avatar {
   readonly head: string;
   readonly skin: string;
@@ -101,6 +104,9 @@ export function randomAvatar(random: () => number = Math.random): Avatar {
 
 // ---------------------------------------------------------------------------
 // Drawing (200×200)
+
+/** A colour part's colour (the skin, for the full figure's hands). */
+export const skinColor = (a: Avatar): string => colorOf('skin', a.skin);
 
 const INK = '#141016';
 const colorOf = (part: 'skin' | 'hairColor', id: string) =>
@@ -202,8 +208,11 @@ function extra(kind: string): string {
   }
 }
 
-/** The avatar as an SVG string (200×200 view box, scales to its box). */
-export function avatarSvg(a: Avatar): string {
+/**
+ * The avatar as an SVG string (200×200 view box, scales to its box). With an outfit, its head
+ * items (a hat, glasses, headphones) are drawn on top.
+ */
+export function avatarSvg(a: Avatar, outfit: Outfit | null = null): string {
   const skin = colorOf('skin', a.skin);
   const hair = colorOf('hairColor', a.hairColor);
   return (
@@ -218,6 +227,7 @@ export function avatarSvg(a: Avatar): string {
     mouth(a.mouth) +
     extra(a.extra) +
     hairFront(a.hair, hair, skin) +
+    (outfit ? hatSvg(outfit.hat) + headAccessorySvg(outfit.acc) : '') +
     `</svg>`
   );
 }

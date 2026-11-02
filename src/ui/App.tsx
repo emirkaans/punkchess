@@ -77,6 +77,7 @@ import type { SoundKind } from './sound.ts';
 const AnalysisPage = lazy(() => import('./AnalysisPage.tsx').then((m) => ({ default: m.AnalysisPage })));
 const ReviewPage = lazy(() => import('./ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
 const SignupPage = lazy(() => import('./SignupPage.tsx').then((m) => ({ default: m.SignupPage })));
+const StorePage = lazy(() => import('./StorePage.tsx').then((m) => ({ default: m.StorePage })));
 const CharacterCreator = lazy(() => import('./CharacterCreator.tsx').then((m) => ({ default: m.CharacterCreator })));
 const ProfilePage = lazy(() => import('./ProfilePage.tsx').then((m) => ({ default: m.ProfilePage })));
 const PuzzlePage = lazy(() => import('./PuzzlePage.tsx').then((m) => ({ default: m.PuzzlePage })));
@@ -349,7 +350,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         r.kind === 'terms' ||
         r.kind === 'licenses' ||
         r.kind === 'contact' ||
-        r.kind === 'character'
+        r.kind === 'character' ||
+        r.kind === 'store'
       )
         return setPage(r.kind);
       if (r.kind === 'online') {
@@ -640,6 +642,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         })}
         onLeaderboard={leaveGame(() => setPage('leaderboard'))}
         onTv={leaveGame(() => setPage('tv'))}
+        onStore={leaveGame(() => {
+          history.pushState(null, '', '/store');
+          setPage('store');
+        })}
         onGangs={leaveGame(() => {
           setGangTag(null);
           setPage('gangs');
@@ -716,6 +722,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           />
         ) : page === 'contact' ? (
           <ContactPage />
+        ) : page === 'store' ? (
+          <StorePage />
         ) : page === 'character' ? (
           <CharacterCreator
             next={afterCharacter}
@@ -825,6 +833,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   clock={timed ? session.clock : null}
                   place="top"
                   character={vsBot && players[top].kind === 'human' ? account.user?.avatar : null}
+                  outfit={vsBot && players[top].kind === 'human' ? account.user?.outfit : null}
                 />
                 {/* Wide screens: the variant and the game state, small, between the two clocks. */}
                 <div className="players-mid">
@@ -851,6 +860,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   clock={timed ? session.clock : null}
                   place="bottom"
                   character={vsBot && players[bottom].kind === 'human' ? account.user?.avatar : null}
+                  outfit={vsBot && players[bottom].kind === 'human' ? account.user?.outfit : null}
                 />
               </aside>
               <div className="board-col">

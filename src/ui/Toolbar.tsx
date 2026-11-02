@@ -29,6 +29,7 @@ export type Page =
   | 'licenses'
   | 'contact'
   | 'character'
+  | 'store'
   | 'loading';
 
 interface Props {
@@ -39,6 +40,8 @@ interface Props {
   /** Play: the online lobby (the computer and two-player games are offered there too). */
   onPlay: () => void;
   onAnalysis: () => void;
+  /** The store (punk coins buy clothes). */
+  onStore: () => void;
   onPuzzles: () => void;
   onLeaderboard: () => void;
   onTv: () => void;
@@ -59,6 +62,7 @@ export function Toolbar({
   onHome,
   onPlay,
   onAnalysis,
+  onStore,
   onPuzzles,
   onLeaderboard,
   onTv,
@@ -160,6 +164,13 @@ export function Toolbar({
             onClick={close(onAnalysis)}
           >
             {t('menu.analysis')}
+          </button>
+          <button
+            className={page === 'store' ? 'on menu-store' : 'menu-store'}
+            aria-current={page === 'store' ? 'page' : undefined}
+            onClick={close(onStore)}
+          >
+            {t('menu.store')}
           </button>
         </nav>
         <div className="toolbar-end">

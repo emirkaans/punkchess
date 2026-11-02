@@ -38,7 +38,7 @@ export async function grantCoins(
   const row = await db
     .prepare(
       `SELECT coalesce(sum(amount), 0) AS total, coalesce(sum(CASE WHEN reason = ?3 THEN amount END), 0) AS mine
-       FROM coin_ledger WHERE user_id = ?1 AND day = ?2`,
+       FROM coin_ledger WHERE user_id = ?1 AND day = ?2 AND amount > 0`,
     )
     .bind(userId, day, reason)
     .first<{ total: number; mine: number }>();
@@ -62,7 +62,7 @@ export async function coinBalance(
 ): Promise<{ balance: number; today: number }> {
   const row = await db
     .prepare(
-      `SELECT coalesce(sum(amount), 0) AS balance, coalesce(sum(CASE WHEN day = ?2 THEN amount END), 0) AS today
+      `SELECT coalesce(sum(amount), 0) AS balance, coalesce(sum(CASE WHEN day = ?2 AND amount > 0 THEN amount END), 0) AS today
        FROM coin_ledger WHERE user_id = ?1`,
     )
     .bind(userId, dailyDay(now))

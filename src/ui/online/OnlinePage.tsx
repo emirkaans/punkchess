@@ -559,6 +559,7 @@ function OnlineGame({
                 clock={timed ? clock : null}
                 place={i === 0 ? 'top' : 'bottom'}
                 character={view.players[c]?.avatar ?? null}
+                outfit={view.players[c]?.outfit ?? null}
                 taunt={
                   prefs.stickers && poppedSticker?.from === c
                     ? {

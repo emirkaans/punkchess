@@ -1,6 +1,7 @@
 // Messages between the browser and the online game server (a Cloudflare
 // Durable Object per game). Shared by both sides. No React / DOM imports.
 
+import type { Outfit } from '../avatar/outfit.ts';
 import type { Avatar } from '../avatar/avatar.ts';
 import { cardMove, findMove } from '../engine/index.ts';
 import type {
@@ -112,6 +113,8 @@ export interface PublicPlayer {
   readonly tag?: string | null;
   /** Their character (signed-in players who made one). */
   readonly avatar?: Avatar | null;
+  /** … and what they wear from the store. */
+  readonly outfit?: Outfit | null;
 }
 
 /** Everything a client needs to draw the game; sent after every change. */

@@ -7,6 +7,7 @@
 //   POST /api/me/tag { tag }                       … and a spray tag style
 //   POST /api/me/avatar { avatar }                 … and saves their character
 
+import { parseOutfit } from '../src/avatar/outfit.ts';
 import { PROVISIONAL_RD } from '../src/rating/glicko2.ts';
 import type { ProfileGame, ProfileRating, ProfileResponse, RatingPoint, Rival } from '../src/online/profile.ts';
 import type { AuthEnv } from './auth.ts';
@@ -180,7 +181,7 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
   if (!m || request.method !== 'GET') return null;
   if (!env.DB) return json({ error: 'accounts-off' }, 503);
   const user = await env.DB.prepare(
-    'SELECT id, username, created_at, jacket, tag, avatar FROM users WHERE username = ?1 AND banned_at IS NULL',
+    'SELECT id, username, created_at, jacket, tag, avatar, outfit FROM users WHERE username = ?1 AND banned_at IS NULL',
   )
     .bind(decodeURIComponent(m[1]))
     .first<{
@@ -190,6 +191,7 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
       jacket: string | null;
       tag: string | null;
       avatar: string | null;
+      outfit: string | null;
     }>();
   if (!user) return json({ error: 'not-found' }, 404);
 
@@ -243,6 +245,7 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
       jacket: jacketById(user.jacket).id,
       tag: tagById(user.tag).id,
       avatar: user.avatar ? parseAvatar(user.avatar) : null,
+      outfit: user.outfit ? parseOutfit(user.outfit) : null,
       stats: await jacketStats(env.DB, user.id),
     } satisfies ProfileResponse);
   }
