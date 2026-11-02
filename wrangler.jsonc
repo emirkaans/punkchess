@@ -59,4 +59,6 @@
     { "name": "READ_LIMIT", "namespace_id": "1003", "simple": { "limit": 240, "period": 60 } },
   ],
   "observability": { "enabled": true },
+  // Site analytics: who is on the site and the games being played, every 5 minutes (server/analytics.ts).
+  "triggers": { "crons": ["*/5 * * * *"] },
 }

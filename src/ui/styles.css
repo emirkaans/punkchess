@@ -10725,3 +10725,239 @@ a:focus-visible {
     font-size: 13px;
   }
 }
+
+/* Admin analytics (src/ui/AdminTraffic.tsx): tiles for the headline numbers, then one card per
+   chart; one series each (pink), values on hover, grid and axes kept quiet. */
+.traffic {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tr-ranges {
+  display: flex;
+  gap: 6px;
+}
+.tr-ranges button {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font: 400 18px/1 var(--display);
+  letter-spacing: 0.05em;
+}
+.tr-ranges button.on,
+.tr-ranges button.on:hover:not(:disabled) {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--on-pink);
+}
+.tr-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.tr-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.tr-tile span {
+  font:
+    700 10px/1.3 'Space Mono',
+    monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tr-tile b {
+  font: 400 40px/1 var(--display);
+  color: var(--fg);
+}
+.tr-tile.live {
+  border-color: var(--lime);
+}
+.tr-tile.live b {
+  color: var(--lime);
+}
+.tr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 12px;
+}
+.tr-card {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.tr-card.wide {
+  grid-column: 1 / -1;
+}
+.tr-card figcaption {
+  font: 400 20px/1 var(--display);
+  letter-spacing: 0.04em;
+}
+.tr-card .tr-sub {
+  margin-top: 8px;
+}
+.tr-cols {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 150px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.tr-col {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+}
+.tr-bar {
+  width: 100%;
+  min-height: 1px;
+  border-radius: 4px 4px 0 0;
+  background: var(--pink);
+}
+.tr-col:hover .tr-bar {
+  background: var(--lime);
+}
+.tr-x {
+  position: absolute;
+  left: 50%;
+  bottom: -18px;
+  transform: translateX(-50%);
+  font:
+    400 10px/1 'Space Mono',
+    monospace;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.tr-col:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: var(--fg);
+  color: var(--bg);
+  font:
+    700 11px/1.3 'Space Mono',
+    monospace;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tr-col:first-child:hover::after {
+  left: 0;
+  transform: none;
+}
+.tr-col:last-child:hover::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.tr-line {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tr-line svg {
+  display: block;
+  width: 100%;
+  height: 150px;
+}
+.tr-axis {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.tr-area {
+  fill: var(--pink);
+  opacity: 0.18;
+}
+.tr-stroke {
+  fill: none;
+  stroke: var(--pink);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+}
+.tr-hit {
+  fill: transparent;
+}
+.tr-hit:hover {
+  fill: rgba(198, 255, 61, 0.15);
+}
+.tr-max {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font:
+    400 10px/1 'Space Mono',
+    monospace;
+  color: var(--muted);
+}
+.tr-ends {
+  display: flex;
+  justify-content: space-between;
+  font:
+    400 10px/1 'Space Mono',
+    monospace;
+  color: var(--muted);
+}
+.tr-ranked {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tr-ranked li {
+  display: grid;
+  grid-template-columns: minmax(0, 9em) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.tr-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tr-track {
+  height: 10px;
+  border-radius: 4px;
+  background: var(--panel-2);
+}
+.tr-fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 4px;
+  background: var(--pink);
+}
+.tr-n {
+  font:
+    700 12px/1 'Space Mono',
+    monospace;
+  color: var(--fg);
+}
+.tr-empty,
+.tr-note {
+  margin: 0;
+  font-size: 12px;
+}

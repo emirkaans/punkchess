@@ -27,6 +27,7 @@ import { handleRush } from './rush.ts';
 import { handleChallenges } from './challenges.ts';
 import { handleContact } from './contact.ts';
 import { handleErrors } from './errors.ts';
+import { handleAnalytics, sampleLive } from './analytics.ts';
 import { handleAdmin } from './admin.ts';
 import { handleFollows } from './follows.ts';
 import { handleGangs } from './gangs.ts';
@@ -137,6 +138,9 @@ export default {
     if (leaders) return leaders;
     const rush = await handleRush(request, env, url);
     if (rush) return rush;
+    // Before the admin routes: /api/admin/traffic is answered here.
+    const analytics = await handleAnalytics(request, env, url);
+    if (analytics) return analytics;
     const admin = await handleAdmin(request, env, url);
     if (admin) return admin;
     const errors = await handleErrors(request, url, env.DB);
@@ -193,5 +197,9 @@ export default {
       if (preview) return preview;
     }
     return env.ASSETS.fetch(request);
+  },
+  // Every 5 minutes (wrangler.jsonc triggers): a sample of who is on the site.
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(sampleLive(env));
   },
 } satisfies ExportedHandler<Env>;

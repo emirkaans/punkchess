@@ -1,4 +1,5 @@
 import { refreshCoins } from './coins.ts';
+import { trackPage } from './analytics.ts';
 import { CoinToast } from './CoinToast.tsx';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
@@ -128,6 +129,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   // The tournament asked for by the address (/tournament/<id>), or null for the list.
   const [tournamentId, setTournamentId] = useState<string | null>(null);
   const [page, setPage] = useState<Page>(() => (parseRoute(location.pathname).kind === 'home' ? 'home' : 'loading'));
+  // Site analytics (src/ui/analytics.ts): the page's kind; staff pages are not counted.
+  useEffect(() => {
+    if (page !== 'loading' && page !== 'admin') trackPage(page);
+  }, [page]);
   /** Online game shown on the online page (null: its lobby). */
   const [onlineId, setOnlineId] = useState<string | null>(null);
   // The online game this player is in, while they are elsewhere on the site (src/ui/online/current.ts).

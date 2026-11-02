@@ -13,9 +13,10 @@ import type { ContactMessage } from '../online/contact.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import { useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
+import { AdminTraffic } from './AdminTraffic.tsx';
 
-type Tab = 'stats' | 'messages' | 'users' | 'tournaments' | 'gangs' | 'errors' | 'log';
-const TABS: readonly Tab[] = ['stats', 'messages', 'users', 'tournaments', 'gangs', 'errors', 'log'];
+type Tab = 'stats' | 'traffic' | 'messages' | 'users' | 'tournaments' | 'gangs' | 'errors' | 'log';
+const TABS: readonly Tab[] = ['stats', 'traffic', 'messages', 'users', 'tournaments', 'gangs', 'errors', 'log'];
 
 const getJSON = <T,>(path: string): Promise<T | null> =>
   fetch(path, { credentials: 'same-origin' })
@@ -71,6 +72,7 @@ export function AdminPage() {
         ))}
       </div>
       {tab === 'stats' && <Stats />}
+      {tab === 'traffic' && <AdminTraffic />}
       {tab === 'messages' && <Messages />}
       {tab === 'users' && <Users role={role} myId={account.user!.id} />}
       {tab === 'tournaments' && <Tournaments />}
