@@ -286,6 +286,7 @@ export function Toolbar({
                         <button
                           key={e.label}
                           className={`menu-shop${e.on ? ' on' : ''}`}
+                          aria-label={t(e.label)}
                           disabled={!e.go}
                           aria-current={e.on ? 'page' : undefined}
                           onClick={e.go ? close(e.go) : undefined}
@@ -302,6 +303,8 @@ export function Toolbar({
                         <button
                           key={e.label}
                           className={`menu-row${e.on ? ' on' : ''}`}
+                          aria-label={t(e.label)}
+                          aria-describedby={`${e.label}-desc`}
                           aria-current={e.on ? 'page' : undefined}
                           onClick={close(e.go!)}
                         >
@@ -309,7 +312,7 @@ export function Toolbar({
                             <path d={e.icon} />
                           </svg>
                           <b>{t(e.label)}</b>
-                          <span>{t(e.desc)}</span>
+                          <span id={`${e.label}-desc`}>{t(e.desc)}</span>
                         </button>
                       ),
                     )}
