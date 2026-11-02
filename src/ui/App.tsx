@@ -648,6 +648,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           history.pushState(null, '', '/store');
           setPage('store');
         })}
+        onBarber={leaveGame(() => {
+          history.pushState(null, '', '/barber');
+          setPage('barber');
+        })}
         onGangs={leaveGame(() => {
           setGangTag(null);
           setPage('gangs');
