@@ -799,7 +799,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
             onOpenGame={setOnlineId}
             onLobby={() => setOnlineId(null)}
             onPlayOffline={(mode) => openNewGame({ mode })}
-            onResumeGame={session.key > 1 ? () => setPage('game') : null}
+            // Only a game still going on (a finished one is not "in progress").
+            onResumeGame={session.key > 1 && !view.finalOutcome ? () => setPage('game') : null}
             prefs={prefs}
             setPrefs={setPrefs}
             defaultVariantId={listVariants()[0].id}
