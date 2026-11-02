@@ -549,6 +549,7 @@ function OnlineGame({
                 active={playing && state?.position.turn === c}
                 clock={timed ? clock : null}
                 place={i === 0 ? 'top' : 'bottom'}
+                character={view.players[c]?.avatar ?? null}
                 taunt={
                   prefs.stickers && poppedSticker?.from === c
                     ? {

@@ -3,6 +3,7 @@
 // disconnect rule. Pure: the caller passes the time (`now`) and randomness.
 // The Durable Object in server/ persists a Room and calls these functions.
 
+import { parseAvatar } from '../avatar/avatar.ts';
 import {
   TIME_CARD_MS,
   addTime,
@@ -82,6 +83,8 @@ export interface Room {
   readonly newPatches?: Readonly<Partial<Record<Color, readonly string[]>>>;
   /** Spray tag styles of the signed-in players (src/achievements/tags.ts), sprayed on a checkmate. */
   readonly tags?: Readonly<Partial<Record<Color, string>>>;
+  /** The signed-in players' characters as stored (src/avatar/avatar.ts), loaded with the tags. */
+  readonly avatars?: Readonly<Partial<Record<Color, string>>>;
   /** The arena tournament the game belongs to (server/tournament.ts): no rematch, the result is reported there. */
   readonly tournamentId?: string;
   /** Each player's hidden chaos card (variants with cards), dealt when the game starts. */
@@ -429,6 +432,8 @@ export function viewOf(
       diff: room.ratingDiff?.[c] ?? null,
       newPatches: room.newPatches?.[c] ?? [],
       tag: room.tags?.[c] ?? null,
+      // Only when they have one: guests and players without a character get no field.
+      ...(room.avatars?.[c] ? { avatar: parseAvatar(room.avatars[c]) } : {}),
     };
   };
   const finite = (ms: number) => (Number.isFinite(ms) ? ms : null);

@@ -31,7 +31,7 @@ interface Props {
 
 /** The avatar drawn from its parts. */
 export function AvatarView({ avatar, className = '' }: { avatar: Avatar; className?: string }) {
-  return <span className={`avatar ${className}`} dangerouslySetInnerHTML={{ __html: avatarSvg(avatar) }} />;
+  return <span className={`char-avatar ${className}`} dangerouslySetInnerHTML={{ __html: avatarSvg(avatar) }} />;
 }
 
 /**

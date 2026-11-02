@@ -790,6 +790,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   active={!outcome && !setup && turn === top}
                   clock={timed ? session.clock : null}
                   place="top"
+                  character={vsBot && players[top].kind === 'human' ? account.user?.avatar : null}
                 />
                 {/* Wide screens: the variant and the game state, small, between the two clocks. */}
                 <div className="players-mid">
@@ -815,6 +816,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   active={!outcome && !setup && turn === bottom}
                   clock={timed ? session.clock : null}
                   place="bottom"
+                  character={vsBot && players[bottom].kind === 'human' ? account.user?.avatar : null}
                 />
               </aside>
               <div className="board-col">

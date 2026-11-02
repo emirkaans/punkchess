@@ -1,6 +1,7 @@
 // Messages between the browser and the online game server (a Cloudflare
 // Durable Object per game). Shared by both sides. No React / DOM imports.
 
+import type { Avatar } from '../avatar/avatar.ts';
 import { cardMove, findMove } from '../engine/index.ts';
 import type {
   CardPlay,
@@ -107,6 +108,8 @@ export interface PublicPlayer {
   readonly newPatches: readonly string[];
   /** Their spray tag style (signed-in players), sprayed when they checkmate. */
   readonly tag?: string | null;
+  /** Their character (signed-in players who made one). */
+  readonly avatar?: Avatar | null;
 }
 
 /** Everything a client needs to draw the game; sent after every change. */

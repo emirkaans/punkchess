@@ -47,16 +47,19 @@ export async function currentRatings(
   return out;
 }
 
-/** A room gets its signed-in players' spray tag styles (once both seats are taken), for a checkmate. */
+/**
+ * A room gets its signed-in players' spray tag styles (once both seats are taken), for a
+ * checkmate, and their characters, for the player cards.
+ */
 export async function withTags(room: Room, db: D1Database | undefined): Promise<Room> {
   const w = room.seats.w?.account?.id;
   const b = room.seats.b?.account?.id;
   if (!db || room.tags || !room.seats.w || !room.seats.b || (!w && !b)) return room;
   try {
     const rows = await db
-      .prepare('SELECT id, tag FROM users WHERE id IN (?1, ?2)')
+      .prepare('SELECT id, tag, avatar FROM users WHERE id IN (?1, ?2)')
       .bind(w ?? '', b ?? '')
-      .all<{ id: string; tag: string | null }>();
+      .all<{ id: string; tag: string | null; avatar: string | null }>();
     const of = (id: string | undefined) => {
       const row = id ? rows.results.find((r) => r.id === id) : undefined;
       return row ? tagById(row.tag).id : undefined;
@@ -66,7 +69,15 @@ export async function withTags(room: Room, db: D1Database | undefined): Promise<
     const tb = of(b);
     if (tw) tags.w = tw;
     if (tb) tags.b = tb;
-    return { ...room, tags };
+    const avatars: Partial<Record<Color, string>> = {};
+    for (const [c, id] of [
+      ['w', w],
+      ['b', b],
+    ] as const) {
+      const stored = id ? rows.results.find((r) => r.id === id)?.avatar : null;
+      if (stored) avatars[c] = stored;
+    }
+    return { ...room, tags, avatars };
   } catch {
     return room; // no tags: nothing is sprayed
   }

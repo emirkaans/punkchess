@@ -4,6 +4,7 @@ import type { Locale } from '../i18n/index.ts';
 import { signInWithGoogle, signOut, useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
 import { GearIcon } from './Punk.tsx';
+import { AvatarView } from './CharacterCreator.tsx';
 
 function PersonIcon() {
   return (
@@ -77,7 +78,7 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
           onClick={toggle}
           title={user.username}
         >
-          <PersonIcon />
+          {user.avatar ? <AvatarView avatar={user.avatar} className="account-avatar" /> : <PersonIcon />}
           <span className="account-label">{user.username}</span>
         </button>
       ) : (
@@ -120,6 +121,12 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
           {user && (
             <a role="menuitem" className="account-profile" href={`/@/${user.username}`}>
               {t('profile.mine')}
+            </a>
+          )}
+          {user && (
+            <a role="menuitem" className="account-row" href="/character">
+              <span>{t('character.mine')}</span>
+              <Chevron />
             </a>
           )}
           {user?.role && (
