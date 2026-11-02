@@ -1,3 +1,4 @@
+import { noteCoins } from './coins.ts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { listVariants } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
@@ -96,6 +97,7 @@ export function PuzzlePage({
       if (!res?.ok) return;
       const r = (await res.json()) as PuzzleResult & PatchNews;
       setPatches(r.newPatches ?? []);
+      noteCoins(r.coins);
       setRating({ rating: r.rating, provisional: r.provisional });
       setDiff(r.diff);
     } else {

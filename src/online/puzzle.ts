@@ -69,9 +69,13 @@ export interface RushSaved {
   readonly best: number;
   /** Puzzle patches the run earned. */
   readonly newPatches: readonly string[];
+  /** Punk coins the run paid. */
+  readonly coins?: number;
 }
 
 /** A puzzle result's answer may carry new puzzle patches too. */
 export interface PatchNews {
   readonly newPatches?: readonly string[];
+  /** Punk coins the result paid (absent or 0: none). */
+  readonly coins?: number;
 }

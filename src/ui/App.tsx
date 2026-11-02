@@ -1,3 +1,5 @@
+import { noteCoins, refreshCoins } from './coins.ts';
+import { CoinToast } from './CoinToast.tsx';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { CHAOS, getVariant, isInCheck, legalMoves, listVariants, opposite, toFen } from '../engine/index.ts';
@@ -481,6 +483,36 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
     showReviewRef.current = () => openReview(postGameReview(), 'game');
   });
   const finished = !!view.finalOutcome;
+  // Punk coins: the balance once signed in; a won game against the bot is sent to be paid
+  // (the server replays it first), once per game.
+  const userId = account.user?.id ?? null;
+  useEffect(() => {
+    if (userId) void refreshCoins();
+  }, [userId]);
+  const claimed = useRef<string | null>(null);
+  const won = view.finalOutcome?.reason === 'checkmate' && view.finalOutcome.winner;
+  useEffect(() => {
+    if (!userId || !vsBot || !won || players[won].kind !== 'human' || claimed.current === session.gameId) return;
+    claimed.current = session.gameId;
+    const end = view.endState;
+    const first = session.timeline.states[0];
+    void fetch('/api/me/coins/bot', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        variantId: variant.id,
+        startFen: toFen(variant, first.position),
+        moves: end.moves.map((m) => m.san),
+        color: won,
+        level: session.settings.botLevel,
+      }),
+    })
+      .then((res) => (res.ok ? (res.json() as Promise<{ coins: number }>) : null))
+      .then((r) => noteCoins(r?.coins))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [won, userId, vsBot, session.gameId]);
   useEffect(() => {
     if (pendingReview && pendingReview === session.gameId && finished) {
       setPendingReview(null);
@@ -591,6 +623,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
 
   return (
     <div className="app">
+      <CoinToast />
       <Toolbar
         page={page}
         prefs={prefs}

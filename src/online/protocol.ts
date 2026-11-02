@@ -106,6 +106,8 @@ export interface PublicPlayer {
   readonly diff: number | null;
   /** Patches the game earned this player (once over). */
   readonly newPatches: readonly string[];
+  /** Punk coins the game paid this player (once over; absent when none). */
+  readonly newCoins?: number;
   /** Their spray tag style (signed-in players), sprayed when they checkmate. */
   readonly tag?: string | null;
   /** Their character (signed-in players who made one). */

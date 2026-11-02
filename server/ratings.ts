@@ -2,6 +2,7 @@
 // and recording a finished game (the game row and both ratings in one batch,
 // so a game never counts twice or half).
 
+import { grantGameCoins } from './coins.ts';
 import { recordOfRoom } from '../src/online/record.ts';
 import type { GameRecord } from '../src/online/record.ts';
 import { ABORT_PLIES, ratedRoom } from '../src/online/room.ts';
@@ -240,11 +241,16 @@ export async function settleGame(room: Room, db: D1Database | undefined, now: nu
   }
 
   await db.batch(statements);
+  // Punk coins for playing (and winning); after the game row, so a retry pays nothing twice.
+  const coins = await grantGameCoins(db, room.id, { w: w?.id, b: b?.id }, winner, room.moves.length, now).catch(
+    () => ({}),
+  );
   return {
     ...room,
     recorded: true,
     ...(diff ? { ratingDiff: diff } : {}),
     ...(Object.keys(earned).length ? { newPatches: earned } : {}),
+    ...(Object.keys(coins).length ? { newCoins: coins } : {}),
   };
 }
 

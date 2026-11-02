@@ -6,6 +6,8 @@
 // A day's puzzle is picked the first time someone asks for it and kept, so
 // everyone gets the same one; a puzzle is never a daily puzzle twice.
 
+import { COIN_RULES } from '../src/coins/rules.ts';
+import { grantCoins } from './coins.ts';
 import { listVariants } from '../src/engine/index.ts';
 import { dailyDay, dailyNumber, dayHash, gridSolved, isDailyGrid, streakOf } from '../src/online/daily.ts';
 import type { DailyResponse, DailyResult, DailySaved } from '../src/online/daily.ts';
@@ -120,7 +122,10 @@ export async function handleDaily(request: Request, env: AuthEnv, url: URL): Pro
       .bind(user.id, day, gridSolved(body.grid) ? 1 : 0, body.grid, Date.now())
       .run();
     const newPatches = await awardPuzzlePatches(env.DB, user.id, day, Date.now());
-    return json({ streak: await streak(env.DB, user.id, day), newPatches } satisfies DailySaved);
+    const coins = gridSolved(body.grid)
+      ? await grantCoins(env.DB, user.id, 'daily', day, COIN_RULES.daily.solved, Date.now())
+      : 0;
+    return json({ streak: await streak(env.DB, user.id, day), newPatches, coins } satisfies DailySaved);
   }
 
   return json({ error: 'not-found' }, 404);

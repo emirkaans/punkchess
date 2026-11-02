@@ -83,6 +83,8 @@ export interface Room {
   readonly newPatches?: Readonly<Partial<Record<Color, readonly string[]>>>;
   /** Spray tag styles of the signed-in players (src/achievements/tags.ts), sprayed on a checkmate. */
   readonly tags?: Readonly<Partial<Record<Color, string>>>;
+  /** Punk coins the game paid each signed-in player (src/coins/rules.ts). */
+  readonly newCoins?: Readonly<Partial<Record<Color, number>>>;
   /** The signed-in players' characters as stored (src/avatar/avatar.ts), loaded with the tags. */
   readonly avatars?: Readonly<Partial<Record<Color, string>>>;
   /** The arena tournament the game belongs to (server/tournament.ts): no rematch, the result is reported there. */
@@ -431,6 +433,7 @@ export function viewOf(
       provisional: rating?.provisional ?? false,
       diff: room.ratingDiff?.[c] ?? null,
       newPatches: room.newPatches?.[c] ?? [],
+      ...(room.newCoins?.[c] ? { newCoins: room.newCoins[c] } : {}),
       tag: room.tags?.[c] ?? null,
       // Only when they have one: guests and players without a character get no field.
       ...(room.avatars?.[c] ? { avatar: parseAvatar(room.avatars[c]) } : {}),

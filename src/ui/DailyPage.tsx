@@ -1,3 +1,4 @@
+import { noteCoins } from './coins.ts';
 import { useEffect, useRef, useState } from 'react';
 import { dailyDay, dailyNumber, dailyShareText, gridEmoji, gridSolved, nextDailyAt } from '../online/daily.ts';
 import type { DailyResponse, DailySaved } from '../online/daily.ts';
@@ -54,6 +55,7 @@ export function DailyPage({ prefs }: { prefs: Prefs }) {
           if (!r) return;
           setStreak(r.streak);
           setPatches(r.newPatches ?? []);
+          noteCoins(r.coins);
         })
         .catch(() => {});
     }

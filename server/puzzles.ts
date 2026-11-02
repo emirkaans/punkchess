@@ -4,6 +4,8 @@
 //   GET  /api/puzzles/:id                     one puzzle (shared links)
 //   POST /api/puzzles/:id/result { solved }   a signed-in player's result: the first try moves the rating
 
+import { COIN_RULES } from '../src/coins/rules.ts';
+import { grantCoins } from './coins.ts';
 import type { PatchNews, PuzzleData, PuzzleNext, PuzzleResult } from '../src/online/puzzle.ts';
 import { PUZZLE_THEMES } from '../src/online/puzzle.ts';
 import { DEFAULT_GLICKO, PROVISIONAL_RD, aged, update } from '../src/rating/glicko2.ts';
@@ -142,11 +144,13 @@ export async function handlePuzzles(request: Request, env: AuthEnv, url: URL): P
       ).bind(user.id, CATEGORY, after.rating, after.rd, after.vol, solved ? 1 : 0, solved ? 0 : 1, now),
     ]);
     const newPatches = solved ? await awardPuzzlePatches(env.DB, user.id, dailyDay(now), now) : [];
+    const coins = solved ? await grantCoins(env.DB, user.id, 'puzzle', m[1], COIN_RULES.puzzle.solved, now) : 0;
     return json({
       rating: Math.round(after.rating),
       provisional: after.rd > PROVISIONAL_RD,
       diff: Math.round(after.rating) - Math.round(before.rating),
       newPatches,
+      coins,
     } satisfies PuzzleResult & PatchNews);
   }
 

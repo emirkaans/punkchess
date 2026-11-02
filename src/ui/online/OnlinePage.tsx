@@ -1,3 +1,4 @@
+import { noteCoins } from '../coins.ts';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { LOW_TIME_MS, remainingMs, timeControl } from '../../clock/clock.ts';
@@ -217,6 +218,14 @@ function OnlineGame({
   const variant = getVariant(view?.variantId ?? listVariants()[0].id);
   const texts = vt(variant);
   const you = view?.you ?? null;
+  // The coins the game paid: shown once, when it is over.
+  const paid = view?.phase === 'over' && you ? (view.players[you]?.newCoins ?? 0) : 0;
+  const paidFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!paid || !gameId || paidFor.current === gameId) return;
+    paidFor.current = gameId;
+    noteCoins(paid);
+  }, [paid, gameId]);
 
   // Played states; a move just sent is shown at once until the server's answer arrives.
   const confirmed = useMemo(() => statesOf(variant, view, replayCache), [variant, view]);
