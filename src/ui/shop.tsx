@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { EMPTY_OUTFIT, storeItem } from '../avatar/outfit.ts';
+import { EMPTY_OUTFIT, clothesOf, storeItem, wearKombin } from '../avatar/outfit.ts';
 import type { Outfit, OutfitSlot, StoreItem } from '../avatar/outfit.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import { refreshAccount, useAccount } from './account.ts';
@@ -10,7 +10,16 @@ interface ShopState {
   readonly owned: ReadonlySet<string>;
   readonly outfit: Outfit;
   readonly balance: number;
+  readonly kombins: readonly (Outfit | null)[];
 }
+
+interface StoreData {
+  owned: string[];
+  outfit: Outfit;
+  balance: number;
+  kombins: (Outfit | null)[];
+}
+const stateOf = (d: StoreData): ShopState => ({ ...d, owned: new Set(d.owned) });
 
 /**
  * A shop's state and actions, shared by the store and the barber: what the player owns and
@@ -29,8 +38,8 @@ export function useShop() {
     if (!userId) return;
     void fetch('/api/store', { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { owned: string[]; outfit: Outfit; balance: number } | null) => {
-        if (d) setStore({ owned: new Set(d.owned), outfit: d.outfit, balance: d.balance });
+      .then((d: StoreData | null) => {
+        if (d) setStore(stateOf(d));
       })
       .catch(() => {});
   }, [userId]);
@@ -72,8 +81,7 @@ export function useShop() {
       if (!r.ok) {
         return setMsg({ text: t(r.data?.error === 'not-enough' ? 'store.notEnough' : 'store.error'), bad: true });
       }
-      const d = r.data as unknown as { owned: string[]; outfit: Outfit; balance: number };
-      setStore({ owned: new Set(d.owned), outfit: d.outfit, balance: d.balance });
+      setStore(stateOf(r.data as unknown as StoreData));
       setMsg({ text: t('store.bought', { item: name(item.id), n: String(item.price) }) });
     }
     setTrying(null);
@@ -107,7 +115,28 @@ export function useShop() {
     setMsg(null);
   };
 
-  return { store, trying, tried, shown, msg, name, button, tryOn };
+  /** Puts on a saved outfit (its clothes; the hair and beard stay). */
+  const wearSaved = async (i: number) => {
+    const kombin = store?.kombins[i];
+    if (!store || !kombin) return;
+    const outfit = wearKombin(store.outfit, kombin);
+    const r = await send('/api/me/outfit', { outfit });
+    if (!r.ok) return setMsg({ text: t('store.error'), bad: true });
+    setStore({ ...store, outfit });
+    setMsg({ text: t('wardrobe.worn', { n: String(i + 1) }) });
+    void refreshAccount();
+  };
+
+  /** Saves the clothes worn now in place `i`. */
+  const saveKombin = async (i: number) => {
+    if (!store) return;
+    const r = await send('/api/me/kombin', { index: i, outfit: clothesOf(store.outfit) });
+    if (!r.ok) return setMsg({ text: t('store.error'), bad: true });
+    setStore({ ...store, kombins: (r.data as unknown as { kombins: (Outfit | null)[] }).kombins });
+    setMsg({ text: t('wardrobe.saved', { n: String(i + 1) }) });
+  };
+
+  return { store, trying, tried, shown, msg, name, button, tryOn, act, busy, wearSaved, saveKombin };
 }
 
 /** Each kind's icon for the shops' phone rails (24×24 strokes). */

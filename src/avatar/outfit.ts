@@ -91,6 +91,37 @@ export function parseOutfit(input: unknown): Outfit {
   return out;
 }
 
+/** How many outfits a player can save in the wardrobe. */
+export const KOMBIN_COUNT = 3;
+
+/** The clothes of an outfit (the store's slots), the rest left empty: what a saved outfit keeps. */
+export const clothesOf = (o: Outfit): Outfit => ({
+  ...EMPTY_OUTFIT,
+  ...Object.fromEntries(STORE_SLOTS.map((s) => [s, o[s]])),
+});
+
+/** Saved outfits from anything (stored JSON): always `KOMBIN_COUNT` places, clothes only. */
+export function parseKombins(input: unknown): readonly (Outfit | null)[] {
+  let data: unknown = input;
+  if (typeof input === 'string') {
+    try {
+      data = JSON.parse(input);
+    } catch {
+      data = null;
+    }
+  }
+  const list = Array.isArray(data) ? data : [];
+  return Array.from({ length: KOMBIN_COUNT }, (_, i) => (list[i] ? clothesOf(parseOutfit(list[i])) : null));
+}
+
+/** A saved outfit put on: its clothes replace the worn ones; the hair, colour and beard stay. */
+export const wearKombin = (worn: Outfit, kombin: Outfit): Outfit => ({
+  ...worn,
+  ...clothesOf(kombin),
+  ...barberOf(worn),
+});
+const barberOf = (o: Outfit) => Object.fromEntries(BARBER_SLOTS.map((s) => [s, o[s]]));
+
 /** The outfit as stored. */
 export const serializeOutfit = (o: Outfit): string =>
   JSON.stringify(Object.fromEntries(OUTFIT_SLOTS.map((s) => [s, o[s]])));

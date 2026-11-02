@@ -6,9 +6,18 @@
 //   GET  /api/store                  the signed-in player's items, outfit and balance
 //   POST /api/store/buy { item }     buys an item (and puts it on)
 //   POST /api/me/outfit { outfit }   wears owned items (null: nothing in that slot)
+//   POST /api/me/kombin { index, outfit }   saves an outfit's clothes in the wardrobe (null: empties it)
 
 import { dailyDay } from '../src/online/daily.ts';
-import { parseOutfit, serializeOutfit, storeItem, wearsOnlyOwned } from '../src/avatar/outfit.ts';
+import {
+  KOMBIN_COUNT,
+  clothesOf,
+  parseKombins,
+  parseOutfit,
+  serializeOutfit,
+  storeItem,
+  wearsOnlyOwned,
+} from '../src/avatar/outfit.ts';
 import type { Outfit } from '../src/avatar/outfit.ts';
 import type { AuthEnv } from './auth.ts';
 import { currentUser, sameOrigin } from './auth.ts';
@@ -18,6 +27,8 @@ export interface StoreResponse {
   readonly owned: readonly string[];
   readonly outfit: Outfit;
   readonly balance: number;
+  /** The wardrobe's saved outfits (clothes only; null: an empty place). */
+  readonly kombins: readonly (Outfit | null)[];
 }
 
 const json = (data: unknown, status = 200) =>
@@ -34,6 +45,14 @@ async function owned(db: D1Database, userId: string): Promise<Set<string>> {
   return new Set(rows.results.map((r) => r.item_id));
 }
 
+async function kombinsOf(db: D1Database, userId: string): Promise<readonly (Outfit | null)[]> {
+  const row = await db
+    .prepare('SELECT kombins FROM users WHERE id = ?1')
+    .bind(userId)
+    .first<{ kombins: string | null }>();
+  return parseKombins(row?.kombins ?? null);
+}
+
 async function outfitOf(db: D1Database, userId: string): Promise<Outfit> {
   const row = await db
     .prepare('SELECT outfit FROM users WHERE id = ?1')
@@ -45,19 +64,20 @@ async function outfitOf(db: D1Database, userId: string): Promise<Outfit> {
 /** Answers a store request, or returns null when `url` is not one. */
 export async function handleStore(request: Request, env: AuthEnv, url: URL): Promise<Response | null> {
   const path = url.pathname;
-  if (!path.startsWith('/api/store') && path !== '/api/me/outfit') return null;
+  if (!path.startsWith('/api/store') && path !== '/api/me/outfit' && path !== '/api/me/kombin') return null;
   if (!env.DB) return json({ error: 'accounts-off' }, 503);
   const now = Date.now();
 
   if (path === '/api/store' && request.method === 'GET') {
     const user = await currentUser(request, env);
     if (!user) return json({ error: 'signed-out' }, 401);
-    const [items, outfit, coins] = await Promise.all([
+    const [items, outfit, coins, kombins] = await Promise.all([
       owned(env.DB, user.id),
       outfitOf(env.DB, user.id),
       coinBalance(env.DB, user.id, now),
+      kombinsOf(env.DB, user.id),
     ]);
-    return json({ owned: [...items], outfit, balance: coins.balance } satisfies StoreResponse);
+    return json({ owned: [...items], outfit, balance: coins.balance, kombins } satisfies StoreResponse);
   }
 
   if (path === '/api/store/buy' && request.method === 'POST') {
@@ -87,8 +107,8 @@ export async function handleStore(request: Request, env: AuthEnv, url: URL): Pro
     // A new item goes on at once.
     const outfit = { ...(await outfitOf(env.DB, user.id)), [item.slot]: item.id };
     await env.DB.prepare('UPDATE users SET outfit = ?1 WHERE id = ?2').bind(serializeOutfit(outfit), user.id).run();
-    const coins = await coinBalance(env.DB, user.id, now);
-    return json({ owned: [...items], outfit, balance: coins.balance } satisfies StoreResponse);
+    const [coins, kombins] = await Promise.all([coinBalance(env.DB, user.id, now), kombinsOf(env.DB, user.id)]);
+    return json({ owned: [...items], outfit, balance: coins.balance, kombins } satisfies StoreResponse);
   }
 
   if (path === '/api/me/outfit' && request.method === 'POST') {
@@ -100,6 +120,23 @@ export async function handleStore(request: Request, env: AuthEnv, url: URL): Pro
     if (!wearsOnlyOwned(outfit, await owned(env.DB, user.id))) return json({ error: 'not-owned' }, 403);
     await env.DB.prepare('UPDATE users SET outfit = ?1 WHERE id = ?2').bind(serializeOutfit(outfit), user.id).run();
     return json({ outfit });
+  }
+
+  if (path === '/api/me/kombin' && request.method === 'POST') {
+    if (!sameOrigin(request, env.PUBLIC_ORIGIN || url.origin, url)) return json({ error: 'forbidden' }, 403);
+    const user = await currentUser(request, env);
+    if (!user) return json({ error: 'signed-out' }, 401);
+    const body = (await request.json().catch(() => ({}))) as { index?: unknown; outfit?: unknown };
+    const index = body.index;
+    if (typeof index !== 'number' || !Number.isInteger(index) || index < 0 || index >= KOMBIN_COUNT)
+      return json({ error: 'bad-request' }, 400);
+    const kombin = body.outfit === null ? null : clothesOf(parseOutfit(body.outfit));
+    if (kombin && !wearsOnlyOwned(kombin, await owned(env.DB, user.id))) return json({ error: 'not-owned' }, 403);
+    const kombins = (await kombinsOf(env.DB, user.id)).map((k, i) => (i === index ? kombin : k));
+    await env.DB.prepare('UPDATE users SET kombins = ?1 WHERE id = ?2')
+      .bind(JSON.stringify(kombins.map((k) => (k ? JSON.parse(serializeOutfit(k)) : null))), user.id)
+      .run();
+    return json({ kombins });
   }
 
   return json({ error: 'not-found' }, 404);

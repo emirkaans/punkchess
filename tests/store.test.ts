@@ -6,6 +6,8 @@ import {
   EMPTY_OUTFIT,
   OUTFIT_SLOTS,
   STORE_SLOTS,
+  parseKombins,
+  wearKombin,
   STORE_ITEMS,
   parseOutfit,
   serializeOutfit,
@@ -56,5 +58,21 @@ describe('mağaza', () => {
     expect(avatarSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, color: 'neon' })).toContain('filter="url(#pc-hair-neon)"');
     expect(avatarSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, beard: 'full' })).toContain('#3a2a20');
     expect(plain).not.toContain('#3a2a20');
+  });
+
+  it('dolap: kombin sadece kıyafeti tutar, giyilince saç ve sakal kalır', () => {
+    const worn = { ...EMPTY_OUTFIT, jacket: 'leather', cut: 'afro', beard: 'full' };
+    const kombins = parseKombins(JSON.stringify([{ jacket: 'hoodie', hat: 'beanie', cut: 'giant' }, null]));
+    expect(kombins).toHaveLength(3);
+    expect(kombins[0]).toEqual({ ...EMPTY_OUTFIT, jacket: 'hoodie', hat: 'beanie' });
+    expect(kombins[1]).toBeNull();
+    expect(wearKombin(worn, kombins[0]!)).toEqual({
+      ...EMPTY_OUTFIT,
+      jacket: 'hoodie',
+      hat: 'beanie',
+      cut: 'afro',
+      beard: 'full',
+    });
+    expect(parseKombins('bozuk')).toEqual([null, null, null]);
   });
 });

@@ -76,6 +76,7 @@ export type Page =
   | 'character'
   | 'store'
   | 'barber'
+  | 'wardrobe'
   | 'loading';
 
 interface Props {

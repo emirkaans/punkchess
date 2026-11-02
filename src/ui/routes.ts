@@ -39,6 +39,7 @@ export type Route =
   | { readonly kind: 'character' }
   | { readonly kind: 'store' }
   | { readonly kind: 'barber' }
+  | { readonly kind: 'wardrobe' }
   | { readonly kind: 'game'; readonly id: string }
   | { readonly kind: 'review'; readonly id: string };
 
@@ -68,6 +69,7 @@ const RESERVED = new Set([
   'character',
   'store',
   'barber',
+  'wardrobe',
 ]);
 /** Game ids: 8 letters / digits; older history records also have dashes. */
 const GAME = /^\/([A-Za-z0-9][A-Za-z0-9-]{3,39})(\/analysis)?$/;
@@ -101,6 +103,7 @@ export function parseRoute(pathname: string): Route {
   if (p === '/character') return { kind: 'character' };
   if (p === '/store') return { kind: 'store' };
   if (p === '/barber') return { kind: 'barber' };
+  if (p === '/wardrobe') return { kind: 'wardrobe' };
   if (p === '/privacy' || p === '/terms' || p === '/licenses')
     return { kind: p.slice(1) as 'privacy' | 'terms' | 'licenses' };
   const puzzle = /^\/puzzles\/([A-Za-z0-9]{3,16})$/.exec(p);
@@ -148,6 +151,8 @@ export function pathOf(r: Route): string {
       return '/store';
     case 'barber':
       return '/barber';
+    case 'wardrobe':
+      return '/wardrobe';
     case 'privacy':
     case 'terms':
     case 'licenses':
