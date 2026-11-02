@@ -9466,12 +9466,32 @@ a:focus-visible {
     min-height: 0;
     gap: 8px;
   }
+  /* The option area keeps one height whatever the part (two rows of three previews), so the
+     mirror above never moves; a part with more options scrolls inside it. */
+  .character-picked {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .character-options,
+  .character-swatches {
+    --tile: calc((100vw - 110px - 12px) / 3);
+    height: calc(var(--tile) * 2 + 6px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
   .character-options {
     gap: 6px;
+    grid-auto-rows: var(--tile);
+  }
+  .character-swatches {
+    align-content: center;
+    justify-content: center;
+    gap: 14px;
   }
   .character-swatch {
-    width: 42px;
-    height: 42px;
+    width: 46px;
+    height: 46px;
   }
   .character-actions {
     flex-wrap: nowrap;
