@@ -75,6 +75,7 @@ import type { SoundKind } from './sound.ts';
 const AnalysisPage = lazy(() => import('./AnalysisPage.tsx').then((m) => ({ default: m.AnalysisPage })));
 const ReviewPage = lazy(() => import('./ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
 const SignupPage = lazy(() => import('./SignupPage.tsx').then((m) => ({ default: m.SignupPage })));
+const CharacterCreator = lazy(() => import('./CharacterCreator.tsx').then((m) => ({ default: m.CharacterCreator })));
 const ProfilePage = lazy(() => import('./ProfilePage.tsx').then((m) => ({ default: m.ProfilePage })));
 const PuzzlePage = lazy(() => import('./PuzzlePage.tsx').then((m) => ({ default: m.PuzzlePage })));
 const DailyPage = lazy(() => import('./DailyPage.tsx').then((m) => ({ default: m.DailyPage })));
@@ -153,6 +154,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const [newGame, setNewGame] = useState<GameSettings | null>(null);
   const [showRules, setShowRules] = useState(false);
   const [showCardGuide, setShowCardGuide] = useState(false);
+  /** After signing up: where to go once the character is made. */
+  const [afterCharacter, setAfterCharacter] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   // A variant picked in the footer: the home page opens its card.
@@ -343,7 +346,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         r.kind === 'privacy' ||
         r.kind === 'terms' ||
         r.kind === 'licenses' ||
-        r.kind === 'contact'
+        r.kind === 'contact' ||
+        r.kind === 'character'
       )
         return setPage(r.kind);
       if (r.kind === 'online') {
@@ -679,6 +683,15 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           />
         ) : page === 'contact' ? (
           <ContactPage />
+        ) : page === 'character' ? (
+          <CharacterCreator
+            next={afterCharacter}
+            onOpen={(path) => {
+              setAfterCharacter(null);
+              history.pushState(null, '', path);
+              applyRouteRef.current(parseRoute(path));
+            }}
+          />
         ) : page === 'admin' ? (
           <AdminPage />
         ) : page === 'tournaments' ? (
@@ -732,8 +745,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         ) : page === 'signup' ? (
           <SignupPage
             onDone={(to) => {
-              history.replaceState(null, '', to);
-              applyRouteRef.current(parseRoute(new URL(to, location.origin).pathname));
+              // A new account makes its character first, then goes where it was headed.
+              setAfterCharacter(to);
+              history.replaceState(null, '', '/character');
+              applyRouteRef.current({ kind: 'character' });
             }}
           />
         ) : page === 'analysis' ? (

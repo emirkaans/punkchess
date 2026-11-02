@@ -9243,3 +9243,166 @@ a:focus-visible {
   margin: 0;
   font-size: 12px;
 }
+
+/* The character creator (src/ui/CharacterCreator.tsx, design "Ayna"): parts, a round mirror, options. */
+.avatar {
+  display: block;
+}
+.avatar svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.character-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.character-title {
+  margin: 0;
+  font: 400 clamp(40px, 7vw, 64px)/0.95 var(--display);
+  letter-spacing: 0.02em;
+}
+.character-lede {
+  margin: 0;
+  max-width: 60ch;
+}
+.character-creator {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 20px;
+  align-items: start;
+  padding: 18px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.character-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.character-parts button {
+  min-height: 46px;
+  padding: 0 12px;
+  text-align: left;
+  font: 400 21px/1 var(--display);
+  letter-spacing: 0.05em;
+}
+.character-parts button.on,
+.character-parts button.on:hover:not(:disabled) {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--on-pink);
+}
+.character-mirror {
+  justify-self: center;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, #2b2532, #141016 70%);
+  border: 6px solid #2a2530;
+  box-shadow:
+    inset 0 0 40px rgba(0, 0, 0, 0.7),
+    0 0 0 2px var(--pink);
+}
+.character-mirror .avatar {
+  width: 100%;
+  height: 100%;
+}
+.character-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.character-picked {
+  font:
+    700 11px/1.2 'Space Mono',
+    monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.character-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.character-option {
+  aspect-ratio: 1;
+  padding: 4px;
+  border-radius: 8px;
+  background: #1b1a1f;
+}
+.character-option .avatar {
+  width: 100%;
+  height: 100%;
+}
+.character-option[aria-pressed='true'],
+.character-option[aria-pressed='true']:hover:not(:disabled) {
+  border-color: var(--pink);
+  background: #2a1424;
+  box-shadow: 0 0 0 2px var(--pink);
+}
+.character-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.character-swatch {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid var(--panel);
+  box-shadow: 0 0 0 2px var(--border);
+}
+.character-swatch[aria-pressed='true'],
+.character-swatch:hover:not(:disabled) {
+  border-color: var(--panel);
+  box-shadow: 0 0 0 3px var(--fg);
+}
+.character-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.character-actions button {
+  min-height: 46px;
+  padding: 0 18px;
+}
+.character-skip {
+  align-self: flex-start;
+}
+@media (max-width: 860px) {
+  .character-creator {
+    grid-template-columns: 1fr;
+  }
+  .character-parts {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .character-mirror {
+    max-width: 260px;
+  }
+}
+/* The character beside the name on a profile. */
+.profile-avatar {
+  flex: none;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, #2b2532, #141016 70%);
+  box-shadow: 0 0 0 2px var(--pink);
+}
+.profile-edit-character {
+  align-self: flex-start;
+  font-size: 12px;
+}

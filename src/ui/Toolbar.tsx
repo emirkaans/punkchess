@@ -28,6 +28,7 @@ export type Page =
   | 'terms'
   | 'licenses'
   | 'contact'
+  | 'character'
   | 'loading';
 
 interface Props {

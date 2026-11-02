@@ -5,6 +5,7 @@
 //   GET /api/users/:username/history?category=…    rating after each rated game of a category
 //   POST /api/me/jacket { jacket }                 the signed-in player picks a jacket they have earned
 //   POST /api/me/tag { tag }                       … and a spray tag style
+//   POST /api/me/avatar { avatar }                 … and saves their character
 
 import { PROVISIONAL_RD } from '../src/rating/glicko2.ts';
 import type { ProfileGame, ProfileRating, ProfileResponse, RatingPoint, Rival } from '../src/online/profile.ts';
@@ -16,6 +17,7 @@ import { currentUser, sameOrigin } from './auth.ts';
 import { JACKETS, jacketById, jacketOpen, longestRun } from '../src/achievements/jackets.ts';
 import type { JacketStats } from '../src/achievements/jackets.ts';
 import { TAG_STYLES, tagById, tagOpen } from '../src/achievements/tags.ts';
+import { isAvatar, parseAvatar, serializeAvatar } from '../src/avatar/avatar.ts';
 
 /** How many of a player's latest games their statistics are worked out from. */
 const STATS_GAMES = 1000;
@@ -137,6 +139,18 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
     await env.DB.prepare('UPDATE users SET tag = ?1 WHERE id = ?2').bind(style.id, user.id).run();
     return json({ tag: style.id });
   }
+  if (url.pathname === '/api/me/avatar' && request.method === 'POST') {
+    if (!env.DB) return json({ error: 'accounts-off' }, 503);
+    if (!sameOrigin(request, env.PUBLIC_ORIGIN || url.origin, url)) return json({ error: 'forbidden' }, 403);
+    const user = await currentUser(request, env);
+    if (!user) return json({ error: 'signed-out' }, 401);
+    const body = (await request.json().catch(() => ({}))) as { avatar?: unknown };
+    // Every part must be a known option: nothing else is stored.
+    if (!isAvatar(body.avatar)) return json({ error: 'bad-request' }, 400);
+    const avatar = parseAvatar(body.avatar);
+    await env.DB.prepare('UPDATE users SET avatar = ?1 WHERE id = ?2').bind(serializeAvatar(avatar), user.id).run();
+    return json({ avatar });
+  }
   if (url.pathname === '/api/me/jacket' && request.method === 'POST') {
     if (!env.DB) return json({ error: 'accounts-off' }, 503);
     if (!sameOrigin(request, env.PUBLIC_ORIGIN || url.origin, url)) return json({ error: 'forbidden' }, 403);
@@ -166,10 +180,17 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
   if (!m || request.method !== 'GET') return null;
   if (!env.DB) return json({ error: 'accounts-off' }, 503);
   const user = await env.DB.prepare(
-    'SELECT id, username, created_at, jacket, tag FROM users WHERE username = ?1 AND banned_at IS NULL',
+    'SELECT id, username, created_at, jacket, tag, avatar FROM users WHERE username = ?1 AND banned_at IS NULL',
   )
     .bind(decodeURIComponent(m[1]))
-    .first<{ id: string; username: string; created_at: number; jacket: string | null; tag: string | null }>();
+    .first<{
+      id: string;
+      username: string;
+      created_at: number;
+      jacket: string | null;
+      tag: string | null;
+      avatar: string | null;
+    }>();
   if (!user) return json({ error: 'not-found' }, 404);
 
   if (!m[2]) {
@@ -221,6 +242,7 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
           .first<{ tag: string; name: string }>()) ?? null,
       jacket: jacketById(user.jacket).id,
       tag: tagById(user.tag).id,
+      avatar: user.avatar ? parseAvatar(user.avatar) : null,
       stats: await jacketStats(env.DB, user.id),
     } satisfies ProfileResponse);
   }

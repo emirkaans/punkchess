@@ -1,5 +1,6 @@
 // Shapes of the profile API (server/profiles.ts), shared with the browser. Pure.
 
+import type { Avatar } from '../avatar/avatar.ts';
 import type { JacketStats } from '../achievements/jackets.ts';
 
 import type { Color } from '../engine/index.ts';
@@ -44,6 +45,8 @@ export interface ProfileResponse {
   readonly jacket: string;
   /** The spray tag style the player picked (src/achievements/tags.ts). */
   readonly tag: string;
+  /** The player's character (src/avatar/avatar.ts); null until they have made one. */
+  readonly avatar: Avatar | null;
   /** What earns the other jackets. */
   readonly stats: JacketStats;
 }
