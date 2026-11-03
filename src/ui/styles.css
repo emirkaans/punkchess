@@ -11284,9 +11284,12 @@ a:focus-visible {
   .modal-backdrop.screen:has(.game-setup) {
     padding: 0;
   }
+  /* The whole screen, whatever the backdrop's padding. */
   .modal.game-setup {
-    width: 100%;
-    height: 100dvh;
+    position: fixed;
+    inset: 0;
+    width: auto;
+    height: auto;
     border-radius: 0;
     border-left: 0;
     border-right: 0;
@@ -11346,5 +11349,45 @@ a:focus-visible {
   .setup-go:hover:not(:disabled) {
     min-width: 0;
     width: 100%;
+  }
+}
+
+/* Narrow phones: the top bar (logo, search, the account with its coins, the menu button) must
+   fit the screen's width, or the whole page scrolls sideways. */
+@media (max-width: 480px) {
+  .toolbar {
+    gap: 8px 8px;
+    padding-inline: 10px;
+  }
+  .logo {
+    gap: 5px;
+    min-width: 0;
+  }
+  .logo-crown {
+    width: 28px;
+    height: 24px;
+  }
+  .logo-punk,
+  .logo-chess {
+    font-size: 22px;
+  }
+  .toolbar-end {
+    gap: 4px;
+  }
+  .toolbar-end .icon-button {
+    width: 40px;
+    height: 40px;
+  }
+  .account-button {
+    gap: 6px;
+    padding: 4px 8px;
+  }
+  .account-coins {
+    padding-left: 6px;
+  }
+}
+@media (max-width: 340px) {
+  .account-coins {
+    display: none;
   }
 }
