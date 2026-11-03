@@ -22,6 +22,8 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
   const account = useAccount();
   const avatar = account.user?.avatar ?? DEFAULT_AVATAR;
   const [kind, setKind] = useState<OutfitSlot>('cut');
+  // The left list: cuts or beards (on phones the rail's kind decides it).
+  const [list, setList] = useState<'cut' | 'beard'>('cut');
   const { store, trying, tried, triedSlot, isTrying, shown, msg, name, button, tryOn, wearFree, busy } = useShop();
   // A natural hair colour being tried (the character's own colour, free), and whether it is the
   // last thing picked (then the button below the mirror is for it).
@@ -174,7 +176,10 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
               role="tab"
               aria-selected={kind === s}
               className={kind === s ? 'on' : ''}
-              onClick={() => setKind(s)}
+              onClick={() => {
+                setKind(s);
+                if (s === 'cut' || s === 'beard') setList(s);
+              }}
             >
               <svg className="cp-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d={SHOP_ICONS[s]} />
@@ -196,16 +201,37 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
             </span>
           )}
         </div>
-        <section className={`${panel('cut')} barber-cuts`} role="tabpanel" aria-label={t('barber.slot.cut')}>
+        {/* Left: the cuts or the beards (two kinds, one list); on phones the rail picks the kind. */}
+        <section
+          className={`barber-panel barber-cuts${kind === 'cut' || kind === 'beard' ? ' on' : ''}`}
+          role="tabpanel"
+          aria-label={t(`barber.slot.${list}` as MessageKey)}
+        >
           <h1 className="store-title">{t('barber.title')}</h1>
+          <div className="barber-kinds" role="tablist">
+            {(['cut', 'beard'] as const).map((k) => (
+              <button
+                key={k}
+                role="tab"
+                aria-selected={list === k}
+                className={list === k ? 'on' : ''}
+                onClick={() => {
+                  setList(k);
+                  setKind(k);
+                }}
+              >
+                {t(`barber.short.${k}` as MessageKey)}
+              </button>
+            ))}
+          </div>
           <div className="barber-list">
-            {items('cut').map((item) => (
+            {items(list).map((item) => (
               <button
                 key={item.id}
                 className="barber-row"
                 aria-pressed={isTrying(item.id)}
                 aria-label={name(item.id)}
-                onClick={() => tryPremium(item.id, 'cut')}
+                onClick={() => tryPremium(item.id, list)}
               >
                 {preview(item)}
                 <b>{name(item.id)}</b>
@@ -241,29 +267,12 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
           </div>
         </div>
         <aside className="barber-side">
+          {/* Right: only the colours, the hair's and the beard's. */}
           <section className={`${panel('color')} barber-colors`} aria-label={t('barber.slot.color')}>
             <h2 className="store-label">{t('barber.hairColor')}</h2>
             {swatches('color')}
             <h2 className="store-label">{t('barber.beardColor')}</h2>
             {swatches('beardColor')}
-          </section>
-          <section className={`${panel('beard')} barber-beards`} aria-label={t('barber.slot.beard')}>
-            <h2 className="store-label">{t('barber.slot.beard')}</h2>
-            <div className="barber-grid">
-              {items('beard').map((item) => (
-                <button
-                  key={item.id}
-                  className="barber-opt"
-                  aria-pressed={isTrying(item.id)}
-                  aria-label={name(item.id)}
-                  onClick={() => tryPremium(item.id, 'beard')}
-                >
-                  {preview(item)}
-                  <b>{name(item.id)}</b>
-                  {price(item)}
-                </button>
-              ))}
-            </div>
           </section>
         </aside>
         {/* Phones: the tried item and its button stay at the bottom. */}

@@ -11578,3 +11578,29 @@ a:focus-visible {
     display: block;
   }
 }
+
+/* The barber's left list: "Saç" and "Sakal" as two tabs over one list. Phones: the rail picks. */
+.barber-kinds {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.barber-kinds button {
+  flex: 1;
+  min-height: 38px;
+  border-radius: 999px;
+  font: 400 19px/1 var(--display);
+  letter-spacing: 0.05em;
+}
+.barber-kinds button.on,
+.barber-kinds button.on:hover:not(:disabled) {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--on-pink);
+}
+@media (max-width: 760px) {
+  .barber-kinds {
+    display: none;
+  }
+}
