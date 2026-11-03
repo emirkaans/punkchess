@@ -47,13 +47,17 @@ interface Props {
   result: CardResult;
   /** The position after the card (for piece badges). */
   position: Position;
+  /** Small, without the piece badges (the players' strip and the card log). */
+  compact?: boolean;
+  /** An earlier result in the card log: faded. */
+  old?: boolean;
 }
 
 /**
  * Under the board, after a card: a speech bubble from the player who played it, saying
  * whether it hit or backfired, what it did and the piece before and after.
  */
-export function CardResultBubble({ variant, result, position }: Props) {
+export function CardResultBubble({ variant, result, position, compact = false, old = false }: Props) {
   const { t } = useI18n();
   const sentence = useCardSentence(variant, result);
   const tone = cardTone(result);
@@ -98,7 +102,10 @@ export function CardResultBubble({ variant, result, position }: Props) {
     }
   };
   return (
-    <div className={`card-result ${tone}`} role="status">
+    <div
+      className={`card-result ${tone}${compact ? ' compact' : ''}${old ? ' old' : ''}`}
+      role={old ? undefined : 'status'}
+    >
       <span className="cr-avatar" aria-hidden="true">
         <span className={`cr-dot ${result.color}`} />
       </span>
@@ -116,7 +123,7 @@ export function CardResultBubble({ variant, result, position }: Props) {
             {sentence}
           </span>
         </div>
-        {tiles.length > 0 && (
+        {!compact && tiles.length > 0 && (
           <div className="cr-pieces" aria-hidden="true">
             {tiles.map(tile)}
           </div>

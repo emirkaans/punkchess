@@ -23,6 +23,8 @@ interface Props {
   onToggleHighlight: () => void;
   /** Card variants (Anarşi): opens the card guide; its button takes the hint's place. */
   onCards?: (() => void) | null;
+  /** Narrow screens: opens the rest of the page (new game, moves, share…) below the board. */
+  onMore?: () => void;
 }
 
 /** Stroke icon from one or more path strings. */
@@ -52,6 +54,7 @@ const ICONS = {
     'M15 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h4',
   ],
   back: 'M15 5l-7 7 7 7',
+  more: ['M5 12h1', 'M11.5 12h1', 'M18 12h1'],
   forward: 'M9 5l7 7-7 7',
 };
 
@@ -78,6 +81,16 @@ function ControlButton(props: {
   );
 }
 
+/** Narrow screens only: the ⋯ that opens the rest of the game page below the board. */
+export function MoreButton({ onClick }: { onClick: () => void }) {
+  const { t } = useI18n();
+  return (
+    <ControlButton icon={ICONS.more} className="more-toggle" onClick={onClick}>
+      {t('controls.more')}
+    </ControlButton>
+  );
+}
+
 /** Main game actions in the side panel; which ones appear depends on the game mode. */
 export function GameControls(p: Props) {
   const { t } = useI18n();
@@ -89,7 +102,7 @@ export function GameControls(p: Props) {
         </ControlButton>
       )}
       {p.onCards ? (
-        <ControlButton icon={ICONS.cards} className="lime" onClick={p.onCards}>
+        <ControlButton icon={ICONS.cards} className="lime cards-guide" onClick={p.onCards}>
           {t('controls.cards')}
         </ControlButton>
       ) : (
@@ -132,6 +145,7 @@ export function GameControls(p: Props) {
           {t('controls.resign')}
         </ControlButton>
       )}
+      {p.onMore && <MoreButton onClick={p.onMore} />}
     </div>
   );
 }

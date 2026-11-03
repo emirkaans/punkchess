@@ -1,4 +1,7 @@
+import { EMPTY_OUTFIT } from '../avatar/outfit.ts';
 import type { Outfit } from '../avatar/outfit.ts';
+import { figureSvg } from '../avatar/figure.ts';
+import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { ClockState } from '../clock/clock.ts';
 import type { Color, Position, VariantDefinition } from '../engine/index.ts';
@@ -10,7 +13,14 @@ import { materialDiff } from './material.ts';
 import { PieceView } from './PieceView.tsx';
 import { Avatar } from './Punk.tsx';
 import type { Avatar as Character } from '../avatar/avatar.ts';
-import { AvatarView } from './CharacterCreator.tsx';
+
+/** The character from the head down to the chest (the card's and the strip's portrait). */
+const CHEST = '32 -4 136 194';
+
+function Portrait({ avatar, outfit }: { avatar: Character; outfit: Outfit | null }) {
+  const svg = useMemo(() => figureSvg(avatar, outfit ?? EMPTY_OUTFIT, CHEST), [avatar, outfit]);
+  return <span className="char-avatar" dangerouslySetInnerHTML={{ __html: svg }} />;
+}
 
 interface Props {
   variant: VariantDefinition;
@@ -32,8 +42,15 @@ interface Props {
   taunt?: { key: number | string; tone: string; who: string; text: string } | null;
   /** The player's character (a signed-in player who made one); else the skull. */
   character?: Character | null;
-  /** … and what they wear (head items show on the card). */
+  /** … and what they wear. */
   outfit?: Outfit | null;
+  /** This side's cards (Anarşi). */
+  rack?: ReactNode;
+  /**
+   * The card this side just played, said from the strip on narrow screens (the wide column shows
+   * the card log instead). `key` restarts it.
+   */
+  note?: { key: number | string; node: ReactNode } | null;
 }
 
 /** One player card left of the board: their character (or a skull), who plays, the material lead, clock. */
@@ -49,6 +66,8 @@ export function PlayerRow({
   taunt,
   character,
   outfit = null,
+  rack,
+  note,
 }: Props) {
   const { t } = useI18n();
   // Only the difference, as on lichess: one short line that never pushes the board around.
@@ -56,9 +75,9 @@ export function PlayerRow({
   const taken = diff.extra[color];
   const lead = diff.lead[color];
   return (
-    <div className={`player-row ${place}${active ? ' turn' : ''}`}>
+    <div className={`player-row ${place}${active ? ' turn' : ''}${rack ? ' has-rack' : ''}`}>
       <span className={character ? 'avatar has-character' : 'avatar'}>
-        {character ? <AvatarView avatar={character} outfit={outfit} /> : <Avatar bot={player.kind === 'bot'} />}
+        {character ? <Portrait avatar={character} outfit={outfit} /> : <Avatar bot={player.kind === 'bot'} />}
       </span>
       <div className="player-info">
         <div className="player-head">
@@ -80,6 +99,12 @@ export function PlayerRow({
           </div>
         )}
       </div>
+      {rack && <div className="player-rack">{rack}</div>}
+      {note && (
+        <div key={note.key} className="player-note">
+          {note.node}
+        </div>
+      )}
       {clock && <ClockView clock={clock} color={color} />}
     </div>
   );

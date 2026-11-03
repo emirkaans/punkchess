@@ -3,12 +3,12 @@ import { trackPage } from './analytics.ts';
 import { CoinToast } from './CoinToast.tsx';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
-import { CHAOS, getVariant, isInCheck, legalMoves, listVariants, opposite, toFen } from '../engine/index.ts';
+import { CHAOS, getVariant, isInCheck, listVariants, opposite, toFen } from '../engine/index.ts';
 import type { Color, Move, PieceType } from '../engine/index.ts';
 import type { AnalysisSeed } from './AnalysisPage.tsx';
 import { Board } from './Board.tsx';
 import { CardGuide } from './CardGuide.tsx';
-import { CardHand } from './CardHand.tsx';
+import { CardLog, CardPickBar, CardRack, useCardMoves } from './CardRack.tsx';
 import { clickTarget, pickTargets } from './cardPick.ts';
 import type { CardPick } from './cardPick.ts';
 import { BoardResizer } from './BoardResizer.tsx';
@@ -164,6 +164,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const [newGame, setNewGame] = useState<GameSettings | null>(null);
   const [showRules, setShowRules] = useState(false);
   const [showCardGuide, setShowCardGuide] = useState(false);
+  // Narrow screens: the page below the controls opens from a ⋯ button instead of scrolling.
+  const [more, setMore] = useState(false);
   /** After signing up: where to go once the character is made. */
   const [afterCharacter, setAfterCharacter] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -541,13 +543,53 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
     setPickAt(game);
     if (cardPick) setCardPick(null);
   }
-  const cardMoves = cardPick && cardColor ? legalMoves(variant, game.position).filter((m) => m.card) : [];
+  // The side to move's playable cards (its rack lights them up); a pick plays from these.
+  const handMoves = useCardMoves(variant, variant.cards ? game : null, cardColor);
+  const cardMoves = cardPick ? handMoves : [];
+  // Each side's chaos card where it is known here (a bot's stays hidden from the person playing it).
+  const knownChaos = session.chaos
+    ? {
+        w: players.w.kind === 'human' || watching ? session.chaos.w : null,
+        b: players.b.kind === 'human' || watching ? session.chaos.b : null,
+      }
+    : null;
+  const showCards = !!(variant.cards && knownChaos && !setup);
+  const rackOf = (color: Color) =>
+    showCards ? (
+      <CardRack
+        game={game}
+        color={color}
+        chaos={knownChaos![color]}
+        active={cardColor}
+        cardMoves={handMoves}
+        pick={cardPick}
+        onPick={setCardPick}
+      />
+    ) : undefined;
+  const pickBar = (className: string) =>
+    cardPick && showCards ? (
+      <CardPickBar
+        cardMoves={cardMoves}
+        pick={cardPick}
+        onPick={setCardPick}
+        onChaos={() => playChaos()}
+        className={className}
+      />
+    ) : null;
   // Secrets (a hidden mine) belong to their side: the one person playing the bot sees theirs,
   // two players at one screen see the side to move's, and everyone sees all once it is over.
   const humans = (['w', 'b'] as const).filter((c) => players[c].kind === 'human');
   const viewer: Viewer = outcome ? 'all' : humans.length === 1 ? humans[0] : humans.length === 2 ? turn : 'all';
   // The card the shown position was reached by: a bubble under the board, a badge on it.
   const cardNote = variant.cards ? lastCardResult(variant, game, viewer) : null;
+  // … said from the strip of the side that played it (narrow screens).
+  const noteOf = (color: Color) =>
+    cardNote && cardNote.color === color
+      ? {
+          key: game.moves.length,
+          node: <CardResultBubble variant={variant} result={cardNote} position={game.position} compact />,
+        }
+      : null;
   const onCardTarget = (sq: number) => {
     if (!cardPick) return;
     const r = clickTarget(cardMoves, cardPick, sq);
@@ -818,7 +860,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
             onReview={(r) => openReview(r, 'online')}
           />
         ) : (
-          <main className="layout">
+          <main className={`layout game-fit${more ? ' more-open' : ''}${cardPick ? ' picking' : ''}`}>
             <section
               className={prefs.boardSize ? 'board-wrap sized' : 'board-wrap'}
               style={prefs.boardSize ? ({ '--board-user': `${prefs.boardSize}px` } as CSSProperties) : undefined}
@@ -836,6 +878,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   place="top"
                   character={vsBot && players[top].kind === 'human' ? account.user?.avatar : null}
                   outfit={vsBot && players[top].kind === 'human' ? account.user?.outfit : null}
+                  rack={rackOf(top)}
+                  note={noteOf(top)}
                 />
                 {/* Wide screens: the variant and the game state, small, between the two clocks. */}
                 <div className="players-mid">
@@ -851,6 +895,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                     {status}
                   </div>
                   {notice && <div className="notice">{notice}</div>}
+                  {pickBar('pick-mid')}
+                  {showCards && <CardLog variant={variant} game={game} viewer={viewer} />}
                 </div>
                 <PlayerRow
                   variant={variant}
@@ -863,6 +909,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   place="bottom"
                   character={vsBot && players[bottom].kind === 'human' ? account.user?.avatar : null}
                   outfit={vsBot && players[bottom].kind === 'human' ? account.user?.outfit : null}
+                  rack={rackOf(bottom)}
+                  note={noteOf(bottom)}
                 />
               </aside>
               <div className="board-col">
@@ -950,7 +998,6 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                     onResize={(boardSize) => setPrefs((p) => ({ ...p, boardSize }))}
                   />
                 </div>
-                {cardNote && <CardResultBubble variant={variant} result={cardNote} position={game.position} />}
                 <div className="board-bar">
                   <label className="switch-row">
                     <input
@@ -1000,22 +1047,13 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                 {notice && <div className="notice">{notice}</div>}
               </div>
 
-              {variant.cards && session.chaos && !setup && (
-                <CardHand
-                  variant={variant}
-                  game={game}
-                  // A bot's chaos card stays hidden from the person playing it.
-                  chaos={{
-                    w: players.w.kind === 'human' || watching ? session.chaos.w : null,
-                    b: players.b.kind === 'human' || watching ? session.chaos.b : null,
-                  }}
-                  colors={[top, bottom]}
-                  active={cardColor}
-                  pick={cardPick}
-                  onPick={setCardPick}
-                  onChaos={playChaos}
-                />
-              )}
+              <div className="more-head">
+                <span>{t('controls.more')}</span>
+                <button onClick={() => setMore(false)} aria-label={t('war.alert.close')}>
+                  ✕
+                </button>
+              </div>
+              {pickBar('pick-side')}
               <GameControls
                 vsBot={vsBot}
                 watching={watching}
@@ -1036,6 +1074,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                 onRun={(run) => dispatch({ type: 'run', run })}
                 onToggleHighlight={() => setShowHighlight((h) => !h)}
                 onCards={variant.cards && session.chaos && !setup ? () => setShowCardGuide(true) : null}
+                onMore={() => setMore((m) => !m)}
               />
               {showCardGuide && variant.cards && session.chaos && (
                 <CardGuide

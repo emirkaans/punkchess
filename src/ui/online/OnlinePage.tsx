@@ -17,7 +17,8 @@ import type { Color, GameState, Move, PieceType, VariantDefinition } from '../..
 import { moveOfWire, wireOf } from '../../online/protocol.ts';
 import type { ClientMessage, GameView, OnlineOutcome, WireMove } from '../../online/protocol.ts';
 import { CardGuide } from '../CardGuide.tsx';
-import { CardHand } from '../CardHand.tsx';
+import { CardLog, CardPickBar, CardRack, useCardMoves } from '../CardRack.tsx';
+import { MoreButton } from '../GameControls.tsx';
 import { lastCardResult, secretMoves } from '../cardResult.ts';
 import type { Viewer } from '../cardResult.ts';
 import { CardResultBubble } from '../CardResultBubble.tsx';
@@ -399,6 +400,15 @@ function OnlineGame({
     onOpenGame(rematchId);
   }, [rematchId, you, ticket, onOpenGame]);
 
+  // Cards: the playable ones of your side, while it is your turn on the latest position.
+  const rackActive: Color | null =
+    variant.cards && view?.phase === 'playing' && you && state?.position.turn === you && !pending && atEnd && !promotion
+      ? you
+      : null;
+  const handMoves = useCardMoves(variant, variant.cards ? state : null, rackActive);
+  // Narrow screens: the page below the controls opens from a ⋯ button instead of scrolling.
+  const [more, setMore] = useState(false);
+
   if (!view) {
     return (
       <main className="online-lobby">
@@ -428,11 +438,44 @@ function OnlineGame({
 
   // Cards (variants with cards): played on your turn, targets picked on the board.
   const cardColor: Color | null = variant.cards && yourTurn && atEnd && promotion === null ? you : null;
-  const cardMoves = cardPick && cardColor && state ? legalMoves(variant, state.position).filter((m) => m.card) : [];
+  const cardMoves = cardPick && cardColor ? handMoves : [];
   // Secrets (a hidden mine) are your own side's; everyone's once the game is over.
   const viewer: Viewer = view?.phase === 'over' ? 'all' : (you ?? null);
   // The card the shown position was reached by: a bubble under the board, a badge on it.
   const cardNote = variant.cards ? lastCardResult(variant, shown, viewer) : null;
+  const showCards = !!(variant.cards && shown && view.phase !== 'waiting' && view.phase !== 'setup');
+  // Only your own chaos card is known here.
+  const knownChaos = (c: Color) => (you === c ? (view.chaos ?? null) : null);
+  const rackOf = (c: Color) =>
+    showCards ? (
+      <CardRack
+        game={shown!}
+        color={c}
+        chaos={knownChaos(c)}
+        active={cardColor}
+        cardMoves={handMoves}
+        pick={cardPick}
+        onPick={setCardPick}
+      />
+    ) : undefined;
+  // The card just played, said from its player's strip (narrow screens).
+  const noteOf = (c: Color) =>
+    cardNote && cardNote.color === c && shown
+      ? {
+          key: shown.moves.length,
+          node: <CardResultBubble variant={variant} result={cardNote} position={shown.position} compact />,
+        }
+      : null;
+  const pickBar = (className: string) =>
+    cardPick && showCards ? (
+      <CardPickBar
+        cardMoves={cardMoves}
+        pick={cardPick}
+        onPick={setCardPick}
+        onChaos={() => playChaos()}
+        className={className}
+      />
+    ) : null;
   const onCardTarget = (sq: number) => {
     if (!cardPick) return;
     const r = clickTarget(cardMoves, cardPick, sq);
@@ -527,7 +570,7 @@ function OnlineGame({
   const canSticker = prefs.stickers && !!you && (playing || view.phase === 'over');
 
   return (
-    <main className="layout">
+    <main className={`layout game-fit${more ? ' more-open' : ''}${cardPick ? ' picking' : ''}`}>
       <section className={prefs.boardSize ? 'board-wrap sized' : 'board-wrap'} style={sized}>
         <aside className="players" aria-label={t('game.players')}>
           {[top, bottom].map((c, i) => (
@@ -547,6 +590,8 @@ function OnlineGame({
                     {statusText}
                   </div>
                   {link.error && <div className="notice">{t(`online.error.${link.error}`)}</div>}
+                  {pickBar('pick-mid')}
+                  {showCards && <CardLog variant={variant} game={shown} viewer={viewer} />}
                 </div>
               )}
               <PlayerRow
@@ -560,6 +605,8 @@ function OnlineGame({
                 place={i === 0 ? 'top' : 'bottom'}
                 character={view.players[c]?.avatar ?? null}
                 outfit={view.players[c]?.outfit ?? null}
+                rack={rackOf(c)}
+                note={noteOf(c)}
                 taunt={
                   prefs.stickers && poppedSticker?.from === c
                     ? {
@@ -659,7 +706,6 @@ function OnlineGame({
               onResize={(boardSize) => setPrefs((p) => ({ ...p, boardSize }))}
             />
           </div>
-          {cardNote && <CardResultBubble variant={variant} result={cardNote} position={shown!.position} />}
           <div className="board-bar">
             <label className="switch-row">
               <input
@@ -698,19 +744,13 @@ function OnlineGame({
           {link.error && <div className="notice">{t(`online.error.${link.error}`)}</div>}
         </div>
 
-        {variant.cards && shown && view.phase !== 'waiting' && view.phase !== 'setup' && (
-          <CardHand
-            variant={variant}
-            game={shown}
-            // Only your own chaos card is known here.
-            chaos={{ w: you === 'w' ? (view.chaos ?? null) : null, b: you === 'b' ? (view.chaos ?? null) : null }}
-            colors={[top, bottom]}
-            active={cardColor}
-            pick={cardPick}
-            onPick={setCardPick}
-            onChaos={playChaos}
-          />
-        )}
+        <div className="more-head">
+          <span>{t('controls.more')}</span>
+          <button onClick={() => setMore(false)} aria-label={t('war.alert.close')}>
+            ✕
+          </button>
+        </div>
+        {pickBar('pick-side')}
         {view.phase === 'waiting' && you && (
           <div className="box online-invite">
             <p>{t('online.invite')}</p>
@@ -763,7 +803,7 @@ function OnlineGame({
               </button>
             )}
             {variant.cards && shown && (
-              <button className="control lime" onClick={() => setShowCardGuide(true)}>
+              <button className="control lime cards-guide" onClick={() => setShowCardGuide(true)}>
                 {t('controls.cards')}
               </button>
             )}
@@ -775,6 +815,7 @@ function OnlineGame({
             >
               {t('controls.resign')}
             </button>
+            <MoreButton onClick={() => setMore((m) => !m)} />
             {canSticker && (
               <button
                 className={`control${stickerMenu ? ' lime' : ''}`}
