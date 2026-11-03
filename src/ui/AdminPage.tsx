@@ -11,7 +11,7 @@ import type {
 import { mayDo } from '../online/admin.ts';
 import type { ContactMessage } from '../online/contact.ts';
 import type { MessageKey } from '../i18n/index.ts';
-import { useAccount } from './account.ts';
+import { refreshAccount, useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
 import { AdminTraffic } from './AdminTraffic.tsx';
 
@@ -164,49 +164,52 @@ function Users({ role, myId }: { role: StaffRole; myId: string }) {
                 {u.banReason && ` · ${u.banReason}`}
               </small>
             </span>
-            {u.id !== myId && (
-              <span className="admin-actions">
-                {mayDo(role, u.bannedAt ? 'unban' : 'ban', u.role) &&
-                  (u.bannedAt ? (
-                    <button onClick={() => void run(`/api/admin/users/${u.id}/unban`)}>{t('admin.unban')}</button>
-                  ) : (
-                    <button
-                      className="danger"
-                      onClick={() => {
-                        const reason = window.prompt(t('admin.banReason', { name: u.username }));
-                        if (reason !== null) void run(`/api/admin/users/${u.id}/ban`, { reason });
-                      }}
-                    >
-                      {t('admin.ban')}
-                    </button>
-                  ))}
-                {mayDo(role, 'rename-user', u.role) && (
+            {/* One's own row: only the name can be changed (not banned, not one's own role). */}
+            <span className="admin-actions">
+              {u.id !== myId &&
+                mayDo(role, u.bannedAt ? 'unban' : 'ban', u.role) &&
+                (u.bannedAt ? (
+                  <button onClick={() => void run(`/api/admin/users/${u.id}/unban`)}>{t('admin.unban')}</button>
+                ) : (
                   <button
+                    className="danger"
                     onClick={() => {
-                      const username = window.prompt(t('admin.renamePrompt', { name: u.username }), u.username);
-                      if (username && username !== u.username) {
-                        void run(`/api/admin/users/${u.id}/rename`, { username });
-                      }
+                      const reason = window.prompt(t('admin.banReason', { name: u.username }));
+                      if (reason !== null) void run(`/api/admin/users/${u.id}/ban`, { reason });
                     }}
                   >
-                    {t('admin.rename')}
+                    {t('admin.ban')}
                   </button>
-                )}
-                {mayDo(role, 'set-role') && (
-                  <select
-                    aria-label={t('admin.roleLabel', { name: u.username })}
-                    value={u.role ?? ''}
-                    onChange={(e) =>
-                      void run(`/api/admin/users/${u.id}/role`, { role: e.target.value === '' ? null : e.target.value })
+                ))}
+              {mayDo(role, 'rename-user', u.role) && (
+                <button
+                  onClick={() => {
+                    const username = window.prompt(t('admin.renamePrompt', { name: u.username }), u.username);
+                    if (username && username !== u.username) {
+                      void run(`/api/admin/users/${u.id}/rename`, { username }).then(() => {
+                        // One's own new name shows in the top bar too.
+                        if (u.id === myId) void refreshAccount();
+                      });
                     }
-                  >
-                    <option value="">{t('admin.role.none')}</option>
-                    <option value="moderator">{t('admin.role.moderator')}</option>
-                    <option value="admin">{t('admin.role.admin')}</option>
-                  </select>
-                )}
-              </span>
-            )}
+                  }}
+                >
+                  {t('admin.rename')}
+                </button>
+              )}
+              {u.id !== myId && mayDo(role, 'set-role') && (
+                <select
+                  aria-label={t('admin.roleLabel', { name: u.username })}
+                  value={u.role ?? ''}
+                  onChange={(e) =>
+                    void run(`/api/admin/users/${u.id}/role`, { role: e.target.value === '' ? null : e.target.value })
+                  }
+                >
+                  <option value="">{t('admin.role.none')}</option>
+                  <option value="moderator">{t('admin.role.moderator')}</option>
+                  <option value="admin">{t('admin.role.admin')}</option>
+                </select>
+              )}
+            </span>
           </li>
         ))}
       </ul>
