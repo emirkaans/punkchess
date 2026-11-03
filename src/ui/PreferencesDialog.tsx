@@ -17,7 +17,6 @@ const GROUPS: { title: MessageKey; switches: { key: Toggle; note?: MessageKey }[
     switches: [
       { key: 'autoQueen', note: 'prefs.autoQueen.note' },
       { key: 'premoves', note: 'prefs.premoves.note' },
-      { key: 'cutIns', note: 'prefs.cutIns.note' },
     ],
   },
   { title: 'prefs.board', switches: [{ key: 'moveHints' }, { key: 'coordinates' }, { key: 'lastMove' }] },

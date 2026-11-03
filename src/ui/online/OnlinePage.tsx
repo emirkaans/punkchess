@@ -21,8 +21,6 @@ import { CardHand } from '../CardHand.tsx';
 import { lastCardResult, secretMoves } from '../cardResult.ts';
 import type { Viewer } from '../cardResult.ts';
 import { CardResultBubble } from '../CardResultBubble.tsx';
-import { CutIn } from '../CutIn.tsx';
-import type { CutInPlayer } from '../CutIn.tsx';
 import { clickTarget, pickTargets } from '../cardPick.ts';
 import type { CardPick } from '../cardPick.ts';
 import { Board } from '../Board.tsx';
@@ -435,10 +433,6 @@ function OnlineGame({
   const viewer: Viewer = view?.phase === 'over' ? 'all' : (you ?? null);
   // The card the shown position was reached by: a bubble under the board, a badge on it.
   const cardNote = variant.cards ? lastCardResult(variant, shown, viewer) : null;
-  const cutInPlayer = (c: Color): CutInPlayer | null => {
-    const p = view?.players[c];
-    return p?.avatar ? { avatar: p.avatar, outfit: p.outfit ?? null } : null;
-  };
   const onCardTarget = (sq: number) => {
     if (!cardPick) return;
     const r = clickTarget(cardMoves, cardPick, sq);
@@ -501,14 +495,14 @@ function OnlineGame({
   }
 
   const nameOf = (c: Color) => {
-    const p = view?.players[c];
+    const p = view.players[c];
     if (!p) return t('online.emptySeat');
     const label = p.name || t('online.anon');
     return c === you ? `${label} (${t('online.you')})` : label;
   };
   /** Name with the rating (rated games), and what the game changed once it is over. */
   const nameWithRating = (c: Color) => {
-    const p = view?.players[c];
+    const p = view.players[c];
     // A player with an account links to their profile (in a new tab while the game is on).
     const name = p?.username ? (
       <ProfileLink username={p.username} newTab={playing}>
@@ -618,15 +612,6 @@ function OnlineGame({
                       }
                     : null
                 }
-              />
-              <CutIn
-                variant={variant}
-                game={shown}
-                card={cardNote}
-                characters={{ w: cutInPlayer('w'), b: cutInPlayer('b') }}
-                bottom={bottom}
-                live={atEnd}
-                enabled={prefs.cutIns}
               />
               {view.outcome && atEnd && (
                 <GameOverOverlay

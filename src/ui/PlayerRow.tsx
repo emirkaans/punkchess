@@ -1,7 +1,4 @@
-import { EMPTY_OUTFIT } from '../avatar/outfit.ts';
 import type { Outfit } from '../avatar/outfit.ts';
-import { figureSvg } from '../avatar/figure.ts';
-import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ClockState } from '../clock/clock.ts';
 import type { Color, Position, VariantDefinition } from '../engine/index.ts';
@@ -13,30 +10,7 @@ import { materialDiff } from './material.ts';
 import { PieceView } from './PieceView.tsx';
 import { Avatar } from './Punk.tsx';
 import type { Avatar as Character } from '../avatar/avatar.ts';
-
-/** Down to the waist on the wide players column; head and shoulders in the narrow strips. */
-const HALF = '16 0 168 230';
-const BUST = '38 4 124 146';
-const NARROW = '(max-width: 1100px)';
-
-function useNarrow(): boolean {
-  const [narrow, setNarrow] = useState(() => typeof matchMedia === 'function' && matchMedia(NARROW).matches);
-  useEffect(() => {
-    if (typeof matchMedia !== 'function') return;
-    const m = matchMedia(NARROW);
-    const on = () => setNarrow(m.matches);
-    m.addEventListener('change', on);
-    return () => m.removeEventListener('change', on);
-  }, []);
-  return narrow;
-}
-
-/** The character in its outfit, cropped to the card (one SVG: its gradients need to be shown). */
-function Portrait({ avatar, outfit }: { avatar: Character; outfit: Outfit | null }) {
-  const narrow = useNarrow();
-  const svg = useMemo(() => figureSvg(avatar, outfit ?? EMPTY_OUTFIT, narrow ? BUST : HALF), [avatar, outfit, narrow]);
-  return <span className="char-avatar" dangerouslySetInnerHTML={{ __html: svg }} />;
-}
+import { AvatarView } from './CharacterCreator.tsx';
 
 interface Props {
   variant: VariantDefinition;
@@ -84,7 +58,7 @@ export function PlayerRow({
   return (
     <div className={`player-row ${place}${active ? ' turn' : ''}`}>
       <span className={character ? 'avatar has-character' : 'avatar'}>
-        {character ? <Portrait avatar={character} outfit={outfit} /> : <Avatar bot={player.kind === 'bot'} />}
+        {character ? <AvatarView avatar={character} outfit={outfit} /> : <Avatar bot={player.kind === 'bot'} />}
       </span>
       <div className="player-info">
         <div className="player-head">

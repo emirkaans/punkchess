@@ -48,12 +48,10 @@ export interface Prefs {
   readonly coordinates: boolean;
   /** The last move's squares are tinted. */
   readonly lastMove: boolean;
-  /** The character slides over the board after a card, a check or a queen taken. */
-  readonly cutIns: boolean;
 }
 
 /** On/off preferences, in the order the preferences dialog lists them. */
-export const SWITCHES = ['autoQueen', 'premoves', 'cutIns', 'moveHints', 'coordinates', 'lastMove'] as const;
+export const SWITCHES = ['autoQueen', 'premoves', 'moveHints', 'coordinates', 'lastMove'] as const;
 export type Switch = (typeof SWITCHES)[number];
 
 // Denim first (the default), then Classic; the faded boards stay together.
@@ -80,7 +78,6 @@ const DEFAULT_PREFS: Omit<Prefs, 'locale'> = {
   moveHints: true,
   coordinates: true,
   lastMove: true,
-  cutIns: true,
 };
 const KEY = 'prefs';
 
