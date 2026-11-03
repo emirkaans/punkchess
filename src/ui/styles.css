@@ -12221,3 +12221,26 @@ a:focus-visible {
 .fit-cart-buy > .store-buy {
   flex: 1;
 }
+
+/* Setup choices on a small board: rows as tall as their text (never squeezed into each other);
+   what does not fit scrolls inside the dialog. */
+.setup-options {
+  grid-auto-rows: max-content;
+  align-content: start;
+}
+.setup-option {
+  min-height: max-content;
+}
+@media (max-width: 760px) {
+  .modal.setup {
+    padding: 14px;
+  }
+  .setup-option {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  .setup-text small {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+}

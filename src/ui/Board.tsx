@@ -320,7 +320,10 @@ export function Board({
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     const sq = squareAt(e.clientX, e.clientY);
-    if (e.button === 2) {
+    // Only a mouse has buttons that mean something else; a finger or a pen always plays (some
+    // phone browsers report a touch with another button number).
+    const mouse = e.pointerType === 'mouse';
+    if (mouse && e.button === 2) {
       // Right button: cancels a queued premove, otherwise starts drawing.
       if (premove) {
         onCancelPremove?.();
@@ -331,7 +334,7 @@ export function Board({
       e.currentTarget.setPointerCapture(e.pointerId);
       return;
     }
-    if (e.button !== 0) return;
+    if (mouse && e.button !== 0) return;
     // A left click clears the drawings, as on lichess and chess.com.
     if (shapes.arrows.length || shapes.circles.length) setShapes({ arrows: [], circles: [] });
     if (sq === null) return;
