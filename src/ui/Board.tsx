@@ -322,7 +322,7 @@ export function Board({
     const sq = squareAt(e.clientX, e.clientY);
     // Only a mouse has buttons that mean something else; a finger or a pen always plays (some
     // phone browsers report a touch with another button number).
-    const mouse = e.pointerType === 'mouse';
+    const mouse = e.pointerType !== 'touch' && e.pointerType !== 'pen';
     if (mouse && e.button === 2) {
       // Right button: cancels a queued premove, otherwise starts drawing.
       if (premove) {
