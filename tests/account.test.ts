@@ -37,6 +37,9 @@ describe('hesaplar', () => {
   it('girişten sonra yalnızca sitenin kendi sayfalarına dönülür', () => {
     expect(safeReturn('/online')).toBe('/online');
     expect(safeReturn('//evil.example')).toBe('/');
+    // Browsers read a backslash as a slash: "/\evil" is another site.
+    expect(safeReturn('/\\evil.example')).toBe('/');
+    expect(safeReturn('/a\tb')).toBe('/');
     expect(safeReturn('https://evil.example')).toBe('/');
     expect(safeReturn('/auth/google/start')).toBe('/');
     expect(safeReturn(null)).toBe('/');

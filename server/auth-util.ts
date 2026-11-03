@@ -37,9 +37,19 @@ export async function sha256(text: string): Promise<Uint8Array> {
 export const sha256hex = async (text: string) =>
   Array.from(await sha256(text), (b) => b.toString(16).padStart(2, '0')).join('');
 
-/** Only paths on this site are followed after signing in. */
+/**
+ * Only paths on this site are followed after signing in. Backslashes and control characters are
+ * refused too: browsers read "/\evil.com" as "//evil.com", another site.
+ */
 export const safeReturn = (path: string | null): string =>
-  path && path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/auth/') ? path : '/';
+  path &&
+  path.startsWith('/') &&
+  !path.startsWith('//') &&
+  !path.startsWith('/auth/') &&
+  !/[\\\s]/.test(path) &&
+  ![...path].some((c) => c.charCodeAt(0) < 32)
+    ? path
+    : '/';
 
 /** The claims of a Google ID token we use, or null when it is not for us or expired. */
 export function idTokenClaims(

@@ -10,9 +10,16 @@
 import { isStaffRole } from '../src/online/admin.ts';
 import { dailyDay } from '../src/online/daily.ts';
 import type { LiveStats } from '../src/online/lobby.ts';
-import { TRAFFIC_RANGES, deviceOf, isBot, isPageKind } from '../src/online/traffic.ts';
+import {
+  DAILY_VIEW_CAP,
+  MAX_BEACON_BYTES,
+  TRAFFIC_RANGES,
+  deviceOf,
+  isBot,
+  isPageKind,
+} from '../src/online/traffic.ts';
 import type { Count, TrafficRange, TrafficStats } from '../src/online/traffic.ts';
-import { currentUser } from './auth.ts';
+import { currentUser, sameOrigin } from './auth.ts';
 import { sha256hex } from './auth-util.ts';
 import type { Env } from './game-room.ts';
 
@@ -147,6 +154,11 @@ export async function handleAnalytics(request: Request, env: Env, url: URL): Pro
   const now = Date.now();
 
   if (url.pathname === '/api/hit' && request.method === 'POST') {
+    // Only from this site's pages, and only small bodies (a page kind and a referrer).
+    if (!sameOrigin(request, env.PUBLIC_ORIGIN || url.origin, url)) return new Response(null, { status: 204 });
+    if (Number(request.headers.get('content-length') ?? MAX_BEACON_BYTES + 1) > MAX_BEACON_BYTES) {
+      return new Response(null, { status: 413 });
+    }
     const ua = request.headers.get('user-agent') ?? '';
     const body = (await request.json().catch(() => ({}))) as { page?: unknown; ref?: unknown; ping?: unknown };
     if (isBot(ua) || !isPageKind(body.page)) return new Response(null, { status: 204 });
@@ -158,6 +170,14 @@ export async function handleAnalytics(request: Request, env: Env, url: URL): Pro
     if (body.ping === true) {
       await presence.run();
     } else {
+      // A ceiling on the day's views (whoever sends them): past it, only presence is kept.
+      const day = await env.DB.prepare('SELECT count(*) AS n FROM page_views WHERE at >= ?1')
+        .bind(now - ((now + 3 * 3_600_000) % DAY))
+        .first<{ n: number }>();
+      if ((day?.n ?? 0) >= DAILY_VIEW_CAP) {
+        await presence.run();
+        return new Response(null, { status: 204 });
+      }
       const cf = (request as Request & { cf?: { country?: string; city?: string } }).cf;
       await env.DB.batch([
         presence,

@@ -98,111 +98,137 @@ async function gamePage(env: Env, request: Request, url: URL, id: string): Promi
     .transform(page);
 }
 
+/**
+ * What every page and answer tells the browser: never shown inside another site's frame (no
+ * clickjacking), HTTPS only, file types as declared, no full addresses sent to other sites, no
+ * camera, microphone or location. The static files get the same from public/_headers.
+ */
+const SECURITY_HEADERS: Readonly<Record<string, string>> = {
+  'content-security-policy': "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
+  'x-frame-options': 'DENY',
+  'strict-transport-security': 'max-age=31536000; includeSubDomains',
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+  'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+};
+
+function withSecurityHeaders(res: Response): Response {
+  // A WebSocket's switch (101) is passed on as it is.
+  if (res.status === 101 || res.webSocket) return res;
+  const out = new Response(res.body, res);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) if (!out.headers.has(k)) out.headers.set(k, v);
+  return out;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-
-    // www.punkchess.com -> punkchess.com
-    if (url.hostname.startsWith('www.')) {
-      url.hostname = url.hostname.slice(4);
-      return Response.redirect(url.toString(), 301);
-    }
-
-    // Emergency stop (see AuthEnv.PAUSE_API): no API, no game rooms, no database.
-    const paused = env.PAUSE_API === '1';
-    if (
-      paused &&
-      (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/') || url.pathname.startsWith('/og/'))
-    ) {
-      return new Response(JSON.stringify({ error: 'paused' }), {
-        status: 503,
-        headers: { 'content-type': 'application/json', 'retry-after': '600' },
-      });
-    }
-
-    const limited = await overLimit(request, env, url.pathname);
-    if (limited) return limited;
-
-    const auth = await handleAuth(request, env, url);
-    if (auth) return auth;
-    const coins = await handleCoins(request, env, url);
-    if (coins) return coins;
-    const rename = await handleRename(request, env, url);
-    if (rename) return rename;
-    const store = await handleStore(request, env, url);
-    if (store) return store;
-    const profile = await handleProfiles(request, env, url);
-    if (profile) return profile;
-    const puzzles = await handlePuzzles(request, env, url);
-    if (puzzles) return puzzles;
-    const daily = await handleDaily(request, env, url);
-    if (daily) return daily;
-    const leaders = await handleLeaderboard(request, env, url);
-    if (leaders) return leaders;
-    const rush = await handleRush(request, env, url);
-    if (rush) return rush;
-    // Before the admin routes: /api/admin/traffic is answered here.
-    const analytics = await handleAnalytics(request, env, url);
-    if (analytics) return analytics;
-    const admin = await handleAdmin(request, env, url);
-    if (admin) return admin;
-    const errors = await handleErrors(request, url, env.DB);
-    if (errors) return errors;
-    const contact = await handleContact(request, env, url);
-    if (contact) return contact;
-    const tournaments = await handleTournaments(request, env, url);
-    if (tournaments) return tournaments;
-    const gangs = await handleGangs(request, env, url);
-    if (gangs) return gangs;
-    const follows = await handleFollows(request, env, url);
-    if (follows) return follows;
-    const challenges = await handleChallenges(request, env, url);
-    if (challenges) return challenges;
-
-    if (url.pathname === '/api/tv' && request.method === 'GET') {
-      return env.LOBBY.get(env.LOBBY.idFromName('main')).fetch(`https://lobby/tv${url.search}`);
-    }
-    if (url.pathname === '/api/stats' && request.method === 'GET') {
-      return env.LOBBY.get(env.LOBBY.idFromName('main')).fetch('https://lobby/stats');
-    }
-    if (url.pathname === '/api/lobby/ws') {
-      // One lobby for the whole site. A signed-in player is told to it by these headers
-      // (never taken from the browser), so nobody can play under someone else's username.
-      const user = await currentUser(request, env).catch(() => null);
-      return env.LOBBY.get(env.LOBBY.idFromName('main')).fetch(withAccountHeaders(request, user));
-    }
-    if (url.pathname === '/api/games' && request.method === 'POST') {
-      // The creator's account goes along (a rated game needs two signed-in players).
-      const user = await currentUser(request, env).catch(() => null);
-      return toRoom(env, withAccountHeaders(request, user), newGameId(), '/create');
-    }
-    const m = /^\/api\/games\/([^/]+)(?:\/(join|ws|record))?$/.exec(url.pathname);
-    if (m) {
-      if (!GAME_ID.test(m[1])) return notFound();
-      if (m[2] === 'join') {
-        const user = await currentUser(request, env).catch(() => null);
-        return toRoom(env, withAccountHeaders(request, user), m[1], '/join');
-      }
-      return toRoom(env, withAccountHeaders(request, null), m[1], `/${m[2] ?? 'info'}`);
-    }
-    if (url.pathname.startsWith('/api/')) return notFound();
-
-    const og = /^\/og\/([A-Za-z0-9]{8})\.png$/.exec(url.pathname);
-    if (og) return toRoom(env, request, og[1], '/og');
-
-    const page = /^\/([A-Za-z0-9]{8})(?:\/analysis)?\/?$/.exec(url.pathname);
-    // Eight-letter page names ('licenses') look like game ids; those are app pages, not games.
-    if (page && !STATIC_PAGES.has(page[1]) && request.method === 'GET' && !paused)
-      return gamePage(env, request, url, page[1]);
-    if (url.pathname === '/sitemap.xml' && !paused) return sitemap(env, url);
-    if (!paused && !url.pathname.startsWith('/api/')) {
-      const preview = await pagePreview(env, request, url);
-      if (preview) return preview;
-    }
-    return env.ASSETS.fetch(request);
+    return withSecurityHeaders(await handle(request, env));
   },
   // Every 5 minutes (wrangler.jsonc triggers): a sample of who is on the site.
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(sampleLive(env));
   },
 } satisfies ExportedHandler<Env>;
+
+async function handle(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+
+  // www.punkchess.com -> punkchess.com
+  if (url.hostname.startsWith('www.')) {
+    url.hostname = url.hostname.slice(4);
+    return Response.redirect(url.toString(), 301);
+  }
+
+  // Emergency stop (see AuthEnv.PAUSE_API): no API, no game rooms, no database.
+  const paused = env.PAUSE_API === '1';
+  if (
+    paused &&
+    (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/') || url.pathname.startsWith('/og/'))
+  ) {
+    return new Response(JSON.stringify({ error: 'paused' }), {
+      status: 503,
+      headers: { 'content-type': 'application/json', 'retry-after': '600' },
+    });
+  }
+
+  const limited = await overLimit(request, env, url.pathname);
+  if (limited) return limited;
+
+  const auth = await handleAuth(request, env, url);
+  if (auth) return auth;
+  const coins = await handleCoins(request, env, url);
+  if (coins) return coins;
+  const rename = await handleRename(request, env, url);
+  if (rename) return rename;
+  const store = await handleStore(request, env, url);
+  if (store) return store;
+  const profile = await handleProfiles(request, env, url);
+  if (profile) return profile;
+  const puzzles = await handlePuzzles(request, env, url);
+  if (puzzles) return puzzles;
+  const daily = await handleDaily(request, env, url);
+  if (daily) return daily;
+  const leaders = await handleLeaderboard(request, env, url);
+  if (leaders) return leaders;
+  const rush = await handleRush(request, env, url);
+  if (rush) return rush;
+  // Before the admin routes: /api/admin/traffic is answered here.
+  const analytics = await handleAnalytics(request, env, url);
+  if (analytics) return analytics;
+  const admin = await handleAdmin(request, env, url);
+  if (admin) return admin;
+  const errors = await handleErrors(request, url, env.DB);
+  if (errors) return errors;
+  const contact = await handleContact(request, env, url);
+  if (contact) return contact;
+  const tournaments = await handleTournaments(request, env, url);
+  if (tournaments) return tournaments;
+  const gangs = await handleGangs(request, env, url);
+  if (gangs) return gangs;
+  const follows = await handleFollows(request, env, url);
+  if (follows) return follows;
+  const challenges = await handleChallenges(request, env, url);
+  if (challenges) return challenges;
+
+  if (url.pathname === '/api/tv' && request.method === 'GET') {
+    return env.LOBBY.get(env.LOBBY.idFromName('main')).fetch(`https://lobby/tv${url.search}`);
+  }
+  if (url.pathname === '/api/stats' && request.method === 'GET') {
+    return env.LOBBY.get(env.LOBBY.idFromName('main')).fetch('https://lobby/stats');
+  }
+  if (url.pathname === '/api/lobby/ws') {
+    // One lobby for the whole site. A signed-in player is told to it by these headers
+    // (never taken from the browser), so nobody can play under someone else's username.
+    const user = await currentUser(request, env).catch(() => null);
+    return env.LOBBY.get(env.LOBBY.idFromName('main')).fetch(withAccountHeaders(request, user));
+  }
+  if (url.pathname === '/api/games' && request.method === 'POST') {
+    // The creator's account goes along (a rated game needs two signed-in players).
+    const user = await currentUser(request, env).catch(() => null);
+    return toRoom(env, withAccountHeaders(request, user), newGameId(), '/create');
+  }
+  const m = /^\/api\/games\/([^/]+)(?:\/(join|ws|record))?$/.exec(url.pathname);
+  if (m) {
+    if (!GAME_ID.test(m[1])) return notFound();
+    if (m[2] === 'join') {
+      const user = await currentUser(request, env).catch(() => null);
+      return toRoom(env, withAccountHeaders(request, user), m[1], '/join');
+    }
+    return toRoom(env, withAccountHeaders(request, null), m[1], `/${m[2] ?? 'info'}`);
+  }
+  if (url.pathname.startsWith('/api/')) return notFound();
+
+  const og = /^\/og\/([A-Za-z0-9]{8})\.png$/.exec(url.pathname);
+  if (og) return toRoom(env, request, og[1], '/og');
+
+  const page = /^\/([A-Za-z0-9]{8})(?:\/analysis)?\/?$/.exec(url.pathname);
+  // Eight-letter page names ('licenses') look like game ids; those are app pages, not games.
+  if (page && !STATIC_PAGES.has(page[1]) && request.method === 'GET' && !paused)
+    return gamePage(env, request, url, page[1]);
+  if (url.pathname === '/sitemap.xml' && !paused) return sitemap(env, url);
+  if (!paused && !url.pathname.startsWith('/api/')) {
+    const preview = await pagePreview(env, request, url);
+    if (preview) return preview;
+  }
+  return env.ASSETS.fetch(request);
+}

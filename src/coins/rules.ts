@@ -7,8 +7,11 @@ export type CoinReason = 'online' | 'puzzle' | 'daily' | 'rush';
 // Coins are earned by winning and solving, not by playing: a game lost or drawn, or a game
 // against the bot, pays nothing.
 export const COIN_RULES = {
-  /** A won online game (at least `minPlies` half-moves). */
-  online: { win: 5, minPlies: 10, dailyMax: 50 },
+  /**
+   * A won online game (at least `minPlies` half-moves). Against the same opponent only
+   * `pairDailyMax` games a day pay (two accounts trading wins earn little).
+   */
+  online: { win: 5, minPlies: 10, dailyMax: 50, pairDailyMax: 3 },
   /** A puzzle solved at the first try (rated puzzles; each puzzle once). */
   puzzle: { solved: 1, dailyMax: 10 },
   /** The daily puzzle, solved. */

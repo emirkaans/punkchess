@@ -79,6 +79,19 @@ export async function grantGameCoins(
   if (plies < COIN_RULES.online.minPlies) return out;
   const id = winner ? players[winner] : undefined;
   if (!winner || !id) return out;
+  // Wins paid today against this same opponent (the game rows tell who played whom).
+  const other = players[winner === 'w' ? 'b' : 'w'];
+  if (other) {
+    const pair = await db
+      .prepare(
+        `SELECT count(*) AS n FROM coin_ledger l JOIN games g ON g.id = l.ref
+         WHERE l.user_id = ?1 AND l.reason = 'online' AND l.day = ?2 AND l.ref <> ?4
+           AND ((g.white_user = ?1 AND g.black_user = ?3) OR (g.white_user = ?3 AND g.black_user = ?1))`,
+      )
+      .bind(id, dailyDay(now), other, gameId)
+      .first<{ n: number }>();
+    if ((pair?.n ?? 0) >= COIN_RULES.online.pairDailyMax) return out;
+  }
   const paid = await grantCoins(db, id, 'online', gameId, COIN_RULES.online.win, now);
   if (paid) out[winner] = paid;
   return out;

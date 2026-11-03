@@ -6,9 +6,16 @@
 import { cleanReport } from '../src/online/errors.ts';
 import { keepErrorReport } from './admin.ts';
 
+/** Largest error report read (bytes). */
+const MAX_REPORT_BYTES = 16_384;
+
 export async function handleErrors(request: Request, url: URL, db?: D1Database): Promise<Response | null> {
   if (url.pathname !== '/api/errors') return null;
   if (request.method !== 'POST') return new Response(null, { status: 405 });
+  // A report is a few short fields: a large body is not read.
+  if (Number(request.headers.get('content-length') ?? MAX_REPORT_BYTES + 1) > MAX_REPORT_BYTES) {
+    return new Response(null, { status: 413 });
+  }
   const report = cleanReport(await request.json().catch(() => null));
   if (report) {
     console.error('client error', JSON.stringify(report));

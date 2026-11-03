@@ -6,8 +6,40 @@
 export const TRAFFIC_RANGES = [1, 7, 30] as const;
 export type TrafficRange = (typeof TRAFFIC_RANGES)[number];
 
-/** A page kind (src/ui/routes.ts) as sent by the browser: lowercase letters only. */
-export const isPageKind = (s: unknown): s is string => typeof s === 'string' && /^[a-z]{2,16}$/.test(s);
+/** The site's pages (src/ui/Toolbar.tsx Page, without the staff and loading ones): only these are counted. */
+export const PAGE_KINDS: ReadonlySet<string> = new Set([
+  'home',
+  'game',
+  'analysis',
+  'online',
+  'review',
+  'signup',
+  'profile',
+  'puzzles',
+  'daily',
+  'rush',
+  'tv',
+  'gangs',
+  'tournaments',
+  'leaderboard',
+  'privacy',
+  'terms',
+  'licenses',
+  'contact',
+  'character',
+  'store',
+  'barber',
+  'wardrobe',
+]);
+
+/** A page kind as sent by the browser: one of the site's pages. */
+export const isPageKind = (s: unknown): s is string => typeof s === 'string' && PAGE_KINDS.has(s);
+
+/** Most page views kept in a day (all visitors): past it, more are not written. */
+export const DAILY_VIEW_CAP = 50_000;
+
+/** Largest request body the analytics and error endpoints read (bytes). */
+export const MAX_BEACON_BYTES = 4096;
 
 /** Crawlers and link previews: not visitors. */
 export const isBot = (userAgent: string): boolean =>

@@ -6,6 +6,8 @@ describe('site analizi', () => {
     expect(isPageKind('store')).toBe(true);
     expect(isPageKind('/@/ali')).toBe(false);
     expect(isPageKind('x')).toBe(false);
+    expect(isPageKind('zzcheck')).toBe(false);
+    expect(isPageKind('wardrobe')).toBe(true);
     expect(isBot('Mozilla/5.0 (compatible; Googlebot/2.1)')).toBe(true);
     expect(isBot('')).toBe(true);
     expect(isBot('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Mobile/15E148')).toBe(false);
