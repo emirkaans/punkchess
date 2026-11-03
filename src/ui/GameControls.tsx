@@ -38,7 +38,7 @@ function Icon({ d, className = '' }: { d: string | string[]; className?: string 
   );
 }
 
-const ICONS = {
+export const ICONS = {
   undo: ['M9 14L4 9l5-5', 'M4 9h10a6 6 0 0 1 0 12h-3'],
   cards: ['M4 7.5l7-2 2.8 10-7 2z', 'M13 4.5h7v11h-7'],
   hint: ['M9 18h6M10 21h4', 'M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z'],
@@ -55,10 +55,13 @@ const ICONS = {
   ],
   back: 'M15 5l-7 7 7 7',
   more: ['M5 12h1', 'M11.5 12h1', 'M18 12h1'],
+  sticker: ['M4 5h16v11H9l-5 4z', 'M8.5 10.5h.5M12 10.5h.5M15.5 10.5h.5'],
+  yes: 'M5 12.5l4.5 4.5L19 7.5',
+  no: 'M6 6l12 12M18 6L6 18',
   forward: 'M9 5l7 7-7 7',
 };
 
-function ControlButton(props: {
+export function ControlButton(props: {
   icon: string | string[];
   onClick: () => void;
   disabled?: boolean;

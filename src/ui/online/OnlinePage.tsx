@@ -18,7 +18,7 @@ import { moveOfWire, wireOf } from '../../online/protocol.ts';
 import type { ClientMessage, GameView, OnlineOutcome, WireMove } from '../../online/protocol.ts';
 import { CardGuide } from '../CardGuide.tsx';
 import { CardLog, CardPickBar, CardRack, useCardMoves } from '../CardRack.tsx';
-import { MoreButton } from '../GameControls.tsx';
+import { ControlButton, ICONS, MoreButton } from '../GameControls.tsx';
 import { lastCardResult, secretMoves } from '../cardResult.ts';
 import type { Viewer } from '../cardResult.ts';
 import { CardResultBubble } from '../CardResultBubble.tsx';
@@ -797,45 +797,48 @@ function OnlineGame({
           <div className="controls">
             {view.drawOffer === opposite(you) ? (
               <>
-                <button className="control lime" onClick={() => send({ t: 'draw', action: 'accept' })}>
+                <ControlButton icon={ICONS.yes} className="lime" onClick={() => send({ t: 'draw', action: 'accept' })}>
                   {t('online.drawAccept')}
-                </button>
-                <button className="control" onClick={() => send({ t: 'draw', action: 'decline' })}>
+                </ControlButton>
+                <ControlButton icon={ICONS.no} onClick={() => send({ t: 'draw', action: 'decline' })}>
                   {t('online.drawDecline')}
-                </button>
+                </ControlButton>
               </>
             ) : (
-              <button
-                className="control"
+              <ControlButton
+                icon={ICONS.draw}
                 disabled={view.drawOffer === you}
+                title={view.drawOffer === you ? t('online.drawOffered') : undefined}
                 onClick={() => send({ t: 'draw', action: 'offer' })}
               >
                 {view.drawOffer === you ? t('online.drawOffered') : t('controls.draw')}
-              </button>
+              </ControlButton>
             )}
             {variant.cards && shown && (
-              <button className="control lime cards-guide" onClick={() => setShowCardGuide(true)}>
+              <ControlButton icon={ICONS.cards} className="lime cards-guide" onClick={() => setShowCardGuide(true)}>
                 {t('controls.cards')}
-              </button>
+              </ControlButton>
             )}
-            <button
-              className="control danger"
+            <ControlButton
+              icon={ICONS.resign}
+              className="danger"
               onClick={() => {
                 if (window.confirm(t('online.resignConfirm'))) send({ t: 'resign' });
               }}
             >
               {t('controls.resign')}
-            </button>
-            <MoreButton onClick={() => setMore((m) => !m)} />
+            </ControlButton>
             {canSticker && (
-              <button
-                className={`control${stickerMenu ? ' lime' : ''}`}
-                aria-expanded={stickerMenu}
+              <ControlButton
+                icon={ICONS.sticker}
+                className={`sticker-toggle${stickerMenu ? ' lime' : ''}`}
+                pressed={stickerMenu}
                 onClick={() => setStickerMenu((o) => !o)}
               >
                 {t('sticker.button')}
-              </button>
+              </ControlButton>
             )}
+            <MoreButton onClick={() => setMore((m) => !m)} />
             {opponent && !opponent.connected && !away.length && (
               <p className="muted online-note">{t('online.opponentOffline')}</p>
             )}
@@ -851,6 +854,8 @@ function OnlineGame({
                 onClick={() => {
                   send({ t: 'sticker', id });
                   setStickerMenu(false);
+                  // Phones: back to the board to see it land.
+                  setMore(false);
                 }}
               >
                 {t(`sticker.${id}`)}
