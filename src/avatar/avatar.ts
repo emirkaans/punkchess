@@ -31,13 +31,26 @@ export const AVATAR_PARTS: readonly AvatarPart[] = ['head', 'skin', 'eyes', 'mou
 
 export const AVATAR_OPTIONS: Readonly<Record<AvatarPart, readonly AvatarOption[]>> = {
   head: [{ id: 'oval' }, { id: 'round' }, { id: 'jaw' }, { id: 'long' }],
+  // Real skin tones from the lightest to the darkest (pink, yellow and olive undertones), then
+  // the fantasy ones. Stored ids never change; new tones can go anywhere in the list.
   skin: [
+    { id: 'porcelain', color: '#fbe6d6' },
     { id: 'light', color: '#f4d3b8' },
+    { id: 'rosy', color: '#efc0a6' },
     { id: 'wheat', color: '#e8b48f' },
+    { id: 'golden', color: '#d9a066' },
+    { id: 'olive', color: '#c4a074' },
     { id: 'tan', color: '#c98a5e' },
+    { id: 'honey', color: '#b5733f' },
     { id: 'brown', color: '#9a5f3a' },
+    { id: 'umber', color: '#7a4a2e' },
     { id: 'dark', color: '#5e3a24' },
+    { id: 'ebony', color: '#3f2618' },
     { id: 'zombie', color: '#b9f0c8' },
+    { id: 'smurf', color: '#8fc7ff' },
+    { id: 'violet', color: '#b89be8' },
+    { id: 'stone', color: '#b7b4bc' },
+    { id: 'demon', color: '#e0574a' },
   ],
   eyes: [{ id: 'dot' }, { id: 'angry' }, { id: 'sleepy' }, { id: 'liner' }, { id: 'star' }, { id: 'x' }],
   mouth: [{ id: 'smirk' }, { id: 'grin' }, { id: 'flat' }, { id: 'tongue' }, { id: 'snarl' }],

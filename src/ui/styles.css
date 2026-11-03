@@ -9507,14 +9507,15 @@ a:focus-visible {
     gap: 6px;
     grid-auto-rows: var(--tile);
   }
+  /* 17 skin tones: small enough that all of them fit without scrolling. */
   .character-swatches {
     align-content: center;
     justify-content: center;
-    gap: 14px;
+    gap: 10px;
   }
   .character-swatch {
-    width: 46px;
-    height: 46px;
+    width: 36px;
+    height: 36px;
   }
   .character-actions {
     flex-wrap: nowrap;
