@@ -12091,13 +12091,45 @@ a:focus-visible {
   .layout.game-fit.more-open {
     height: calc(100dvh - 61px);
   }
+  /* The menu gets room: the board gives up a little (never below 70% of the screen width). */
+  .layout.game-fit.more-open,
+  .layout.game-fit.more-open .board-wrap,
+  .layout.game-fit.more-open .board-wrap.sized {
+    --board: min(100vw, max(70vw, calc(100dvh - 61px - 290px)));
+  }
+  /* Compact inside the menu: a small title, smaller buttons and boxes. */
+  .layout.game-fit.more-open .new-game-button,
+  .layout.game-fit.more-open .analyse-button {
+    min-height: 40px;
+    gap: 8px;
+    font-size: 17px;
+  }
+  .layout.game-fit.more-open .new-game-button .ic {
+    width: 16px;
+    height: 16px;
+  }
+  .layout.game-fit.more-open .side .box {
+    padding: 10px 12px;
+  }
+  .layout.game-fit.more-open .side .box-head h2 {
+    font-size: 18px;
+  }
+  .layout.game-fit.more-open .side .status {
+    font-size: 15px;
+  }
+  .layout.game-fit.more-open .side .controls {
+    margin: 0;
+  }
+  .layout.game-fit.more-open .side .control {
+    min-height: 40px;
+  }
   .layout.game-fit.more-open > .side {
     order: 3;
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     overflow-y: auto;
     padding: 0 12px 12px;
     background: var(--panel-2, #18181b);
@@ -12127,15 +12159,17 @@ a:focus-visible {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 0;
+    padding: 6px 0;
     background: var(--panel-2, #18181b);
-    font: 400 22px/1 var(--marker);
+    font: 400 16px/1 var(--marker);
     color: var(--lime);
   }
   .layout.game-fit.more-open .more-head button {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
+    min-height: 0;
     padding: 0;
+    font-size: 14px;
   }
 }
 
