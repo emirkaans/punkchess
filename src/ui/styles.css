@@ -12324,3 +12324,46 @@ a:focus-visible {
     font-size: 44px;
   }
 }
+
+/* Game controls: one row of icons everywhere (as on lichess); the names stay for screen readers
+   and as tooltips (src/ui/GameControls.tsx). */
+.controls:not(.rematch):not(.tournament-return) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.controls:not(.rematch):not(.tournament-return) > .control {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0;
+}
+.controls:not(.rematch):not(.tournament-return) .control .ic {
+  width: 22px;
+  height: 22px;
+}
+.controls .online-note {
+  flex-basis: 100%;
+}
+.control-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* A taunt is over everything beside the board: the other card, the game state between them. */
+.player-row:has(.taunt-bubble) {
+  z-index: 30;
+}
+
+/* The chaos card's bar: only "light the fuse" and cancel (what it may do is in the card guide). */
+.card-pickbar.chaos .pickbar-text {
+  display: none;
+}
+.card-pickbar.pick-mid {
+  justify-content: center;
+}

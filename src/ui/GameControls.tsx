@@ -75,7 +75,8 @@ export function ControlButton(props: {
       className={`control ${props.className ?? ''}`}
       onClick={props.onClick}
       disabled={props.disabled}
-      title={props.title}
+      // Icons only (as on lichess): the name is the tooltip and the screen-reader label.
+      title={props.title ?? (typeof props.children === 'string' ? props.children : undefined)}
       aria-pressed={props.pressed}
     >
       <Icon d={props.icon} />
@@ -139,7 +140,12 @@ export function GameControls(p: Props) {
         </>
       )}
       {p.highlightLabel && (
-        <ControlButton icon={ICONS.highlight} onClick={p.onToggleHighlight} pressed={p.showHighlight}>
+        <ControlButton
+          icon={ICONS.highlight}
+          onClick={p.onToggleHighlight}
+          pressed={p.showHighlight}
+          title={`${p.highlightLabel}: ${p.showHighlight ? t('controls.on') : t('controls.off')}`}
+        >
           {p.highlightLabel}: {p.showHighlight ? t('controls.on') : t('controls.off')}
         </ControlButton>
       )}
