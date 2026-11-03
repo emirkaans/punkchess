@@ -11462,3 +11462,43 @@ a:focus-visible {
     display: none;
   }
 }
+
+/* A saved outfit's delete button: a small ✕, asking "Sure?" (pink) after the first tap. */
+.wardrobe-delete {
+  min-height: 32px;
+  min-width: 32px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--muted);
+  font:
+    700 11px/1 'Space Mono',
+    monospace;
+}
+.wardrobe-delete.sure,
+.wardrobe-delete.sure:hover:not(:disabled) {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--on-pink);
+}
+.ws-short {
+  display: none;
+}
+@media (max-width: 760px) {
+  /* Phones: "Save over" as an icon; while asking "Sure?", only that button shows. */
+  .wardrobe-save .ws-full {
+    display: none;
+  }
+  .wardrobe-save .ws-short {
+    display: inline;
+    font-size: 15px;
+  }
+  .wardrobe-acts:has(.sure) > :not(.sure) {
+    display: none;
+  }
+  .wardrobe-delete {
+    min-height: 30px;
+    min-width: 30px;
+    padding: 0 6px;
+    font-size: 10px;
+  }
+}

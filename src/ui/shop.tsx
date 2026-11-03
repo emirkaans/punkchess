@@ -127,13 +127,13 @@ export function useShop() {
     void refreshAccount();
   };
 
-  /** Saves the clothes worn now in place `i`. */
-  const saveKombin = async (i: number) => {
+  /** Saves the clothes worn now in place `i`, or with `remove` empties it. */
+  const saveKombin = async (i: number, remove = false) => {
     if (!store) return;
-    const r = await send('/api/me/kombin', { index: i, outfit: clothesOf(store.outfit) });
+    const r = await send('/api/me/kombin', { index: i, outfit: remove ? null : clothesOf(store.outfit) });
     if (!r.ok) return setMsg({ text: t('store.error'), bad: true });
     setStore({ ...store, kombins: (r.data as unknown as { kombins: (Outfit | null)[] }).kombins });
-    setMsg({ text: t('wardrobe.saved', { n: String(i + 1) }) });
+    setMsg({ text: t(remove ? 'wardrobe.deleted' : 'wardrobe.saved', { n: String(i + 1) }) });
   };
 
   return { store, trying, tried, shown, msg, name, button, tryOn, act, busy, wearSaved, saveKombin };

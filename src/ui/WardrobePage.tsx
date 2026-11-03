@@ -23,6 +23,8 @@ export function WardrobePage({ onOpen }: { onOpen: (path: string) => void }) {
   const account = useAccount();
   const avatar = account.user?.avatar ?? DEFAULT_AVATAR;
   const [slot, setSlot] = useState<OutfitSlot>('jacket');
+  // The saved outfit whose delete button asks "Sure?".
+  const [sure, setSure] = useState<number | null>(null);
   const { store, msg, name, act, busy, wearSaved, saveKombin } = useShop();
 
   if (!account.loading && !account.user) {
@@ -63,8 +65,31 @@ export function WardrobePage({ onOpen }: { onOpen: (path: string) => void }) {
                     <button className="store-buy" disabled={busy || isOn(k)} onClick={() => void wearSaved(i)}>
                       {t('store.wear')}
                     </button>
-                    <button className="wardrobe-save" disabled={busy} onClick={() => void saveKombin(i)}>
-                      {t('wardrobe.saveOver')}
+                    <button
+                      className="wardrobe-save"
+                      disabled={busy}
+                      title={t('wardrobe.saveOverHint')}
+                      aria-label={t('wardrobe.saveOver')}
+                      onClick={() => void saveKombin(i)}
+                    >
+                      <span className="ws-full">{t('wardrobe.saveOver')}</span>
+                      <span className="ws-short" aria-hidden="true">
+                        ⟳
+                      </span>
+                    </button>
+                    {/* Deleting asks once: the first tap turns the button into "Sure?". */}
+                    <button
+                      className={sure === i ? 'wardrobe-delete sure' : 'wardrobe-delete'}
+                      disabled={busy}
+                      aria-label={sure === i ? t('wardrobe.sure') : t('wardrobe.delete')}
+                      onClick={() => {
+                        if (sure !== i) return setSure(i);
+                        setSure(null);
+                        void saveKombin(i, true);
+                      }}
+                      onBlur={() => setSure(null)}
+                    >
+                      {sure === i ? t('wardrobe.sure') : '✕'}
                     </button>
                   </div>
                 </div>
