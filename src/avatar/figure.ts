@@ -4,6 +4,7 @@
 
 import { avatarSvg, skinColor } from './avatar.ts';
 import type { Avatar } from './avatar.ts';
+import { isHeadAcc } from './more.ts';
 import { jacketSvg, neckAccessorySvg, pantsSvg } from './outfit.ts';
 import type { Outfit, OutfitSlot } from './outfit.ts';
 
@@ -27,7 +28,7 @@ export function figureSvg(avatar: Avatar, outfit: Outfit, view = FULL): string {
 
 /** Where an item shows best on the figure: the head for hats and glasses, else the body or legs. */
 export function itemView(slot: OutfitSlot, id: string): string {
-  if (slot === 'hat' || id === 'shades' || id === 'phones') return '30 0 140 130';
+  if (slot === 'hat' || id === 'shades' || id === 'phones' || isHeadAcc(id)) return '30 0 140 130';
   if (slot === 'pants') return '20 220 160 140';
   return '20 90 160 160';
 }

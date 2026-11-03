@@ -4,6 +4,9 @@
 // character itself; items only change looks. Prices are in punk coins (src/coins/rules.ts).
 // Pure: no DOM.
 
+import { MORE_BARBER_ITEMS } from './barber-more.ts';
+import { MORE_ITEMS, drawMoreHat, drawMoreHeadAcc, drawMoreJacket, drawMoreNeckAcc, drawMorePants } from './more.ts';
+
 export type OutfitSlot = 'jacket' | 'pants' | 'hat' | 'acc' | 'cut' | 'color' | 'beard';
 
 export interface StoreItem {
@@ -58,6 +61,9 @@ export const STORE_ITEMS: readonly StoreItem[] = [
   { id: 'goatee', slot: 'beard', price: 70 },
   { id: 'handlebar', slot: 'beard', price: 90 },
   { id: 'chops', slot: 'beard', price: 60 },
+  // The second wave (src/avatar/more.ts, src/avatar/barber-more.ts).
+  ...MORE_ITEMS,
+  ...MORE_BARBER_ITEMS,
 ];
 
 export const storeItem = (id: string): StoreItem | undefined => STORE_ITEMS.find((i) => i.id === id);
@@ -138,6 +144,8 @@ const INK = '#141016';
 
 /** A hat, in the head's box. */
 export function hatSvg(id: string | null): string {
+  const more = drawMoreHat(id);
+  if (more) return more;
   switch (id) {
     case 'beanie':
       return `<path d="M50 84c0-36 22-52 50-52s50 16 50 52z" fill="#ff2e93" stroke="${INK}" stroke-width="4"/><rect x="46" y="76" width="108" height="16" rx="6" fill="#d61f7a" stroke="${INK}" stroke-width="4"/><circle cx="100" cy="30" r="9" fill="#ff2e93" stroke="${INK}" stroke-width="3"/>`;
@@ -154,6 +162,8 @@ export function hatSvg(id: string | null): string {
 
 /** An accessory worn on the head (glasses, headphones), in the head's box; others draw nothing here. */
 export function headAccessorySvg(id: string | null): string {
+  const more = drawMoreHeadAcc(id);
+  if (more) return more;
   if (id === 'shades')
     return `<path d="M64 100h28l-2 14H66zM108 100h28l-2 14h-24z" fill="${INK}"/><path d="M92 104h16" stroke="${INK}" stroke-width="3"/><path d="M70 104h6" stroke="#fff" stroke-width="2" opacity=".6"/>`;
   if (id === 'phones')
@@ -163,6 +173,8 @@ export function headAccessorySvg(id: string | null): string {
 
 /** An accessory worn at the neck (chain, choker), in the figure's box. */
 export function neckAccessorySvg(id: string | null): string {
+  const more = drawMoreNeckAcc(id);
+  if (more) return more;
   if (id === 'chain')
     return `<path d="M80 120c4 30 36 30 40 0" fill="none" stroke="#d8d4dc" stroke-width="4" stroke-dasharray="4 2"/><circle cx="100" cy="146" r="6" fill="#d8d4dc" stroke="${INK}" stroke-width="2"/>`;
   if (id === 'choker')
@@ -177,6 +189,8 @@ const studs = (pts: readonly (readonly [number, number])[]) =>
 
 /** The upper body: a jacket, or a plain punk T-shirt; arms and hands in `skin`. */
 export function jacketSvg(id: string | null, skin: string): string {
+  const more = id ? drawMoreJacket(id, skin) : null;
+  if (more) return more;
   const torso = 'M62 128c4-10 14-14 38-14s34 4 38 14l6 104H56z';
   const armL = 'M62 128l-18 10-4 84h16l6-62z';
   const armR = 'M138 128l18 10 4 84h-16l-6-62z';
@@ -239,6 +253,8 @@ export function jacketSvg(id: string | null, skin: string): string {
 
 /** The legs: trousers (plain dark ones by default) and boots. */
 export function pantsSvg(id: string | null, skin: string): string {
+  const more = id ? drawMorePants(id, skin) : null;
+  if (more) return more;
   const legs = (fill: string, extra = '') =>
     `<path d="M58 230h84l-4 100h-26l-10-76-10 76H66z" fill="${fill}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>${extra}`;
   const boots = `<path d="M62 328h30l2 18H56c0-8 2-14 6-18zM108 328h30c4 4 6 10 6 18h-38z" fill="#141016" stroke="${INK}" stroke-width="3"/><path d="M60 340h34M106 340h38" stroke="#5a5662" stroke-width="2"/>`;

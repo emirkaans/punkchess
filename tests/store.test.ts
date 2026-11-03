@@ -75,4 +75,16 @@ describe('mağaza', () => {
     });
     expect(parseKombins('bozuk')).toEqual([null, null, null]);
   });
+
+  it('her eşyanın iki dilde de adı var, her saç ve sakal çizilir', async () => {
+    const { tr, en } = await import('../src/i18n/messages.ts');
+    for (const item of STORE_ITEMS) {
+      for (const lang of [tr, en]) expect((lang as Record<string, string>)[`store.item.${item.id}`]).toBeTruthy();
+    }
+    for (const item of STORE_ITEMS.filter((i) => i.slot === 'cut' || i.slot === 'beard' || i.slot === 'color')) {
+      const svg = avatarSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, [item.slot]: item.id });
+      expect(svg).not.toContain('undefined');
+      if (item.slot === 'beard') expect(svg.length).toBeGreaterThan(avatarSvg(DEFAULT_AVATAR, EMPTY_OUTFIT).length);
+    }
+  });
 });

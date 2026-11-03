@@ -2,6 +2,8 @@
 // (src/avatar/avatar.ts): premium cuts (some reach above the box, up to y = -50), hair colours
 // and beards. Pure: no DOM.
 
+import { moreBeard, moreCutBack, moreCutFront, morePaint, moreSwatch } from './barber-more.ts';
+
 const INK = '#141016';
 const BEARD = '#3a2a20';
 
@@ -35,14 +37,15 @@ export function hairPaint(color: string | null, base: string): HairPaint {
       defs: '<filter id="pc-hair-neon"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>',
       filter: 'url(#pc-hair-neon)',
     };
-  return { fill: base, defs: '', filter: null };
+  return morePaint(color ?? '') ?? { fill: base, defs: '', filter: null };
 }
 
 /** A premium colour's swatch (a CSS background). */
 export function colorSwatch(id: string): string {
   if (id === 'grad') return 'linear-gradient(135deg, #ff2e93, #c6ff3d)';
   if (id === 'split') return 'linear-gradient(90deg, #ff2e93 50%, #4aa8ff 50%)';
-  return 'radial-gradient(#ff8fd0, #ff2e93)';
+  if (id === 'neon') return 'radial-gradient(#ff8fd0, #ff2e93)';
+  return moreSwatch(id) ?? 'radial-gradient(#ff8fd0, #ff2e93)';
 }
 
 /** Hair drawn with a paint: wrapped in the glow when the colour has one. */
@@ -75,7 +78,7 @@ export function cutBack(id: string, fill: string): string {
     case 'half':
       return `<path d="M100 40c34 0 58 22 58 62l4 70h-20l-4-60c0-20-16-34-38-34z" ${st}/>`;
     default:
-      return '';
+      return moreCutBack(id, fill) ?? '';
   }
 }
 
@@ -119,22 +122,22 @@ export function cutFront(id: string, fill: string): string {
     case 'flame':
       return `<path d="M52 84c-6-30 6-50 20-62 0 14 4 22 10 26 0-20 8-38 22-48 0 18 6 30 14 36 4-12 12-20 22-24-4 12-2 24 4 34 6-8 8-16 8-24 10 18 6 46-4 62-30-12-66-12-96 0z" ${st}/>`;
     default:
-      return '';
+      return moreCutFront(id, fill) ?? '';
   }
 }
 
-/** A beard or moustache, over the face. */
-export function beardSvg(id: string | null): string {
+/** A beard or moustache, over the face, in its natural brown or a premium colour's `fill`. */
+export function beardSvg(id: string | null, fill = BEARD): string {
   switch (id) {
     case 'full':
-      return `<path d="M52 118c0 34 20 58 48 58s48-24 48-58c-8 10-18 14-26 12-6 6-14 8-22 8s-16-2-22-8c-8 2-18-2-26-12z" fill="${BEARD}" stroke="${INK}" stroke-width="3"/><path d="M84 142c10 6 22 6 32 0" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
+      return `<path d="M52 118c0 34 20 58 48 58s48-24 48-58c-8 10-18 14-26 12-6 6-14 8-22 8s-16-2-22-8c-8 2-18-2-26-12z" fill="${fill}" stroke="${INK}" stroke-width="3"/><path d="M84 142c10 6 22 6 32 0" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
     case 'goatee':
-      return `<path d="M90 150c0 18 6 28 10 28s10-10 10-28c-6 4-14 4-20 0z" fill="${BEARD}" stroke="${INK}" stroke-width="3"/>`;
+      return `<path d="M90 150c0 18 6 28 10 28s10-10 10-28c-6 4-14 4-20 0z" fill="${fill}" stroke="${INK}" stroke-width="3"/>`;
     case 'handlebar':
-      return `<path d="M100 134c-10-6-24-4-32 6-4 6 0 10 4 6 6-8 18-8 28-4 10-4 22-4 28 4 4 4 8 0 4-6-8-10-22-12-32-6z" fill="${BEARD}" stroke="${INK}" stroke-width="2.5"/>`;
+      return `<path d="M100 134c-10-6-24-4-32 6-4 6 0 10 4 6 6-8 18-8 28-4 10-4 22-4 28 4 4 4 8 0 4-6-8-10-22-12-32-6z" fill="${fill}" stroke="${INK}" stroke-width="2.5"/>`;
     case 'chops':
-      return `<path d="M50 100c-2 18 2 34 12 40 2-12 4-26 0-38zM150 100c2 18-2 34-12 40-2-12-4-26 0-38z" fill="${BEARD}" stroke="${INK}" stroke-width="2.5"/>`;
+      return `<path d="M50 100c-2 18 2 34 12 40 2-12 4-26 0-38zM150 100c2 18-2 34-12 40-2-12-4-26 0-38z" fill="${fill}" stroke="${INK}" stroke-width="2.5"/>`;
     default:
-      return '';
+      return id ? (moreBeard(id, fill) ?? '') : '';
   }
 }
