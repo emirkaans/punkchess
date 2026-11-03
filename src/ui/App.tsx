@@ -38,6 +38,7 @@ import { SettingsDialog } from './SettingsDialog.tsx';
 import { lastCardResult, secretMoves } from './cardResult.ts';
 import type { Viewer } from './cardResult.ts';
 import { CardResultBubble } from './CardResultBubble.tsx';
+import { CutIn } from './CutIn.tsx';
 import { SiteFooter } from './SiteFooter.tsx';
 import { ChallengeInbox } from './ChallengeInbox.tsx';
 import { SetupDialog } from './SetupDialog.tsx';
@@ -904,6 +905,21 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                             }
                           : null
                       }
+                    />
+                    <CutIn
+                      variant={variant}
+                      game={game}
+                      card={cardNote}
+                      characters={
+                        vsBot && account.user?.avatar
+                          ? {
+                              [humanColor ?? 'w']: { avatar: account.user.avatar, outfit: account.user.outfit ?? null },
+                            }
+                          : {}
+                      }
+                      bottom={bottom}
+                      live={atEnd}
+                      enabled={prefs.cutIns}
                     />
                     {setup && (
                       <SetupDialog
