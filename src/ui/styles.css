@@ -11502,3 +11502,51 @@ a:focus-visible {
     font-size: 10px;
   }
 }
+
+/* Changing one's username (src/ui/RenameDialog.tsx). */
+.modal.rename-dialog {
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rename-dialog h2 {
+  margin: 0;
+  font: 400 26px/1 var(--marker);
+  color: var(--pink);
+}
+.rename-dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rename-input {
+  min-height: 48px;
+  padding: 0 12px;
+  font:
+    700 18px/1 'Space Mono',
+    monospace;
+}
+.rename-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--lime);
+}
+.rename-note.bad {
+  color: var(--pink);
+}
+.rename-rules {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.rename-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.rename-actions .primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

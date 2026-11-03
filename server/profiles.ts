@@ -7,6 +7,7 @@
 //   POST /api/me/tag { tag }                       … and a spray tag style
 //   POST /api/me/avatar { avatar }                 … and saves their character
 
+import { renamedTo } from './rename.ts';
 import { parseOutfit } from '../src/avatar/outfit.ts';
 import { PROVISIONAL_RD } from '../src/rating/glicko2.ts';
 import type { ProfileGame, ProfileRating, ProfileResponse, RatingPoint, Rival } from '../src/online/profile.ts';
@@ -193,7 +194,11 @@ export async function handleProfiles(request: Request, env: AuthEnv, url: URL): 
       avatar: string | null;
       outfit: string | null;
     }>();
-  if (!user) return json({ error: 'not-found' }, 404);
+  if (!user) {
+    // A name changed lately: the profile is now under the new one.
+    const moved = await renamedTo(env.DB, decodeURIComponent(m[1]));
+    return json(moved ? { error: 'not-found', moved } : { error: 'not-found' }, 404);
+  }
 
   if (!m[2]) {
     const rows = await env.DB.prepare(

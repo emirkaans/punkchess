@@ -6,6 +6,7 @@ import type { MessageKey } from '../i18n/index.ts';
 import type { ProfileGame, ProfileRating, ProfileResponse, RatingPoint } from '../online/profile.ts';
 import type { FollowLists } from '../online/follow.ts';
 import { allCategories, variantOfCategory } from '../rating/categories.ts';
+import { RenameDialog } from './RenameDialog.tsx';
 import { useI18n } from './i18n.tsx';
 import { BattleJacket, jacketSrc } from './BattleJacket.tsx';
 import { useAccount } from './account.ts';
@@ -48,6 +49,8 @@ export function ProfilePage({ username, onOpen }: Props) {
   const account = useAccount();
   // Own profile: the spray tag picker is open.
   const [pickingTag, setPickingTag] = useState(false);
+  // Own profile: the username change window is open.
+  const [renaming, setRenaming] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   // Own profile: the followers or following list being shown.
   const [followList, setFollowList] = useState<'followers' | 'following' | null>(null);
@@ -60,7 +63,12 @@ export function ProfilePage({ username, onOpen }: Props) {
     void (async () => {
       const res = await fetch(`/api/users/${encodeURIComponent(username)}`).catch(() => null);
       if (!live) return;
-      if (!res?.ok) return setProfile('missing');
+      if (!res?.ok) {
+        // A name changed lately: go to the profile under the new name.
+        const moved = ((await res?.json().catch(() => null)) as { moved?: string } | null)?.moved;
+        if (moved && live) return onOpen(`/@/${moved}`);
+        return setProfile('missing');
+      }
       const p = (await res.json()) as ProfileResponse;
       setProfile(p);
       // The category played most opens first.
@@ -77,6 +85,8 @@ export function ProfilePage({ username, onOpen }: Props) {
     return () => {
       live = false;
     };
+    // Only a new username loads a profile (onOpen is a new function on every render).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
   useEffect(() => {
@@ -188,9 +198,23 @@ export function ProfilePage({ username, onOpen }: Props) {
         <div className="profile-title">
           <h1 className="profile-name">{profile.username}</h1>
           {mine && (
-            <button className="link-button profile-edit-character" onClick={() => onOpen('/character')}>
-              {t('character.edit')}
-            </button>
+            <>
+              <button className="link-button profile-edit-character" onClick={() => onOpen('/character')}>
+                {t('character.edit')}
+              </button>
+              <button className="link-button profile-edit-character" onClick={() => setRenaming(true)}>
+                {t('rename.open')}
+              </button>
+            </>
+          )}
+          {renaming && (
+            <RenameDialog
+              onClose={() => setRenaming(false)}
+              onDone={(name) => {
+                setRenaming(false);
+                onOpen(`/@/${name}`);
+              }}
+            />
           )}
           {profile.gang && (
             <a

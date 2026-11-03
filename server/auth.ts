@@ -10,6 +10,7 @@
 //   POST /api/auth/logout
 //   POST /api/auth/delete                  deletes the signed-in account (and its sign-in link, sessions)
 
+import { RENAME_RULES } from '../src/online/rename.ts';
 import { parseOutfit } from '../src/avatar/outfit.ts';
 import { suggestUsername, usernameProblem } from '../src/online/account.ts';
 import { isStaffRole } from '../src/online/admin.ts';
@@ -318,7 +319,14 @@ export async function handleAuth(request: Request, env: AuthEnv, url: URL): Prom
   return json({ error: 'not-found' }, 404);
 }
 
-export async function usernameTaken(env: AuthEnv, name: string): Promise<boolean> {
-  const row = await env.DB.prepare('SELECT 1 FROM users WHERE username = ?1').bind(name).first();
+export async function usernameTaken(env: AuthEnv, name: string, exceptUserId: string | null = null): Promise<boolean> {
+  // An account's own name, or a name another player gave up lately (held for them for a while).
+  const row = await env.DB.prepare(
+    `SELECT 1 FROM users WHERE username = ?1 AND id IS NOT ?3
+     UNION ALL SELECT 1 FROM username_history WHERE old_name = ?1 AND changed_at >= ?2 AND user_id IS NOT ?3
+     LIMIT 1`,
+  )
+    .bind(name, Date.now() - RENAME_RULES.holdMs, exceptUserId)
+    .first();
   return row !== null;
 }

@@ -28,6 +28,7 @@ import { handleChallenges } from './challenges.ts';
 import { handleContact } from './contact.ts';
 import { handleErrors } from './errors.ts';
 import { handleAnalytics, sampleLive } from './analytics.ts';
+import { handleRename } from './rename.ts';
 import { handleAdmin } from './admin.ts';
 import { handleFollows } from './follows.ts';
 import { handleGangs } from './gangs.ts';
@@ -126,6 +127,8 @@ export default {
     if (auth) return auth;
     const coins = await handleCoins(request, env, url);
     if (coins) return coins;
+    const rename = await handleRename(request, env, url);
+    if (rename) return rename;
     const store = await handleStore(request, env, url);
     if (store) return store;
     const profile = await handleProfiles(request, env, url);
