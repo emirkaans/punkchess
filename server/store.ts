@@ -12,6 +12,7 @@ import { dailyDay } from '../src/online/daily.ts';
 import {
   KOMBIN_COUNT,
   clothesOf,
+  fitsSlot,
   parseKombins,
   parseOutfit,
   serializeOutfit,
@@ -84,9 +85,11 @@ export async function handleStore(request: Request, env: AuthEnv, url: URL): Pro
     if (!sameOrigin(request, env.PUBLIC_ORIGIN || url.origin, url)) return json({ error: 'forbidden' }, 403);
     const user = await currentUser(request, env);
     if (!user) return json({ error: 'signed-out' }, 401);
-    const body = (await request.json().catch(() => ({}))) as { item?: unknown };
+    const body = (await request.json().catch(() => ({}))) as { item?: unknown; wear?: unknown };
     const item = typeof body.item === 'string' ? storeItem(body.item) : undefined;
     if (!item) return json({ error: 'not-found' }, 404);
+    // Where it goes on once bought: its own slot, or (a hair colour) the beard.
+    const wear = body.wear === 'beardColor' && fitsSlot('beardColor', item) ? 'beardColor' : item.slot;
     // Both statements run in one transaction: the charge only when the balance covers it and the
     // item is not owned yet; the item only when this charge exists.
     await env.DB.batch([
@@ -105,7 +108,7 @@ export async function handleStore(request: Request, env: AuthEnv, url: URL): Pro
     const items = await owned(env.DB, user.id);
     if (!items.has(item.id)) return json({ error: 'not-enough' }, 409);
     // A new item goes on at once.
-    const outfit = { ...(await outfitOf(env.DB, user.id)), [item.slot]: item.id };
+    const outfit = { ...(await outfitOf(env.DB, user.id)), [wear]: item.id };
     await env.DB.prepare('UPDATE users SET outfit = ?1 WHERE id = ?2').bind(serializeOutfit(outfit), user.id).run();
     const [coins, kombins] = await Promise.all([coinBalance(env.DB, user.id, now), kombinsOf(env.DB, user.id)]);
     return json({ owned: [...items], outfit, balance: coins.balance, kombins } satisfies StoreResponse);

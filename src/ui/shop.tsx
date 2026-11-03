@@ -29,7 +29,10 @@ export function useShop() {
   const { t } = useI18n();
   const account = useAccount();
   const [store, setStore] = useState<ShopState | null>(null);
-  const [trying, setTrying] = useState<string | null>(null);
+  // What is tried on, one item per slot (a cut, its colour and a beard can be tried together);
+  // the last one tried is the one the buy button is for.
+  const [tries, setTries] = useState<Partial<Record<OutfitSlot, string>>>({});
+  const [last, setLast] = useState<OutfitSlot | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; bad?: boolean } | null>(null);
 
@@ -46,9 +49,14 @@ export function useShop() {
 
   const name = (id: string) => t(`store.item.${id}` as MessageKey);
   const worn = store?.outfit ?? EMPTY_OUTFIT;
+  const trying = last ? (tries[last] ?? null) : null;
   const tried = trying ? storeItem(trying) : undefined;
-  /** What the character wears with the tried item on. */
-  const shown: Outfit = tried ? { ...worn, [tried.slot]: tried.id } : worn;
+  /** The slot the last tried item goes to (a hair colour may be tried on the beard). */
+  const triedSlot = tried ? last! : null;
+  /** What the character wears with everything tried on. */
+  const shown: Outfit = { ...worn, ...tries };
+  /** Whether `id` is being tried in `slot` (its own slot by default). */
+  const isTrying = (id: string, slot: OutfitSlot | undefined = storeItem(id)?.slot) => !!slot && tries[slot] === id;
 
   const send = async (url: string, body: unknown) => {
     setBusy(true);
@@ -66,33 +74,46 @@ export function useShop() {
     }
   };
 
-  const act = async (item: StoreItem) => {
+  const act = async (item: StoreItem, slot: OutfitSlot = item.slot) => {
     if (!store) return;
     if (store.owned.has(item.id)) {
       // Owned: put on, or take off when already worn.
-      const on = store.outfit[item.slot] === item.id;
-      const outfit = { ...store.outfit, [item.slot]: on ? null : item.id };
+      const on = store.outfit[slot] === item.id;
+      const outfit = { ...store.outfit, [slot]: on ? null : item.id };
       const r = await send('/api/me/outfit', { outfit });
       if (!r.ok) return setMsg({ text: t('store.error'), bad: true });
       setStore({ ...store, outfit });
       setMsg({ text: t(on ? 'store.takenOff' : 'store.wearing', { item: name(item.id) }) });
     } else {
-      const r = await send('/api/store/buy', { item: item.id });
+      const r = await send('/api/store/buy', { item: item.id, wear: slot });
       if (!r.ok) {
         return setMsg({ text: t(r.data?.error === 'not-enough' ? 'store.notEnough' : 'store.error'), bad: true });
       }
       setStore(stateOf(r.data as unknown as StoreData));
       setMsg({ text: t('store.bought', { item: name(item.id), n: String(item.price) }) });
     }
-    setTrying(null);
+    setTries(({ [slot]: _done, ...rest }) => rest);
+    setLast(null);
     void refreshCoins();
     void refreshAccount();
   };
 
+  /** Puts on what needs no buying (a natural beard colour, or nothing) in `slot`. */
+  const wearFree = async (slot: OutfitSlot, id: string | null) => {
+    if (!store) return;
+    const outfit = { ...store.outfit, [slot]: id };
+    const r = await send('/api/me/outfit', { outfit });
+    if (!r.ok) return setMsg({ text: t('store.error'), bad: true });
+    setStore({ ...store, outfit });
+    setTries(({ [slot]: _done, ...rest }) => rest);
+    setLast(null);
+    void refreshAccount();
+  };
+
   /** An item's button: buy (with its price), wear or take off. */
-  const button = (item: StoreItem) => {
+  const button = (item: StoreItem, slot: OutfitSlot = item.slot) => {
     const owned = store?.owned.has(item.id) ?? false;
-    const on = store?.outfit[item.slot] === item.id;
+    const on = store?.outfit[slot] === item.id;
     const short = !owned && (store?.balance ?? 0) < item.price;
     return (
       <button
@@ -101,7 +122,7 @@ export function useShop() {
         title={short ? t('store.notEnough') : undefined}
         onClick={(e) => {
           e.stopPropagation();
-          void act(item);
+          void act(item, slot);
         }}
       >
         {owned ? t(on ? 'store.takeOff' : 'store.wear') : t('store.buy', { n: String(item.price) })}
@@ -109,9 +130,12 @@ export function useShop() {
     );
   };
 
-  /** Tries an item on, or stops trying it. */
-  const tryOn = (id: string) => {
-    setTrying(trying === id ? null : id);
+  /** Tries an item on (in its own slot, or another it fits), or stops trying it. */
+  const tryOn = (id: string, slot: OutfitSlot | undefined = storeItem(id)?.slot) => {
+    if (!slot) return;
+    const off = tries[slot] === id;
+    setTries(({ [slot]: _old, ...rest }) => (off ? rest : { ...rest, [slot]: id }));
+    setLast(off ? null : slot);
     setMsg(null);
   };
 
@@ -136,7 +160,23 @@ export function useShop() {
     setMsg({ text: t(remove ? 'wardrobe.deleted' : 'wardrobe.saved', { n: String(i + 1) }) });
   };
 
-  return { store, trying, tried, shown, msg, name, button, tryOn, act, busy, wearSaved, saveKombin };
+  return {
+    store,
+    trying,
+    tried,
+    triedSlot,
+    isTrying,
+    shown,
+    msg,
+    name,
+    button,
+    tryOn,
+    act,
+    wearFree,
+    busy,
+    wearSaved,
+    saveKombin,
+  };
 }
 
 /** Each kind's icon for the shops' phone rails (24×24 strokes). */
@@ -148,4 +188,5 @@ export const SHOP_ICONS: Readonly<Record<OutfitSlot, string>> = {
   cut: 'M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM8 16L19 4M16 16L5 4',
   color: 'M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z',
   beard: 'M5 9c0 7 3 12 7 12s7-5 7-12c-2 2-4 3-7 3S7 11 5 9z',
+  beardColor: 'M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z',
 };

@@ -23,7 +23,7 @@ export function StorePage({ onOpen }: { onOpen: (path: string) => void }) {
   const account = useAccount();
   const avatar = account.user?.avatar ?? DEFAULT_AVATAR;
   const [slot, setSlot] = useState<OutfitSlot>('jacket');
-  const { store, trying, tried, shown, msg, name, button, tryOn } = useShop();
+  const { store, tried, isTrying, shown, msg, name, button, tryOn } = useShop();
 
   if (!account.loading && !account.user) {
     return (
@@ -108,10 +108,10 @@ export function StorePage({ onOpen }: { onOpen: (path: string) => void }) {
             {STORE_ITEMS.filter((i) => i.slot === slot).map((item) => (
               <div
                 key={item.id}
-                className={trying === item.id ? 'store-card on' : 'store-card'}
+                className={isTrying(item.id) ? 'store-card on' : 'store-card'}
                 role="button"
                 tabIndex={0}
-                aria-pressed={trying === item.id}
+                aria-pressed={isTrying(item.id)}
                 aria-label={name(item.id)}
                 onClick={() => tryOn(item.id)}
                 onKeyDown={(e) => {

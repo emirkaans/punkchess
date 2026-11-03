@@ -11550,3 +11550,31 @@ a:focus-visible {
   align-items: center;
   gap: 6px;
 }
+
+/* The barber's colours: hair and beard each have a row of natural colours (free, round with a
+   ring) and the premium ones; on phones the rows are smaller and scroll inside their panel. */
+.barber-swatch.natural {
+  box-shadow:
+    0 0 0 2px var(--border),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+.barber-colors h2 + .barber-swatches {
+  margin-bottom: 6px;
+}
+@media (max-width: 760px) {
+  .barber-colors {
+    max-height: 40dvh;
+    overflow-y: auto;
+  }
+  .barber-colors .barber-swatches {
+    gap: 12px;
+    padding: 6px 0 10px;
+  }
+  .barber-colors .barber-swatch {
+    width: 36px;
+    height: 36px;
+  }
+  .barber-colors h2 {
+    display: block;
+  }
+}

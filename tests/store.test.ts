@@ -41,7 +41,8 @@ describe('mağaza', () => {
   });
 
   it('her yuva tek bir dükkânda satılır', () => {
-    expect([...STORE_SLOTS, ...BARBER_SLOTS].sort()).toEqual([...OUTFIT_SLOTS].sort());
+    // The beard's colour is not sold on its own: it takes the hair colours (or a natural one).
+    expect([...STORE_SLOTS, ...BARBER_SLOTS, 'beardColor'].sort()).toEqual([...OUTFIT_SLOTS].sort());
   });
 
   it('kuaför: saç kendi saçın yerine çizilir, renk ve sakal karakterde görünür', () => {
@@ -86,5 +87,19 @@ describe('mağaza', () => {
       expect(svg).not.toContain('undefined');
       if (item.slot === 'beard') expect(svg.length).toBeGreaterThan(avatarSvg(DEFAULT_AVATAR, EMPTY_OUTFIT).length);
     }
+  });
+
+  it('sakal rengi ayrı: doğal renkler bedava, özel renk sahip olunursa; saç rengi sakala değmez', () => {
+    const o = parseOutfit({ beard: 'full', beardColor: 'nat-ginger', color: 'fire' });
+    expect(o.beardColor).toBe('nat-ginger');
+    expect(parseOutfit({ beardColor: 'ocean' }).beardColor).toBe('ocean');
+    expect(parseOutfit({ beardColor: 'giant' }).beardColor).toBeNull();
+    expect(wearsOnlyOwned(o, new Set(['full', 'fire']))).toBe(true);
+    expect(wearsOnlyOwned({ ...o, beardColor: 'ocean' }, new Set(['full', 'fire']))).toBe(false);
+    const ginger = avatarSvg(DEFAULT_AVATAR, o);
+    expect(ginger).toContain('#b8541e');
+    // The hair's premium colour no longer paints the beard brown-free.
+    const hairOnly = avatarSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, beard: 'full', color: 'grad' });
+    expect(hairOnly).toContain('#3a2a20');
   });
 });

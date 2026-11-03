@@ -7,7 +7,7 @@
 import { MORE_BARBER_ITEMS } from './barber-more.ts';
 import { MORE_ITEMS, drawMoreHat, drawMoreHeadAcc, drawMoreJacket, drawMoreNeckAcc, drawMorePants } from './more.ts';
 
-export type OutfitSlot = 'jacket' | 'pants' | 'hat' | 'acc' | 'cut' | 'color' | 'beard';
+export type OutfitSlot = 'jacket' | 'pants' | 'hat' | 'acc' | 'cut' | 'color' | 'beard' | 'beardColor';
 
 export interface StoreItem {
   readonly id: string;
@@ -18,10 +18,41 @@ export interface StoreItem {
 /** What the player wears: an item id per slot, or null. */
 export type Outfit = Readonly<Record<OutfitSlot, string | null>>;
 
-export const OUTFIT_SLOTS: readonly OutfitSlot[] = ['jacket', 'pants', 'hat', 'acc', 'cut', 'color', 'beard'];
+export const OUTFIT_SLOTS: readonly OutfitSlot[] = [
+  'jacket',
+  'pants',
+  'hat',
+  'acc',
+  'cut',
+  'color',
+  'beard',
+  'beardColor',
+];
 /** What each shop sells. */
 export const STORE_SLOTS: readonly OutfitSlot[] = ['jacket', 'pants', 'hat', 'acc'];
 export const BARBER_SLOTS: readonly OutfitSlot[] = ['cut', 'color', 'beard'];
+
+/**
+ * The beard's colour (slot beardColor): a premium colour the player owns (the same items as the
+ * hair's), or one of these natural ones, free. Unset: brown.
+ */
+export const NATURAL_BEARD: readonly (readonly [id: string, color: string])[] = [
+  ['nat-brown', '#3a2a20'],
+  ['nat-black', '#141016'],
+  ['nat-ginger', '#b8541e'],
+  ['nat-blond', '#d9b35a'],
+  ['nat-grey', '#9a979e'],
+  ['nat-white', '#efe6c8'],
+  ['nat-pink', '#ff2e93'],
+  ['nat-lime', '#c6ff3d'],
+  ['nat-blue', '#4aa8ff'],
+  ['nat-red', '#e5352b'],
+];
+export const naturalBeard = (id: string | null): string | null => NATURAL_BEARD.find(([n]) => n === id)?.[1] ?? null;
+
+/** The item ids a slot takes: its own items, and for the beard's colour also the hair colours. */
+const fits = (slot: OutfitSlot, item: StoreItem) =>
+  item.slot === slot || (slot === 'beardColor' && item.slot === 'color');
 
 /** The catalogue. New items can be added; an item must never be removed once sold (hide it instead). */
 export const STORE_ITEMS: readonly StoreItem[] = [
@@ -76,6 +107,7 @@ export const EMPTY_OUTFIT: Outfit = {
   cut: null,
   color: null,
   beard: null,
+  beardColor: null,
 };
 
 /** An outfit from anything (stored JSON, a request): unknown items or items in the wrong slot are dropped. */
@@ -91,8 +123,10 @@ export function parseOutfit(input: unknown): Outfit {
   const obj = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
   const out: Record<OutfitSlot, string | null> = { ...EMPTY_OUTFIT };
   for (const slot of OUTFIT_SLOTS) {
-    const item = typeof obj[slot] === 'string' ? storeItem(obj[slot] as string) : undefined;
-    if (item && item.slot === slot) out[slot] = item.id;
+    const id = typeof obj[slot] === 'string' ? (obj[slot] as string) : null;
+    const item = id ? storeItem(id) : undefined;
+    if (item && fits(slot, item)) out[slot] = item.id;
+    else if (slot === 'beardColor' && naturalBeard(id)) out[slot] = id;
   }
   return out;
 }
@@ -126,7 +160,7 @@ export const wearKombin = (worn: Outfit, kombin: Outfit): Outfit => ({
   ...clothesOf(kombin),
   ...barberOf(worn),
 });
-const barberOf = (o: Outfit) => Object.fromEntries(BARBER_SLOTS.map((s) => [s, o[s]]));
+const barberOf = (o: Outfit) => Object.fromEntries([...BARBER_SLOTS, 'beardColor'].map((s) => [s, o[s as OutfitSlot]]));
 
 /** The outfit as stored. */
 export const serializeOutfit = (o: Outfit): string =>
@@ -134,7 +168,10 @@ export const serializeOutfit = (o: Outfit): string =>
 
 /** Whether every worn item is one the player owns. */
 export const wearsOnlyOwned = (o: Outfit, owned: ReadonlySet<string>): boolean =>
-  OUTFIT_SLOTS.every((s) => o[s] === null || owned.has(o[s]!));
+  OUTFIT_SLOTS.every((s) => o[s] === null || owned.has(o[s]!) || (s === 'beardColor' && naturalBeard(o[s]) !== null));
+
+/** Whether a store item can be worn in `slot` (a hair colour also on the beard). */
+export const fitsSlot = (slot: OutfitSlot, item: StoreItem): boolean => fits(slot, item);
 
 // ---------------------------------------------------------------------------
 // Drawing. Head items are in the head's 200×200 box (src/avatar/avatar.ts); body items in the

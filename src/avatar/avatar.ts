@@ -4,7 +4,7 @@
 // stays (only `offered: false`), and an unknown one falls back to the default. Pure: no DOM.
 
 import { beardSvg, cutBack, cutFront, hairPaint, painted } from './barber.ts';
-import { hatSvg, headAccessorySvg } from './outfit.ts';
+import { hatSvg, headAccessorySvg, naturalBeard } from './outfit.ts';
 import type { Outfit } from './outfit.ts';
 
 export interface Avatar {
@@ -222,9 +222,14 @@ export function avatarSvg(a: Avatar, outfit: Outfit | null = null, view = '0 0 2
   const paint = hairPaint(outfit?.color ?? null, colorOf('hairColor', a.hairColor));
   const hair = paint.fill;
   const cut = outfit?.cut ?? null;
+  // The beard: a natural colour, a premium one (its own paint), or brown.
+  const bc = outfit?.beardColor ?? null;
+  const natural = naturalBeard(bc);
+  const beardPaint = bc && !natural ? hairPaint(bc, '#3a2a20') : null;
+  const defs = paint.defs + (beardPaint && beardPaint.defs !== paint.defs ? beardPaint.defs : '');
   return (
     `<svg viewBox="${view}" overflow="visible" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">` +
-    (paint.defs ? `<defs>${paint.defs}</defs>` : '') +
+    (defs ? `<defs>${defs}</defs>` : '') +
     painted(cut ? cutBack(cut, hair) : hairBack(a.hair, hair), paint) +
     `<path d="M72 168c6 10 50 10 56 0l6 32H66z" fill="${shade(skin, 0.85)}" stroke="${INK}" stroke-width="3"/>` +
     `<ellipse cx="46" cy="114" rx="8" ry="12" fill="${skin}" stroke="${INK}" stroke-width="3"/>` +
@@ -234,7 +239,9 @@ export function avatarSvg(a: Avatar, outfit: Outfit | null = null, view = '0 0 2
     eyes(a.eyes) +
     mouth(a.mouth) +
     extra(a.extra) +
-    (outfit?.color ? painted(beardSvg(outfit.beard, hair), paint) : beardSvg(outfit?.beard ?? null)) +
+    (beardPaint
+      ? painted(beardSvg(outfit?.beard ?? null, beardPaint.fill), beardPaint)
+      : beardSvg(outfit?.beard ?? null, natural ?? undefined)) +
     painted(cut ? cutFront(cut, hair) : hairFront(a.hair, hair, skin), paint) +
     (outfit ? hatSvg(outfit.hat) + headAccessorySvg(outfit.acc) : '') +
     `</svg>`
