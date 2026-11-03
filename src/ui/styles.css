@@ -9453,13 +9453,20 @@ a:focus-visible {
     height: calc(100dvh - var(--character-top, 120px));
     min-height: 460px;
   }
+  /* Eleven parts: the rail scrolls inside itself, the creator still fits the screen. */
   .character-parts {
     grid-row: 1 / 3;
-    gap: 6px;
+    gap: 5px;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .character-parts button {
+    flex: none;
   }
   .character-parts button {
     min-height: 0;
-    height: 52px;
+    height: 48px;
     padding: 4px 2px;
     display: flex;
     flex-direction: column;
@@ -11604,4 +11611,38 @@ a:focus-visible {
   .barber-kinds {
     display: none;
   }
+}
+
+/* The character's body (src/ui/CharacterCreator.tsx "Vücut"): the mirror shows the whole figure;
+   the ready types as figures; three sliders for a custom body. */
+.char-figure {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.char-figure svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.character-mirror.full .char-figure {
+  padding: 6% 0 2%;
+}
+.character-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.character-sliders label {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  font: 400 18px/1 var(--display);
+  letter-spacing: 0.04em;
+}
+.character-sliders input {
+  width: 100%;
+  accent-color: var(--pink);
 }

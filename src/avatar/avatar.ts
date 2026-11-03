@@ -4,14 +4,20 @@
 // stays (only `offered: false`), and an unknown one falls back to the default. Pure: no DOM.
 
 import { beardSvg, cutBack, cutFront, hairPaint, painted } from './barber.ts';
+import { isBody } from './body.ts';
 import { hatSvg, headAccessorySvg, naturalBeard } from './outfit.ts';
 import type { Outfit } from './outfit.ts';
 
 export interface Avatar {
   readonly head: string;
   readonly skin: string;
+  /** The body (src/avatar/body.ts): a ready type, or "c-<shoulders>-<waist>-<hips>". */
+  readonly body: string;
   readonly eyes: string;
+  readonly lashes: string;
   readonly mouth: string;
+  readonly lips: string;
+  readonly blush: string;
   readonly hair: string;
   readonly hairColor: string;
   readonly extra: string;
@@ -27,7 +33,19 @@ export interface AvatarOption {
 }
 
 /** The parts in the order the creator shows them. */
-export const AVATAR_PARTS: readonly AvatarPart[] = ['head', 'skin', 'eyes', 'mouth', 'hair', 'hairColor', 'extra'];
+export const AVATAR_PARTS: readonly AvatarPart[] = [
+  'head',
+  'skin',
+  'body',
+  'eyes',
+  'lashes',
+  'mouth',
+  'lips',
+  'blush',
+  'hair',
+  'hairColor',
+  'extra',
+];
 
 export const AVATAR_OPTIONS: Readonly<Record<AvatarPart, readonly AvatarOption[]>> = {
   head: [{ id: 'oval' }, { id: 'round' }, { id: 'jaw' }, { id: 'long' }],
@@ -52,8 +70,14 @@ export const AVATAR_OPTIONS: Readonly<Record<AvatarPart, readonly AvatarOption[]
     { id: 'stone', color: '#b7b4bc' },
     { id: 'demon', color: '#e0574a' },
   ],
+  // Body types (the ready ones; a custom body is stored as "c-…", see src/avatar/body.ts).
+  body: [{ id: 'slim' }, { id: 'mid' }, { id: 'broad' }, { id: 'curvy' }],
   eyes: [{ id: 'dot' }, { id: 'angry' }, { id: 'sleepy' }, { id: 'liner' }, { id: 'star' }, { id: 'x' }],
+  lashes: [{ id: 'none' }, { id: 'short' }, { id: 'long' }],
   mouth: [{ id: 'smirk' }, { id: 'grin' }, { id: 'flat' }, { id: 'tongue' }, { id: 'snarl' }],
+  // Lipstick colours a mouth; blush the cheeks. Either is for anyone.
+  lips: [{ id: 'none' }, { id: 'red' }, { id: 'black' }, { id: 'pink' }, { id: 'purple' }, { id: 'blue' }],
+  blush: [{ id: 'none' }, { id: 'pink' }, { id: 'peach' }],
   hair: [{ id: 'mohawk' }, { id: 'spikes' }, { id: 'messy' }, { id: 'buzz' }, { id: 'bob' }, { id: 'bald' }],
   hairColor: [
     { id: 'pink', color: '#ff2e93' },
@@ -69,15 +93,19 @@ export const AVATAR_OPTIONS: Readonly<Record<AvatarPart, readonly AvatarOption[]
 export const DEFAULT_AVATAR: Avatar = {
   head: 'oval',
   skin: 'wheat',
+  body: 'mid',
   eyes: 'angry',
+  lashes: 'none',
   mouth: 'smirk',
+  lips: 'none',
+  blush: 'none',
   hair: 'mohawk',
   hairColor: 'pink',
   extra: 'nosering',
 };
 
 const known = (part: AvatarPart, id: unknown): id is string =>
-  typeof id === 'string' && AVATAR_OPTIONS[part].some((o) => o.id === id);
+  part === 'body' ? isBody(id) : typeof id === 'string' && AVATAR_OPTIONS[part].some((o) => o.id === id);
 
 /** An avatar from anything (stored JSON, a request body): unknown parts become the default's. */
 export function parseAvatar(input: unknown): Avatar {
@@ -190,6 +218,38 @@ function eyes(kind: string): string {
   }
 }
 
+const LIPS: Readonly<Record<string, string>> = {
+  red: '#c8182a',
+  black: '#141016',
+  pink: '#ff2e93',
+  purple: '#7a2bb8',
+  blue: '#2b6fd6',
+};
+
+/** Lashes at the eyes' outer corners. */
+function lashes(kind: string): string {
+  if (kind === 'none') return '';
+  const n = kind === 'long' ? 9 : 6;
+  return `<path d="M${68 - n * 0.3} 102l-${n} -${n}M${74} 99l-${n * 0.4} -${n}M${132 + n * 0.3} 102l${n} -${n}M${126} 99l${n * 0.4} -${n}" stroke="${INK}" stroke-width="2.5" stroke-linecap="round"/>`;
+}
+
+/** Blush on the cheeks. */
+function blush(kind: string): string {
+  const c = kind === 'pink' ? '#ff6f9a' : kind === 'peach' ? '#ffa36b' : null;
+  return c
+    ? `<ellipse cx="66" cy="128" rx="11" ry="6" fill="${c}" opacity=".45"/><ellipse cx="134" cy="128" rx="11" ry="6" fill="${c}" opacity=".45"/>`
+    : '';
+}
+
+/** The mouth, in a lipstick's colour when one is worn (its lines thicker). */
+function lipsMouth(kind: string, lips: string): string {
+  const c = LIPS[lips];
+  if (!c) return mouth(kind);
+  return mouth(kind)
+    .replace(/stroke="#141016" stroke-width="(\d+)"/g, (_m, w) => `stroke="${c}" stroke-width="${Number(w) + 2}"`)
+    .replace(/fill="#fff"/g, `fill="${c}"`);
+}
+
 function mouth(kind: string): string {
   switch (kind) {
     case 'grin':
@@ -249,8 +309,10 @@ export function avatarSvg(a: Avatar, outfit: Outfit | null = null, view = '0 0 2
     `<ellipse cx="154" cy="114" rx="8" ry="12" fill="${skin}" stroke="${INK}" stroke-width="3"/>` +
     `<path d="${headPath(a.head)}" fill="${skin}" stroke="${INK}" stroke-width="4"/>` +
     `<path d="M98 112c-2 8-4 14 2 18" fill="none" stroke="${shade(skin, 0.7)}" stroke-width="3" stroke-linecap="round"/>` +
+    blush(a.blush) +
     eyes(a.eyes) +
-    mouth(a.mouth) +
+    lashes(a.lashes) +
+    lipsMouth(a.mouth, a.lips) +
     extra(a.extra) +
     (beardPaint
       ? painted(beardSvg(outfit?.beard ?? null, beardPaint.fill), beardPaint)

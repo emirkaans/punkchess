@@ -102,4 +102,20 @@ describe('mağaza', () => {
     const hairOnly = avatarSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, beard: 'full', color: 'grad' });
     expect(hairOnly).toContain('#3a2a20');
   });
+
+  it('vücut: her eşya her vücut tipinde çizilir; özel vücut kaydedilip okunur', async () => {
+    const { parseAvatar, serializeAvatar } = await import('../src/avatar/avatar.ts');
+    for (const body of ['slim', 'mid', 'broad', 'curvy', 'c-0-100-0', 'c-100-0-100']) {
+      const avatar = { ...DEFAULT_AVATAR, body };
+      for (const item of STORE_ITEMS) {
+        const svg = figureSvg(avatar, { ...EMPTY_OUTFIT, [item.slot]: item.id });
+        expect(svg).not.toMatch(/undefined|NaN/);
+      }
+    }
+    const custom = { ...DEFAULT_AVATAR, body: 'c-30-60-90', lashes: 'long', lips: 'red', blush: 'pink' };
+    expect(parseAvatar(serializeAvatar(custom))).toEqual(custom);
+    expect(parseAvatar({ ...custom, body: 'c-30-60-900' }).body).toBe('mid');
+    // An old avatar (no body, no face extras) gets the defaults.
+    expect(parseAvatar({ head: 'round' }).body).toBe('mid');
+  });
 });

@@ -5,9 +5,20 @@
 // Pure: no DOM.
 
 import { MORE_BARBER_ITEMS } from './barber-more.ts';
-import { MORE_ITEMS, drawMoreHat, drawMoreHeadAcc, drawMoreJacket, drawMoreNeckAcc, drawMorePants } from './more.ts';
+import {
+  MORE_ITEMS,
+  SKIRT_ITEMS,
+  drawMoreHat,
+  drawMoreHeadAcc,
+  drawMoreJacket,
+  drawMoreNeckAcc,
+  drawMorePants,
+  drawSkirt,
+} from './more.ts';
+import { NECK_BAND, bodyGeom, bootsSvg, clipTo } from './body.ts';
+import type { BodyGeom } from './body.ts';
 
-export type OutfitSlot = 'jacket' | 'pants' | 'hat' | 'acc' | 'cut' | 'color' | 'beard' | 'beardColor';
+export type OutfitSlot = 'jacket' | 'pants' | 'skirt' | 'hat' | 'acc' | 'cut' | 'color' | 'beard' | 'beardColor';
 
 export interface StoreItem {
   readonly id: string;
@@ -21,6 +32,7 @@ export type Outfit = Readonly<Record<OutfitSlot, string | null>>;
 export const OUTFIT_SLOTS: readonly OutfitSlot[] = [
   'jacket',
   'pants',
+  'skirt',
   'hat',
   'acc',
   'cut',
@@ -29,7 +41,7 @@ export const OUTFIT_SLOTS: readonly OutfitSlot[] = [
   'beardColor',
 ];
 /** What each shop sells. */
-export const STORE_SLOTS: readonly OutfitSlot[] = ['jacket', 'pants', 'hat', 'acc'];
+export const STORE_SLOTS: readonly OutfitSlot[] = ['jacket', 'pants', 'skirt', 'hat', 'acc'];
 export const BARBER_SLOTS: readonly OutfitSlot[] = ['cut', 'color', 'beard'];
 
 /**
@@ -95,6 +107,7 @@ export const STORE_ITEMS: readonly StoreItem[] = [
   // The second wave (src/avatar/more.ts, src/avatar/barber-more.ts).
   ...MORE_ITEMS,
   ...MORE_BARBER_ITEMS,
+  ...SKIRT_ITEMS,
 ];
 
 export const storeItem = (id: string): StoreItem | undefined => STORE_ITEMS.find((i) => i.id === id);
@@ -102,6 +115,7 @@ export const storeItem = (id: string): StoreItem | undefined => STORE_ITEMS.find
 export const EMPTY_OUTFIT: Outfit = {
   jacket: null,
   pants: null,
+  skirt: null,
   hat: null,
   acc: null,
   cut: null,
@@ -225,15 +239,15 @@ const studs = (pts: readonly (readonly [number, number])[]) =>
     .join('');
 
 /** The upper body: a jacket, or a plain punk T-shirt; arms and hands in `skin`. */
-export function jacketSvg(id: string | null, skin: string): string {
-  const more = id ? drawMoreJacket(id, skin) : null;
+export function jacketSvg(id: string | null, skin: string, g: BodyGeom = bodyGeom()): string {
+  const more = id ? drawMoreJacket(id, skin, g) : null;
   if (more) return more;
-  const torso = 'M62 128c4-10 14-14 38-14s34 4 38 14l6 104H56z';
-  const armL = 'M62 128l-18 10-4 84h16l6-62z';
-  const armR = 'M138 128l18 10 4 84h-16l-6-62z';
-  const hands = `<circle cx="48" cy="226" r="8" fill="${skin}" stroke="${INK}" stroke-width="3"/><circle cx="152" cy="226" r="8" fill="${skin}" stroke="${INK}" stroke-width="3"/>`;
+  const { torso, armL, armR } = g;
+  const hands = g.hands
+    .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="${skin}" stroke="${INK}" stroke-width="3"/>`)
+    .join('');
   const part = (fill: string, arms = fill, extra = '') =>
-    `<path d="${armL}" fill="${arms}" stroke="${INK}" stroke-width="3"/><path d="${armR}" fill="${arms}" stroke="${INK}" stroke-width="3"/><path d="${torso}" fill="${fill}" stroke="${INK}" stroke-width="3"/>${extra}${hands}`;
+    `<path d="${armL}" fill="${arms}" stroke="${INK}" stroke-width="3"/><path d="${armR}" fill="${arms}" stroke="${INK}" stroke-width="3"/><path d="${torso}" fill="${fill}" stroke="${INK}" stroke-width="3"/>${clipTo([torso, armL, armR, NECK_BAND], extra)}${hands}`;
   switch (id) {
     case 'leather':
       return part(
@@ -288,13 +302,21 @@ export function jacketSvg(id: string | null, skin: string): string {
   }
 }
 
-/** The legs: trousers (plain dark ones by default) and boots. */
-export function pantsSvg(id: string | null, skin: string): string {
-  const more = id ? drawMorePants(id, skin) : null;
+/** Bare legs and boots (a skirt without trousers). */
+export const bareLegs = (skin: string, g: BodyGeom): string =>
+  `<path d="${g.legL}${g.legR}" fill="${skin}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>${bootsSvg(g, INK)}`;
+
+/** A skirt, hanging from the waist (null: none). */
+export const skirtSvg = (id: string | null, g: BodyGeom = bodyGeom()): string => (id ? (drawSkirt(id, g) ?? '') : '');
+
+/** The legs: trousers (plain dark ones by default) and boots; 'bare' for bare legs. */
+export function pantsSvg(id: string | null, skin: string, g: BodyGeom = bodyGeom()): string {
+  if (id === 'bare') return bareLegs(skin, g);
+  const more = id ? drawMorePants(id, skin, g) : null;
   if (more) return more;
   const legs = (fill: string, extra = '') =>
-    `<path d="M58 230h84l-4 100h-26l-10-76-10 76H66z" fill="${fill}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>${extra}`;
-  const boots = `<path d="M62 328h30l2 18H56c0-8 2-14 6-18zM108 328h30c4 4 6 10 6 18h-38z" fill="#141016" stroke="${INK}" stroke-width="3"/><path d="M60 340h34M106 340h38" stroke="#5a5662" stroke-width="2"/>`;
+    `<path d="${g.legL}${g.legR}" fill="${fill}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>${clipTo([g.legL, g.legR], extra)}`;
+  const boots = bootsSvg(g, INK);
   switch (id) {
     case 'ripped':
       return (

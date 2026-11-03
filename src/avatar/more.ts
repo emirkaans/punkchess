@@ -4,6 +4,8 @@
 // head items in the head's 200×200 box (src/avatar/avatar.ts). Pure: no DOM.
 
 import type { OutfitSlot } from './outfit.ts';
+import { NECK_BAND, bootsSvg, clipTo } from './body.ts';
+import type { BodyGeom } from './body.ts';
 
 const INK = '#141016';
 
@@ -118,9 +120,6 @@ interface JacketSpec {
   readonly extra?: string;
 }
 
-const TORSO = 'M62 128c4-10 14-14 38-14s34 4 38 14l6 104H56z';
-const ARM_L = 'M62 128l-18 10-4 84h16l6-62z';
-const ARM_R = 'M138 128l18 10 4 84h-16l-6-62z';
 const ZIP = '<path d="M100 116v116" stroke="#8a8590" stroke-width="2" stroke-dasharray="3 3"/>';
 const LAPELS = (c: string) =>
   `<path d="M88 116l12 34 12-34" fill="none" stroke="${c}" stroke-width="5" stroke-linejoin="round"/>`;
@@ -243,15 +242,17 @@ const JACKETS: Readonly<Record<string, JacketSpec>> = {
   },
 };
 
-function moreJacket(id: string, skin: string): string | null {
+function moreJacket(id: string, skin: string, g: BodyGeom): string | null {
   const j = JACKETS[id];
   if (!j) return null;
   const arms = j.arms === 'skin' ? skin : (j.arms ?? j.c);
-  const hands = `<circle cx="48" cy="226" r="8" fill="${skin}" stroke="${INK}" stroke-width="3"/><circle cx="152" cy="226" r="8" fill="${skin}" stroke="${INK}" stroke-width="3"/>`;
+  const hands = g.hands
+    .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="${skin}" stroke="${INK}" stroke-width="3"/>`)
+    .join('');
   return (
-    `<path d="${ARM_L}" fill="${arms}" stroke="${INK}" stroke-width="3"/><path d="${ARM_R}" fill="${arms}" stroke="${INK}" stroke-width="3"/>` +
-    `<path d="${TORSO}" fill="${j.c}"/>${patterned(TORSO, [56, 114, 88, 118], j.pattern, j.pc ?? [])}<path d="${TORSO}" fill="none" stroke="${INK}" stroke-width="3"/>` +
-    (j.extra ?? '') +
+    `<path d="${g.armL}" fill="${arms}" stroke="${INK}" stroke-width="3"/><path d="${g.armR}" fill="${arms}" stroke="${INK}" stroke-width="3"/>` +
+    `<path d="${g.torso}" fill="${j.c}"/>${patterned(g.torso, [40, 112, 120, 132], j.pattern, j.pc ?? [])}<path d="${g.torso}" fill="none" stroke="${INK}" stroke-width="3"/>` +
+    clipTo([g.torso, g.armL, g.armR, NECK_BAND], j.extra ?? '') +
     hands
   );
 }
@@ -267,11 +268,6 @@ interface PantsSpec {
   readonly wide?: boolean;
   readonly extra?: string;
 }
-
-const LEGS = 'M58 230h84l-4 100h-26l-10-76-10 76H66z';
-const WIDE = 'M58 230h84l8 100h-36l-14-76-14 76H50z';
-const SHORTS = 'M58 230h84l-2 44h-34l-6-22-6 22H60z';
-const BOOTS = `<path d="M62 328h30l2 18H56c0-8 2-14 6-18zM108 328h30c4 4 6 10 6 18h-38z" fill="#141016" stroke="${INK}" stroke-width="3"/><path d="M60 340h34M106 340h38" stroke="#5a5662" stroke-width="2"/>`;
 
 const PANTS: Readonly<Record<string, PantsSpec>> = {
   blackskinny: { c: '#151318', extra: `<path d="M74 240v84M126 240v84" stroke="#2c2a30" stroke-width="2"/>` },
@@ -318,19 +314,22 @@ const PANTS: Readonly<Record<string, PantsSpec>> = {
   neonp: { c: '#c6ff3d', extra: `<path d="M100 234v18" stroke="#8fb81e" stroke-width="2"/>` },
 };
 
-function morePants(id: string, skin: string): string | null {
+function morePants(id: string, skin: string, g: BodyGeom): string | null {
   const p = PANTS[id];
   if (!p) return null;
-  const shape = p.shorts ? SHORTS : p.wide ? WIDE : LEGS;
-  // Shorts: bare legs under them.
-  const bare = p.shorts
-    ? `<path d="M64 268h30l-2 62H66zM106 268h30l-2 62h-26z" fill="${skin}" stroke="${INK}" stroke-width="3"/>`
-    : '';
+  const legs = g.legL + g.legR;
+  // Wide legs: the same legs, flaring out from the knee.
+  const flare = p.wide ? ` transform="translate(100 0) scale(1.14 1) translate(-100 0)"` : '';
+  const trousers =
+    `<g${flare}><path d="${legs}" fill="${p.c}"/>${patterned(legs, [40, 228, 120, 104], p.pattern, p.pc ?? [])}` +
+    `<path d="${legs}" fill="none" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>${clipTo([legs], p.extra ?? '')}</g>`;
+  if (!p.shorts) return trousers + bootsSvg(g, INK);
+  // Shorts: bare legs, the trousers cut above the knee.
   return (
-    bare +
-    `<path d="${shape}" fill="${p.c}"/>${patterned(shape, [48, 228, 104, 104], p.pattern, p.pc ?? [])}<path d="${shape}" fill="none" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>` +
-    (p.extra ?? '') +
-    BOOTS
+    `<path d="${legs}" fill="${skin}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>` +
+    clipTo(['M20 200H180V276H20z'], trousers) +
+    `<path d="M40 276H160" stroke="none"/>` +
+    bootsSvg(g, INK)
   );
 }
 
@@ -406,6 +405,122 @@ const ACC_NECK: Readonly<Record<string, string>> = {
 
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Skirts: hung from the waist, over trousers or bare legs.
+
+interface SkirtSpec {
+  readonly c: string;
+  readonly len: 'mini' | 'midi' | 'long';
+  readonly shape: 'a' | 'pencil' | 'tutu' | 'pleat' | 'layer';
+  readonly pattern?: string;
+  readonly pc?: readonly string[];
+  readonly extra?: string;
+}
+
+const SKIRTS: Readonly<Record<string, SkirtSpec>> = {
+  kilt: {
+    c: '#b3202a',
+    len: 'midi',
+    shape: 'pleat',
+    pattern: 'plaid',
+    pc: ['#141016', '#e8c84a'],
+    extra: `<rect x="112" y="226" width="5" height="22" rx="2" fill="#d8d4dc" stroke="${INK}" stroke-width="1.5"/>`,
+  },
+  blackmini: { c: '#151318', len: 'mini', shape: 'a' },
+  leathermini: {
+    c: '#1d1b21',
+    len: 'mini',
+    shape: 'pencil',
+    extra: `<path d="M100 204v44" stroke="#8a8590" stroke-width="2" stroke-dasharray="3 3"/>`,
+  },
+  denimmini: {
+    c: '#3a5f95',
+    len: 'mini',
+    shape: 'a',
+    extra: `<path d="M70 212h60" stroke="#e9e4d8" stroke-width="1.5" stroke-dasharray="2 2"/>`,
+  },
+  tutupink: { c: '#ff2e93', len: 'mini', shape: 'tutu' },
+  tutublack: { c: '#1d1b21', len: 'mini', shape: 'tutu' },
+  pleatcheck: { c: '#f1eee8', len: 'mini', shape: 'pleat', pattern: 'check', pc: ['#141016'] },
+  plaidmidi: { c: '#2e5a3a', len: 'midi', shape: 'a', pattern: 'plaid', pc: ['#141016', '#e8c84a'] },
+  leopardskirt: { c: '#d9a441', len: 'midi', shape: 'pencil', pattern: 'leopard', pc: ['#3a2410'] },
+  zebraskirt: { c: '#f1eee8', len: 'mini', shape: 'a', pattern: 'zebra', pc: ['#141016'] },
+  camoskirt: { c: '#6b7a45', len: 'midi', shape: 'a', pattern: 'camo', pc: ['#4a5530', '#2f3620'] },
+  longblack: { c: '#151318', len: 'long', shape: 'a' },
+  layered: { c: '#7a2bb8', len: 'midi', shape: 'layer' },
+  chainskirt: {
+    c: '#1d1b21',
+    len: 'mini',
+    shape: 'a',
+    extra: `<path d="M66 214c12 18 56 18 68 0" fill="none" stroke="#d8d4dc" stroke-width="3" stroke-dasharray="5 3"/>`,
+  },
+  studskirt: {
+    c: '#141216',
+    len: 'mini',
+    shape: 'pencil',
+    extra: [70, 80, 90, 100, 110, 120, 130]
+      .map((x) => `<circle cx="${x}" cy="208" r="2.6" fill="#d8d4dc" stroke="${INK}" stroke-width=".8"/>`)
+      .join(''),
+  },
+  neonmini: { c: '#c6ff3d', len: 'mini', shape: 'a' },
+  purplemidi: { c: '#5b2a86', len: 'midi', shape: 'pleat' },
+  splatterskirt: { c: '#1a181d', len: 'midi', shape: 'a', pattern: 'splatter', pc: ['#ff2e93', '#c6ff3d'] },
+  stripeskirt: { c: '#f1eee8', len: 'midi', shape: 'pencil', pattern: 'stripesH', pc: ['#141016'] },
+  redpencil: {
+    c: '#c8182a',
+    len: 'midi',
+    shape: 'pencil',
+    extra: `<path d="M100 270v26" stroke="#8e1420" stroke-width="2"/>`,
+  },
+};
+
+function skirt(id: string, g: BodyGeom): string | null {
+  const k = SKIRTS[id];
+  if (!k) return null;
+  const top = g.waistY;
+  const bottom = k.len === 'mini' ? 262 : k.len === 'midi' ? 296 : 330;
+  const w = g.W + 2;
+  // How wide the hem is: a pencil skirt hugs the hips, an A-line and a tutu flare.
+  const hem = k.shape === 'pencil' ? g.H + 2 : k.shape === 'tutu' ? g.H + 30 : g.H + 14 + (bottom - 262) * 0.2;
+  const hip = Math.max(g.H + 2, w);
+  const f = (x: number) => x.toFixed(1);
+  let shape =
+    `M${f(100 - w)} ${top} C${f(100 - hip)} ${top + 18} ${f(100 - hip)} ${top + 30} ${f(100 - hem)} ${bottom} ` +
+    `L${f(100 + hem)} ${bottom} C${f(100 + hip)} ${top + 30} ${f(100 + hip)} ${top + 18} ${f(100 + w)} ${top} Z`;
+  if (k.shape === 'tutu') {
+    // A tutu: a jagged hem.
+    const n = 10;
+    let d = `M${f(100 - w)} ${top} L${f(100 - hem)} ${bottom - 6}`;
+    for (let i = 1; i <= n; i++)
+      d += ` L${f(100 - hem + ((2 * hem) / n) * (i - 0.5))} ${bottom + 4} L${f(100 - hem + ((2 * hem) / n) * i)} ${bottom - 6}`;
+    shape = d + ` L${f(100 + w)} ${top} Z`;
+  }
+  let detail = '';
+  if (k.shape === 'pleat') {
+    for (let x = -hem + 10; x < hem; x += 10)
+      detail += `<path d="M${f(100 + x * 0.6)} ${top + 6} L${f(100 + x)} ${bottom}" stroke="${INK}" stroke-width="1.2" opacity=".5"/>`;
+  }
+  if (k.shape === 'layer') {
+    for (const y of [top + 22, top + 46, top + 70])
+      if (y < bottom)
+        detail += `<path d="M${f(100 - hem)} ${y}q${f(hem / 2)} 8 ${f(hem)} 0t${f(hem)} 0" fill="none" stroke="#3e1c5e" stroke-width="3"/>`;
+  }
+  return (
+    `<path d="${shape}" fill="${k.c}"/>${patterned(shape, [40, top, 120, bottom - top + 6], k.pattern, k.pc ?? [])}` +
+    clipTo([shape], detail + (k.extra ?? '')) +
+    `<path d="${shape}" fill="none" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>` +
+    `<path d="M${f(100 - w)} ${top + 3}H${f(100 + w)}" stroke="${INK}" stroke-width="2"/>`
+  );
+}
+
+/** The skirts and their prices (punk coins). */
+export const SKIRT_ITEMS: readonly { readonly id: string; readonly slot: OutfitSlot; readonly price: number }[] =
+  Object.keys(SKIRTS).map((id, i) => ({
+    id,
+    slot: 'skirt' as const,
+    price: [220, 90, 180, 110, 160, 160, 150, 170, 200, 170, 140, 150, 210, 190, 200, 120, 160, 170, 150, 140][i],
+  }));
+
 /** The new goods and their prices (punk coins). */
 export const MORE_ITEMS: readonly { readonly id: string; readonly slot: OutfitSlot; readonly price: number }[] = [
   ...Object.keys(JACKETS).map((id, i) => ({
@@ -432,6 +547,7 @@ export const MORE_ITEMS: readonly { readonly id: string; readonly slot: OutfitSl
 
 /** A new jacket, trousers, hat or accessory drawn, or null when `id` is not one. */
 export const drawMoreJacket = moreJacket;
+export const drawSkirt = (id: string, g: BodyGeom): string | null => skirt(id, g);
 export const drawMorePants = morePants;
 export const drawMoreHat = (id: string | null): string | null => (id && HATS[id]) || null;
 export const drawMoreHeadAcc = (id: string | null): string | null => (id && ACC_HEAD[id]) || null;

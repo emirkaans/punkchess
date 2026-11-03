@@ -1,4 +1,7 @@
+import { EMPTY_OUTFIT } from '../avatar/outfit.ts';
 import type { Outfit } from '../avatar/outfit.ts';
+import { BODY_TYPES, bodyShape, customBody } from '../avatar/body.ts';
+import { figureSvg } from '../avatar/figure.ts';
 import { useEffect, useState } from 'react';
 import {
   AVATAR_OPTIONS,
@@ -17,6 +20,10 @@ import { useI18n } from './i18n.tsx';
 const PART_ICONS: Readonly<Record<AvatarPart, string>> = {
   head: 'M12 3c4 0 7 4 7 9s-3 9-7 9-7-4-7-9 3-9 7-9z',
   skin: 'M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z',
+  body: 'M12 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM7 9h10l-1 6h-1l-1 7h-4l-1-7H8z',
+  lashes: 'M3 13c4-5 14-5 18 0M6 10L4 7M10 8.5L9.5 5M14 8.5L14.5 5M18 10l2-3',
+  lips: 'M3 12c3-4 6-4 9-2 3-2 6-2 9 2-3 5-15 5-18 0zM3 12h18',
+  blush: 'M7 10a3 2 0 1 0 0 4 3 2 0 0 0 0-4zM17 10a3 2 0 1 0 0 4 3 2 0 0 0 0-4z',
   eyes: 'M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
   mouth: 'M5 11c3 5 11 5 14 0',
   hair: 'M6 14L5 4l4 4 3-6 3 6 4-4-1 10',
@@ -106,7 +113,21 @@ export function CharacterCreator({ next, onOpen }: Props) {
   }
 
   const colour = optionColor(part, AVATAR_OPTIONS[part][0].id) !== null;
-  const label = (p: AvatarPart, id: string) => t(`character.opt.${p}.${id}` as MessageKey);
+  const label = (p: AvatarPart, id: string) =>
+    p === 'body' && !(id in BODY_TYPES) ? t('character.opt.body.custom') : t(`character.opt.${p}.${id}` as MessageKey);
+  // The body is seen full length (with what the player wears); every other part on the head.
+  const full = part === 'body';
+  const outfit = account.user?.outfit ?? EMPTY_OUTFIT;
+  const shape = bodyShape(avatar.body);
+  const setShape = (k: 'shoulders' | 'waist' | 'hips', v: number) =>
+    setAvatar({
+      ...avatar,
+      body: customBody({
+        s: k === 'shoulders' ? v : shape.s,
+        w: k === 'waist' ? v : shape.w,
+        h: k === 'hips' ? v : shape.h,
+      }),
+    });
   return (
     <main className="character-page">
       <h1 className="character-title">{t('character.title')}</h1>
@@ -132,8 +153,12 @@ export function CharacterCreator({ next, onOpen }: Props) {
             </button>
           ))}
         </div>
-        <div className="character-mirror">
-          <AvatarView avatar={avatar} />
+        <div className={full ? 'character-mirror full' : 'character-mirror'}>
+          {full ? (
+            <span className="char-figure" dangerouslySetInnerHTML={{ __html: figureSvg(avatar, outfit) }} />
+          ) : (
+            <AvatarView avatar={avatar} />
+          )}
         </div>
         <div className="character-side" role="tabpanel">
           <span className="character-picked">
@@ -158,11 +183,41 @@ export function CharacterCreator({ next, onOpen }: Props) {
                   aria-pressed={avatar[part] === o.id}
                   onClick={() => setAvatar({ ...avatar, [part]: o.id })}
                 >
-                  <AvatarView avatar={{ ...avatar, [part]: o.id }} />
+                  {full ? (
+                    <span
+                      className="char-figure"
+                      dangerouslySetInnerHTML={{ __html: figureSvg({ ...avatar, body: o.id }, outfit) }}
+                    />
+                  ) : (
+                    <AvatarView avatar={{ ...avatar, [part]: o.id }} />
+                  )}
                 </button>
               ),
             )}
           </div>
+          {full && (
+            // Fine tuning: moving one makes the body "custom".
+            <div className="character-sliders">
+              {(
+                [
+                  ['shoulders', shape.s],
+                  ['waist', shape.w],
+                  ['hips', shape.h],
+                ] as const
+              ).map(([k, v]) => (
+                <label key={k}>
+                  <span>{t(`character.body.${k}`)}</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={v}
+                    onChange={(e) => setShape(k, Number(e.target.value))}
+                  />
+                </label>
+              ))}
+            </div>
+          )}
           <div className="character-actions">
             <button onClick={() => setAvatar(randomAvatar())}>🎲 {t('character.random')}</button>
             <button className="primary" disabled={saving} onClick={() => void save()}>
