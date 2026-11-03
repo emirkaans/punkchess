@@ -5814,7 +5814,8 @@ button.primary:hover:not(:disabled) {
     gap: 4px 18px;
   }
   .hero {
-    padding: 28px 16px 40px;
+    /* The hero slides under the see-through top bar: its text starts below the bar. */
+    padding: calc(var(--toolbar-h, 73px) + 28px) 16px 40px;
   }
   .hero-image {
     object-position: 80% center;
@@ -11388,6 +11389,54 @@ a:focus-visible {
 }
 @media (max-width: 340px) {
   .account-coins {
+    display: none;
+  }
+}
+
+/* Phones: the ☰ menu fits the screen. Pages two to a row without their line; the street's
+   storefronts small, with only their names. */
+@media (max-width: 760px) {
+  .menu.open {
+    max-height: calc(100dvh - var(--toolbar-h, 64px));
+    overflow-y: auto;
+  }
+  .menu-drop:not(.menu-street) .menu-drop-items {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 10px;
+  }
+  .menu .menu-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+    min-height: 44px;
+    padding: 4px 2px;
+  }
+  .menu-row .menu-ic {
+    grid-row: auto;
+    width: 28px;
+    height: 28px;
+    padding: 5px;
+  }
+  .menu-row span {
+    display: none;
+  }
+  .menu-row b {
+    font-size: 19px;
+  }
+  .menu-drop-title,
+  .menu-street .menu-drop-title {
+    padding: 8px 0 2px;
+  }
+  .menu-street .menu-drop-items {
+    gap: 10px;
+    padding: 0 6px 6px;
+  }
+  .menu-front {
+    max-width: 64px;
+  }
+  .menu .menu-shop b {
+    font-size: 14px;
+  }
+  .menu .menu-shop span:not(.menu-front) {
     display: none;
   }
 }
