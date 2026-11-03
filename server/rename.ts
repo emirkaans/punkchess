@@ -67,6 +67,7 @@ export async function handleRename(request: Request, env: AuthEnv, url: URL): Pr
       cost: renameCost(before.count),
       nextAt: waiting ? nextAt : null,
       balance,
+      staff: staff !== null,
     } satisfies RenameInfo);
   }
 

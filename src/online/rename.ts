@@ -34,4 +34,6 @@ export interface RenameInfo {
   /** When a change is allowed again (ms), or null: now. */
   readonly nextAt: number | null;
   readonly balance: number;
+  /** Staff: their own changes are free and have no wait. */
+  readonly staff: boolean;
 }

@@ -96,9 +96,11 @@ export function RenameDialog({ onDone, onClose }: { onDone: (username: string) =
                 ? t('rename.capitals')
                 : cost > 0
                   ? t('rename.cost', { n: String(cost) })
-                  : t('rename.free')}
+                  : info?.staff
+                    ? t('rename.staff')
+                    : t('rename.free')}
         </p>
-        <p className="muted rename-rules">{t('rename.rules')}</p>
+        <p className="muted rename-rules">{t(info?.staff ? 'rename.staffRules' : 'rename.rules')}</p>
         <div className="rename-actions">
           <button type="button" onClick={onClose}>
             {t('settings.back')}
