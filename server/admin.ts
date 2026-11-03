@@ -250,10 +250,25 @@ export async function handleAdmin(request: Request, env: Env, url: URL): Promise
       const name = typeof body.username === 'string' ? body.username.trim() : '';
       const problem = usernameProblem(name);
       if (problem) return json({ error: problem }, 400);
-      if (name.toLowerCase() !== target.username.toLowerCase() && (await usernameTaken(env, name))) {
+      if (name === target.username) return json({ error: 'same' }, 400);
+      // A name in use, or held for whoever gave it up lately, as for a player's own change.
+      if (name.toLowerCase() !== target.username.toLowerCase() && (await usernameTaken(env, name, target.id))) {
         return json({ error: 'taken' }, 409);
       }
-      await db.prepare('UPDATE users SET username = ?1 WHERE id = ?2').bind(name, target.id).run();
+      // Like a player's own change, the old name is held and its link leads to the new one; it is
+      // marked as staff's, so it costs the player nothing and does not start their 30 days.
+      try {
+        await db.batch([
+          db.prepare('UPDATE users SET username = ?1 WHERE id = ?2').bind(name, target.id),
+          db
+            .prepare(
+              'INSERT INTO username_history (user_id, old_name, new_name, changed_at, paid, by_staff) VALUES (?1, ?2, ?3, ?4, 0, ?5)',
+            )
+            .bind(target.id, target.username, name, now, staff.username),
+        ]);
+      } catch {
+        return json({ error: 'taken' }, 409);
+      }
       await log(db, staff, action, target.username, name);
     } else {
       const next = body.role === null ? null : roleOf(body.role);

@@ -8,6 +8,7 @@
 // balance covers it.
 
 import { usernameProblem } from '../src/online/account.ts';
+import { isStaffRole } from '../src/online/admin.ts';
 import { dailyDay } from '../src/online/daily.ts';
 import { RENAME_RULES, nextRenameAt, renameCost, sameName } from '../src/online/rename.ts';
 import type { RenameInfo } from '../src/online/rename.ts';
@@ -26,7 +27,7 @@ async function changes(db: D1Database, userId: string): Promise<{ count: number;
   const row = await db
     .prepare(
       `SELECT count(*) AS n, max(changed_at) AS last FROM username_history
-       WHERE user_id = ?1 AND lower(old_name) <> lower(new_name)`,
+       WHERE user_id = ?1 AND lower(old_name) <> lower(new_name) AND by_staff IS NULL`,
     )
     .bind(userId)
     .first<{ n: number; last: number | null }>();
@@ -53,7 +54,9 @@ export async function handleRename(request: Request, env: AuthEnv, url: URL): Pr
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'signed-out' }, 401);
   const now = Date.now();
-  const before = await changes(env.DB, user.id);
+  // Staff change their own name freely (no coins, no 30 days); it is logged as theirs.
+  const staff = isStaffRole(user.role) ? user.username : null;
+  const before = staff ? { count: 0, lastAt: null } : await changes(env.DB, user.id);
   const nextAt = nextRenameAt(before.lastAt);
   const waiting = nextAt !== null && nextAt > now;
 
@@ -75,14 +78,14 @@ export async function handleRename(request: Request, env: AuthEnv, url: URL): Pr
   const problem = usernameProblem(name);
   if (problem) return json({ error: problem }, 400);
   const history = env.DB.prepare(
-    'INSERT INTO username_history (user_id, old_name, new_name, changed_at, paid) VALUES (?1, ?2, ?3, ?4, ?5)',
+    'INSERT INTO username_history (user_id, old_name, new_name, changed_at, paid, by_staff) VALUES (?1, ?2, ?3, ?4, ?5, ?6)',
   );
 
   // Capitals only: free, any time.
   if (sameName(name, user.username)) {
     await env.DB.batch([
       env.DB.prepare('UPDATE users SET username = ?1 WHERE id = ?2').bind(name, user.id),
-      history.bind(user.id, user.username, name, now, 0),
+      history.bind(user.id, user.username, name, now, 0, staff),
     ]);
     return json({ username: name });
   }
@@ -93,7 +96,7 @@ export async function handleRename(request: Request, env: AuthEnv, url: URL): Pr
   if (cost === 0) {
     await env.DB.batch([
       env.DB.prepare('UPDATE users SET username = ?1 WHERE id = ?2').bind(name, user.id),
-      history.bind(user.id, user.username, name, now, 0),
+      history.bind(user.id, user.username, name, now, 0, staff),
     ]);
     return json({ username: name });
   }
