@@ -5815,7 +5815,29 @@ button.primary:hover:not(:disabled) {
   }
   .hero {
     /* The hero slides under the see-through top bar: its text starts below the bar. */
-    padding: calc(var(--toolbar-h, 73px) + 28px) 16px 40px;
+    padding: calc(var(--toolbar-h, 73px) + 24px) 16px 24px;
+  }
+  /* The whole hero on the first screen: the two buttons side by side, smaller. */
+  .hero .ctas {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .hero .cta {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 50px;
+    min-height: 0;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 21px;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  .hero .cta svg:last-child {
+    display: none;
+  }
+  .hero .daily-box {
+    padding: 8px 12px;
   }
   .hero-image {
     object-position: 80% center;
