@@ -5,7 +5,7 @@ import type { Color } from '../../engine/index.ts';
 import { quickTimeControls } from '../../online/lobby.ts';
 import type { Seek } from '../../online/lobby.ts';
 import type { MessageKey } from '../../i18n/index.ts';
-import { useI18n } from '../i18n.tsx';
+import { useI18n, withEnglishWords } from '../i18n.tsx';
 import type { Mode } from '../settings.ts';
 import { ApiError, createOnlineGame } from './connection.ts';
 import { playerIdentity, useLobby } from './lobbyConnection.ts';
@@ -93,7 +93,7 @@ export function LobbyCard({
         <div className="lobby-title">
           <div className="analysis-head">
             {BOLT}
-            <h1>{t('online.title')}</h1>
+            <h1>{withEnglishWords(t('online.title'))}</h1>
           </div>
           <span className={`lobby-online${lobby.status === 'open' ? '' : ' off'}`}>
             {lobby.status === 'open' ? t('lobby.online', { n: String(lobby.online) }) : t('lobby.reconnecting')}

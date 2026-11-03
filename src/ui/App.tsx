@@ -686,6 +686,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         ) : page === 'home' ? (
           <HomePage
             onPlay={openNewGame}
+            onStart={(patch) => startGame({ ...settings, ...patch })}
+            settings={settings}
             onOnline={() => {
               setOnlineId(null);
               setPage('online');

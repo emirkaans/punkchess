@@ -4,7 +4,7 @@ import type { LiveStats } from '../online/lobby.ts';
 import { dailyDay, dailyNumber, gridEmoji } from '../online/daily.ts';
 import { dailyResults, localStreak } from './dailyStore.ts';
 import type { PieceType, VariantDefinition } from '../engine/index.ts';
-import { useI18n } from './i18n.tsx';
+import { useI18n, withEnglishWords } from './i18n.tsx';
 import type { MessageKey } from '../i18n/index.ts';
 import { PieceView } from './PieceView.tsx';
 import { Crown } from './Punk.tsx';
@@ -16,6 +16,10 @@ import type { GameSettings, Mode } from './settings.ts';
 interface Props {
   /** Opens the new game dialog, optionally with some settings already picked. */
   onPlay: (patch?: Partial<GameSettings>) => void;
+  /** Starts a game on this device at once (the variant dialog has chosen everything). */
+  onStart: (patch: Partial<GameSettings>) => void;
+  /** The saved settings (games on this device start from them). */
+  settings: GameSettings;
   /** Opens online play (the lobby): the main way to play. */
   onOnline: () => void;
   /** Opens the daily puzzle. */
@@ -69,7 +73,16 @@ function Arrow() {
 }
 
 /** Landing page: hero, the variants and the ways to play. */
-export function HomePage({ onPlay, onOnline, onDaily, onOpenGame, openVariant, onVariantOpened }: Props) {
+export function HomePage({
+  onPlay,
+  onStart,
+  settings,
+  onOnline,
+  onDaily,
+  onOpenGame,
+  openVariant,
+  onVariantOpened,
+}: Props) {
   const { t, vt } = useI18n();
   const today = dailyDay(Date.now());
   const done = dailyResults()[today];
@@ -188,7 +201,7 @@ export function HomePage({ onPlay, onOnline, onDaily, onOpenGame, openVariant, o
           <button className="opponent" onClick={onOnline}>
             <b>1</b>
             <span>
-              {t('online.title')}
+              {withEnglishWords(t('online.title'))}
               <small>{t('home.onlineSub')}</small>
             </span>
           </button>
@@ -208,9 +221,10 @@ export function HomePage({ onPlay, onOnline, onDaily, onOpenGame, openVariant, o
           variant={picked}
           lobby={lobby}
           onOpenGame={onOpenGame}
-          onPlayOffline={(mode, variantId) => {
+          initial={settings}
+          onStart={(patch) => {
             setPicked(null);
-            onPlay({ variantId, mode });
+            onStart(patch);
           }}
           onClose={() => setPicked(null)}
         />

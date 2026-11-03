@@ -40,7 +40,7 @@ import { SharePanel } from '../ShareTools.tsx';
 import { gameUrl } from '../routes.ts';
 import { outcomeText } from '../game/session.ts';
 import type { Outcome } from '../game/session.ts';
-import { useI18n } from '../i18n.tsx';
+import { useI18n, withEnglishWords } from '../i18n.tsx';
 import type { MessageKey } from '../../i18n/index.ts';
 import { directMove } from '../prefs.ts';
 import type { Prefs } from '../prefs.ts';
@@ -685,7 +685,7 @@ function OnlineGame({
             </svg>
             <h2>{texts.name}</h2>
             <span className="game-label">
-              {t('online.label')} · {control.initialMs === null ? t('time.none') : control.label}
+              {withEnglishWords(t('online.label'))} · {control.initialMs === null ? t('time.none') : control.label}
               {view.rated && ` · ${t('lobby.rated')}`}
               {!you && ` · ${t('online.spectating')}`}
             </span>

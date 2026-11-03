@@ -24,3 +24,21 @@ export function useI18n(): I18n {
   const locale = useContext(LocaleContext);
   return useMemo(() => ({ locale, t: translator(locale), vt: (v) => variantTexts(v, locale) }), [locale]);
 }
+
+/**
+ * Text with its English words ("online") marked as English: in capitals they stay ONLINE, not
+ * ONLİNE (Turkish capitalises i as İ, and the display font draws a lowercase i as İ in Turkish).
+ */
+export function withEnglishWords(text: string): ReactNode {
+  const parts = text.split(/(online)/i);
+  if (parts.length === 1) return text;
+  return parts.map((p, i) =>
+    i % 2 ? (
+      <span key={i} lang="en">
+        {p}
+      </span>
+    ) : (
+      p
+    ),
+  );
+}

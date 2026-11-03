@@ -80,16 +80,16 @@ function startGame(settings: Record<string, unknown>) {
     JSON.stringify({ variantId: 'standard', timeControl: 'none', humanColor: 'w', ...settings }),
   );
   render(<App />);
-  // The app opens on the home page: a variant card opens its dialog (online first), whose
-  // "on this device" buttons open the new game dialog with the saved settings.
+  // The app opens on the home page: a variant card opens its dialog (the opponent first);
+  // a game on this device starts from the saved settings.
   const variantId = (settings.variantId as string | undefined) ?? 'standard';
   const card = document.querySelectorAll('.variant-card')[listVariants().findIndex((v) => v.id === variantId)];
   fireEvent.click(card);
   const mode = (settings.mode as string | undefined) ?? 'hotseat';
   fireEvent.click(
-    document.querySelectorAll('.variant-play .offline-buttons button')[['bot', 'botvbot', 'hotseat'].indexOf(mode)],
+    screen.getByRole('button', { name: { bot: 'Bilgisayar', botvbot: 'Bot vs Bot', hotseat: 'İki kişi' }[mode] }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Oyuna başla' }));
+  fireEvent.click(document.querySelector('.setup-go') as HTMLElement);
 }
 
 const board = () => document.querySelector('.board-area .board') as HTMLElement;
@@ -531,10 +531,10 @@ describe('uygulama: dil', () => {
     localStorage.setItem('dorkchess:hideRules:jester', 'true');
     localStorage.setItem('dorkchess:settings', JSON.stringify({ mode: 'hotseat', variantId: 'jester' }));
     render(<App />);
-    // The Jester card opens its dialog; "Two players" there opens the new game dialog.
+    // The Jester card opens its dialog; "Two players" there starts the game.
     fireEvent.click(document.querySelectorAll('.variant-card')[listVariants().findIndex((v) => v.id === 'jester')]);
-    fireEvent.click(document.querySelectorAll('.variant-play .offline-buttons button')[2]);
-    fireEvent.click(screen.getByRole('button', { name: 'Start game' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Two players' }));
+    fireEvent.click(document.querySelector('.setup-go') as HTMLElement);
     expect(screen.getByRole('dialog', { name: 'White: which piece becomes the Jester?' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Right knight \(g1\)/ })).toBeTruthy();
   });
