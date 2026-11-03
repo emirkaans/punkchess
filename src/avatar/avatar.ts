@@ -318,7 +318,7 @@ export function avatarSvg(a: Avatar, outfit: Outfit | null = null, view = '0 0 2
       ? painted(beardSvg(outfit?.beard ?? null, beardPaint.fill), beardPaint)
       : beardSvg(outfit?.beard ?? null, natural ?? undefined)) +
     painted(cut ? cutFront(cut, hair) : hairFront(a.hair, hair, skin), paint) +
-    (outfit ? hatSvg(outfit.hat) + headAccessorySvg(outfit.acc) : '') +
+    (outfit ? headAccessorySvg(outfit.acc) + hatSvg(outfit.hat) + headAccessorySvg(outfit.eyewear) : '') +
     `</svg>`
   );
 }

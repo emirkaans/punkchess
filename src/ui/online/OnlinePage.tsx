@@ -187,6 +187,17 @@ function OnlineGame({
 
   const link = useOnlineGame(gameId, ticket?.token ?? null, { onView });
   const { view, offset, status, send } = link;
+  // Your own game opened on another device (signed in, no seat ticket here): take your seat back.
+  const me = useAccount().user?.username ?? null;
+  const claimed = useRef(false);
+  useEffect(() => {
+    if (ticket || !me || !view || claimed.current) return;
+    if (!(['w', 'b'] as const).some((c) => view.players[c]?.username === me)) return;
+    claimed.current = true;
+    joinOnlineGame(gameId, playerIdentity().id)
+      .then(setTicket)
+      .catch(() => {});
+  }, [ticket, me, view, gameId]);
   useEffect(() => {
     sendNow.current = send;
   });

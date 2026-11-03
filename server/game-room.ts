@@ -307,8 +307,12 @@ export class GameRoom extends DurableObject<Env> {
     const room = await this.load();
     if (!room) return json({ error: 'not-found' }, 404);
     const body = (await request.json()) as { playerId?: unknown };
+    const account = this.accountOf(request);
+    // A signed-in player opening their own game on another device gets their seat back.
+    const own = account ? (['w', 'b'] as const).find((c) => room.seats[c]?.account?.id === account.id) : undefined;
+    if (own) return json({ gameId: room.id, color: own, token: room.seats[own]!.token });
     const token = crypto.randomUUID();
-    const joined = joinRoom(room, guestName(guestId(body.playerId, token)), token, this.accountOf(request));
+    const joined = joinRoom(room, guestName(guestId(body.playerId, token)), token, account);
     const saved = await this.save(await withTags(await withRatings(joined.room, this.env.DB, Date.now()), this.env.DB));
     this.broadcast(saved);
     return json({ gameId: room.id, color: joined.color, token });

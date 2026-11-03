@@ -18,7 +18,8 @@ import {
 import { NECK_BAND, bodyGeom, bootsSvg, clipTo } from './body.ts';
 import type { BodyGeom } from './body.ts';
 
-export type OutfitSlot = 'jacket' | 'pants' | 'skirt' | 'hat' | 'acc' | 'cut' | 'color' | 'beard' | 'beardColor';
+export type OutfitSlot =
+  'jacket' | 'pants' | 'skirt' | 'hat' | 'eyewear' | 'neck' | 'acc' | 'cut' | 'color' | 'beard' | 'beardColor';
 
 export interface StoreItem {
   readonly id: string;
@@ -34,6 +35,8 @@ export const OUTFIT_SLOTS: readonly OutfitSlot[] = [
   'pants',
   'skirt',
   'hat',
+  'eyewear',
+  'neck',
   'acc',
   'cut',
   'color',
@@ -41,7 +44,8 @@ export const OUTFIT_SLOTS: readonly OutfitSlot[] = [
   'beardColor',
 ];
 /** What each shop sells. */
-export const STORE_SLOTS: readonly OutfitSlot[] = ['jacket', 'pants', 'skirt', 'hat', 'acc'];
+/** Accessories come in three kinds, one of each worn at a time: glasses, at the neck, ears and face. */
+export const STORE_SLOTS: readonly OutfitSlot[] = ['jacket', 'pants', 'skirt', 'hat', 'eyewear', 'neck', 'acc'];
 export const BARBER_SLOTS: readonly OutfitSlot[] = ['cut', 'color', 'beard'];
 
 /**
@@ -81,9 +85,9 @@ export const STORE_ITEMS: readonly StoreItem[] = [
   { id: 'cap', slot: 'hat', price: 70 },
   { id: 'bandana', slot: 'hat', price: 50 },
   { id: 'army', slot: 'hat', price: 130 },
-  { id: 'chain', slot: 'acc', price: 80 },
-  { id: 'choker', slot: 'acc', price: 100 },
-  { id: 'shades', slot: 'acc', price: 90 },
+  { id: 'chain', slot: 'neck', price: 80 },
+  { id: 'choker', slot: 'neck', price: 100 },
+  { id: 'shades', slot: 'eyewear', price: 90 },
   { id: 'phones', slot: 'acc', price: 150 },
   { id: 'giant', slot: 'cut', price: 260 },
   { id: 'double', slot: 'cut', price: 220 },
@@ -117,6 +121,8 @@ export const EMPTY_OUTFIT: Outfit = {
   pants: null,
   skirt: null,
   hat: null,
+  eyewear: null,
+  neck: null,
   acc: null,
   cut: null,
   color: null,
@@ -141,6 +147,9 @@ export function parseOutfit(input: unknown): Outfit {
     const item = id ? storeItem(id) : undefined;
     if (item && fits(slot, item)) out[slot] = item.id;
     else if (slot === 'beardColor' && naturalBeard(id)) out[slot] = id;
+    // Stored before accessories had kinds: glasses and neckwear worn as "acc" move to their own place.
+    else if (slot === 'acc' && item && (item.slot === 'eyewear' || item.slot === 'neck') && !out[item.slot])
+      out[item.slot] = item.id;
   }
   return out;
 }
@@ -237,6 +246,15 @@ const studs = (pts: readonly (readonly [number, number])[]) =>
   pts
     .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="#d8d4dc" stroke="${INK}" stroke-width=".8"/>`)
     .join('');
+
+/** The hands, drawn again over trousers or a skirt tucked over a T-shirt. */
+export const handsSvg = (skin: string, g: BodyGeom): string =>
+  g.hands
+    .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="${skin}" stroke="${INK}" stroke-width="3"/>`)
+    .join('');
+
+/** Tops worn under the trousers or skirt (the plain T-shirt, a band tee, a mesh top). */
+export const isTuckedTop = (id: string | null): boolean => id === null || id === 'bandtee' || id === 'mesh';
 
 /** The upper body: a jacket, or a plain punk T-shirt; arms and hands in `skin`. */
 export function jacketSvg(id: string | null, skin: string, g: BodyGeom = bodyGeom()): string {

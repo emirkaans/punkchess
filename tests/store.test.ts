@@ -119,3 +119,30 @@ describe('mağaza', () => {
     expect(parseAvatar({ head: 'round' }).body).toBe('mid');
   });
 });
+
+describe('aksesuar türleri', () => {
+  it('gözlük, boyun ve kulak/yüz ayrı yerlerde: üçü birden takılır, iki gözlük takılmaz', () => {
+    const o = parseOutfit({ eyewear: 'shades', neck: 'scarf', acc: 'hoops' });
+    expect(o).toMatchObject({ eyewear: 'shades', neck: 'scarf', acc: 'hoops' });
+    expect(parseOutfit({ eyewear: 'scarf' }).eyewear).toBeNull();
+    expect(STORE_ITEMS.find((i) => i.id === 'eyepatch')?.slot).toBe('eyewear');
+    expect(STORE_ITEMS.find((i) => i.id === 'choker')?.slot).toBe('neck');
+  });
+
+  it('eski kayıtta "acc" olarak duran gözlük ve kolye kendi yerine geçer', () => {
+    expect(parseOutfit({ acc: 'shades' })).toMatchObject({ acc: null, eyewear: 'shades' });
+    expect(parseOutfit({ acc: 'chain' })).toMatchObject({ acc: null, neck: 'chain' });
+    expect(parseOutfit({ acc: 'phones' })).toMatchObject({ acc: 'phones' });
+  });
+
+  it('tasma kafadan sonra çizilir (boyun onu örtmez); pantolon tişörtün üstünde', () => {
+    const svg = figureSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, neck: 'choker', pants: 'camo' });
+    expect(svg.lastIndexOf('<svg x="40"')).toBeLessThan(
+      svg.indexOf('M84 108') === -1 ? svg.length : svg.lastIndexOf('#d8d4dc'),
+    );
+    // The plain T-shirt's anarchy sign comes before the trousers' camo.
+    expect(svg.indexOf('#ff2e93')).toBeLessThan(svg.indexOf('#6b7a45'));
+    const coat = figureSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, jacket: 'leather', pants: 'camo' });
+    expect(coat.indexOf('#6b7a45')).toBeLessThan(coat.indexOf('#1d1b21'));
+  });
+});

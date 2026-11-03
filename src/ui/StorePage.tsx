@@ -7,7 +7,7 @@ import type { MessageKey } from '../i18n/index.ts';
 import { signInWithGoogle, useAccount } from './account.ts';
 import { CoinIcon } from './CoinToast.tsx';
 import { useI18n } from './i18n.tsx';
-import { SHOP_ICONS, useShop } from './shop.tsx';
+import { FittingCart, SHOP_ICONS, useShop } from './shop.tsx';
 
 const Figure = ({ svg, className }: { svg: string; className: string }) => (
   <span className={className} dangerouslySetInnerHTML={{ __html: svg }} />
@@ -23,7 +23,8 @@ export function StorePage({ onOpen }: { onOpen: (path: string) => void }) {
   const account = useAccount();
   const avatar = account.user?.avatar ?? DEFAULT_AVATAR;
   const [slot, setSlot] = useState<OutfitSlot>('jacket');
-  const { store, tried, isTrying, shown, msg, name, button, tryOn } = useShop();
+  const shop = useShop();
+  const { store, isTrying, shown, msg, name, button, tryOn, cart, total } = shop;
 
   if (!account.loading && !account.user) {
     return (
@@ -46,14 +47,8 @@ export function StorePage({ onOpen }: { onOpen: (path: string) => void }) {
           <span className="store-label">{t('store.booth')}</span>
           <Figure svg={figureSvg(avatar, shown)} className="store-figure" />
           <div className="store-booth-foot">
-            {tried ? (
-              <>
-                <b className="store-tried">{name(tried.id)}</b>
-                {button(tried)}
-              </>
-            ) : (
-              <span className="store-label">{t('store.pick')}</span>
-            )}
+            {/* Everything tried on, bought and worn together. */}
+            {cart.length ? <FittingCart shop={shop} /> : <span className="store-label">{t('store.pick')}</span>}
             <p className={msg?.bad ? 'store-msg bad' : 'store-msg'} role="status">
               {msg?.text ?? ''}
             </p>
@@ -144,17 +139,12 @@ export function StorePage({ onOpen }: { onOpen: (path: string) => void }) {
         {/* Phones: the picked item and its button stay at the bottom. */}
         <div className="store-bar">
           <div className="store-bar-text">
-            <b>{tried ? name(tried.id) : t('store.pick')}</b>
+            <b>{cart.length ? cart.map((c) => name(c.id)).join(' + ') : t('store.pick')}</b>
             <span className={msg?.bad ? 'store-msg bad' : 'store-msg'}>
-              {msg?.text ??
-                (tried
-                  ? store?.owned.has(tried.id)
-                    ? t('store.owned')
-                    : t('coins.balance', { n: String(tried.price) })
-                  : '')}
+              {msg?.text ?? (cart.length ? t('coins.balance', { n: String(total) }) : '')}
             </span>
           </div>
-          {tried && button(tried)}
+          {cart.length > 0 && shop.cartButton()}
         </div>
       </div>
     </main>

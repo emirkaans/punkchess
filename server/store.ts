@@ -11,15 +11,17 @@
 import { dailyDay } from '../src/online/daily.ts';
 import {
   KOMBIN_COUNT,
+  OUTFIT_SLOTS,
   clothesOf,
   fitsSlot,
+  naturalBeard,
   parseKombins,
   parseOutfit,
   serializeOutfit,
   storeItem,
   wearsOnlyOwned,
 } from '../src/avatar/outfit.ts';
-import type { Outfit } from '../src/avatar/outfit.ts';
+import type { Outfit, OutfitSlot, StoreItem } from '../src/avatar/outfit.ts';
 import type { AuthEnv } from './auth.ts';
 import { currentUser, sameOrigin } from './auth.ts';
 import { coinBalance } from './coins.ts';
@@ -62,6 +64,56 @@ async function outfitOf(db: D1Database, userId: string): Promise<Outfit> {
   return parseOutfit(row?.outfit ?? null);
 }
 
+/** The charge and the item for one purchase (run in a batch: each sees the ones before it). */
+const purchase = (db: D1Database, userId: string, item: StoreItem, now: number) => [
+  db
+    .prepare(
+      `INSERT OR IGNORE INTO coin_ledger (user_id, amount, reason, ref, day, created_at)
+       SELECT ?1, -?2, 'store', ?3, ?4, ?5
+       WHERE (SELECT coalesce(sum(amount), 0) FROM coin_ledger WHERE user_id = ?1) >= ?2
+         AND NOT EXISTS (SELECT 1 FROM user_items WHERE user_id = ?1 AND item_id = ?3)`,
+    )
+    .bind(userId, item.price, item.id, dailyDay(now), now),
+  db
+    .prepare(
+      `INSERT OR IGNORE INTO user_items (user_id, item_id, price, bought_at)
+       SELECT ?1, ?2, ?3, ?4
+       WHERE EXISTS (SELECT 1 FROM coin_ledger WHERE user_id = ?1 AND reason = 'store' AND ref = ?2)`,
+    )
+    .bind(userId, item.id, item.price, now),
+];
+
+/**
+ * Everything tried on at once (the fitting room's "buy all"): the items not owned yet are bought
+ * when the balance covers them all (else nothing is), then everything tried is worn. A natural beard
+ * colour comes along free.
+ */
+async function buyMany(db: D1Database, userId: string, input: unknown[], now: number): Promise<Response> {
+  const wanted: { slot: OutfitSlot; id: string; item: StoreItem | null }[] = [];
+  for (const raw of input.slice(0, 24)) {
+    const r = (raw && typeof raw === 'object' ? raw : {}) as { item?: unknown; wear?: unknown };
+    if (typeof r.item !== 'string') continue;
+    const item = storeItem(r.item) ?? null;
+    const slot = OUTFIT_SLOTS.find((s) => s === r.wear) ?? item?.slot;
+    if (!slot) continue;
+    if (item ? fitsSlot(slot, item) : slot === 'beardColor' && naturalBeard(r.item))
+      wanted.push({ slot, id: r.item, item });
+  }
+  if (!wanted.length) return json({ error: 'bad-request' }, 400);
+  const have = await owned(db, userId);
+  const toBuy = [...new Map(wanted.filter((w) => w.item && !have.has(w.id)).map((w) => [w.id, w.item!])).values()];
+  const total = toBuy.reduce((sum, i) => sum + i.price, 0);
+  if (total > (await coinBalance(db, userId, now)).balance) return json({ error: 'not-enough' }, 409);
+  if (toBuy.length) await db.batch(toBuy.flatMap((item) => purchase(db, userId, item, now)));
+  const items = await owned(db, userId);
+  const outfit: Record<OutfitSlot, string | null> = { ...(await outfitOf(db, userId)) };
+  for (const w of wanted) if (!w.item || items.has(w.id)) outfit[w.slot] = w.id;
+  await db.prepare('UPDATE users SET outfit = ?1 WHERE id = ?2').bind(serializeOutfit(outfit), userId).run();
+  const [coins, kombins] = await Promise.all([coinBalance(db, userId, now), kombinsOf(db, userId)]);
+  if (toBuy.some((i) => !items.has(i.id))) return json({ error: 'not-enough' }, 409);
+  return json({ owned: [...items], outfit, balance: coins.balance, kombins } satisfies StoreResponse);
+}
+
 /** Answers a store request, or returns null when `url` is not one. */
 export async function handleStore(request: Request, env: AuthEnv, url: URL): Promise<Response | null> {
   const path = url.pathname;
@@ -85,7 +137,8 @@ export async function handleStore(request: Request, env: AuthEnv, url: URL): Pro
     if (!sameOrigin(request, env.PUBLIC_ORIGIN || url.origin, url)) return json({ error: 'forbidden' }, 403);
     const user = await currentUser(request, env);
     if (!user) return json({ error: 'signed-out' }, 401);
-    const body = (await request.json().catch(() => ({}))) as { item?: unknown; wear?: unknown };
+    const body = (await request.json().catch(() => ({}))) as { item?: unknown; wear?: unknown; items?: unknown };
+    if (Array.isArray(body.items)) return buyMany(env.DB, user.id, body.items, now);
     const item = typeof body.item === 'string' ? storeItem(body.item) : undefined;
     if (!item) return json({ error: 'not-found' }, 404);
     // Where it goes on once bought: its own slot, or (a hair colour) the beard.

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { AVATAR_OPTIONS, DEFAULT_AVATAR, TALL_VIEW } from '../avatar/avatar.ts';
 import { colorSwatch } from '../avatar/barber.ts';
-import { BARBER_SLOTS, EMPTY_OUTFIT, NATURAL_BEARD, STORE_ITEMS, naturalBeard } from '../avatar/outfit.ts';
+import { BARBER_SLOTS, EMPTY_OUTFIT, NATURAL_BEARD, STORE_ITEMS } from '../avatar/outfit.ts';
 import type { OutfitSlot, StoreItem } from '../avatar/outfit.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import { refreshAccount, signInWithGoogle, useAccount } from './account.ts';
 import { AvatarView } from './CharacterCreator.tsx';
 import { CoinIcon } from './CoinToast.tsx';
 import { useI18n } from './i18n.tsx';
-import { SHOP_ICONS, useShop } from './shop.tsx';
+import { FittingCart, SHOP_ICONS, useShop } from './shop.tsx';
 
 /**
  * The barber ("Makas & Jilet", design "Salon Koltuğu"): premium cuts in a priced list on the
@@ -24,7 +24,8 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
   const [kind, setKind] = useState<OutfitSlot>('cut');
   // The left list: cuts or beards (on phones the rail's kind decides it).
   const [list, setList] = useState<'cut' | 'beard'>('cut');
-  const { store, trying, tried, triedSlot, isTrying, shown, msg, name, button, tryOn, wearFree, busy } = useShop();
+  const shop = useShop();
+  const { store, isTrying, shown, msg, name, tryOn, wearFree, busy, triedIn, untry, cart, total } = shop;
   // A natural hair colour being tried (the character's own colour, free), and whether it is the
   // last thing picked (then the button below the mirror is for it).
   const [natHair, setNatHair] = useState<string | null>(null);
@@ -63,9 +64,11 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
   // The mirror: everything tried on; a natural hair colour tried replaces a premium one.
   const mirrorAvatar = natHair ? { ...avatar, hairColor: natHair } : avatar;
   const mirrorOutfit = { ...shown, hat: null, ...(natHair ? { color: null } : {}) };
+  // A natural hair colour replaces a premium one being tried.
   const tryHair = (id: string) => {
     setNatHair(natHair === id ? null : id);
     setNatLast(natHair !== id);
+    untry('color');
   };
   const tryPremium = (id: string, slot: OutfitSlot) => {
     if (slot === 'color') setNatHair(null);
@@ -86,8 +89,7 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
     setNatHair(null);
     setNatLast(false);
   };
-  const naturalBeardTried = !natLast && trying !== null && naturalBeard(trying) !== null;
-  // Below the mirror: the last thing picked, and its button.
+  // Below the mirror: a natural hair colour just picked (saved on the character), else the basket.
   const footer =
     natLast && natHair
       ? {
@@ -99,24 +101,19 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
             </button>
           ),
         }
-      : naturalBeardTried
+      : cart.length
         ? {
-            label: t('barber.beardColor'),
-            note: t('barber.natural'),
-            action:
-              worn.beardColor === trying ? null : (
-                <button className="store-buy wear" disabled={busy} onClick={() => void wearFree('beardColor', trying)}>
-                  {t('barber.use')}
-                </button>
-              ),
+            label: cart.map((c) => (c.natural ? t('barber.beardColor') : name(c.id))).join(' + '),
+            note: total ? t('coins.balance', { n: String(total) }) : t('store.owned'),
+            action: shop.cartButton(),
           }
-        : tried
-          ? {
-              label: name(tried.id) + (triedSlot === 'beardColor' ? ` · ${t('barber.onBeard')}` : ''),
-              note: store?.owned.has(tried.id) ? t('store.owned') : t('coins.balance', { n: String(tried.price) }),
-              action: button(tried, triedSlot ?? tried.slot),
-            }
-          : null;
+        : null;
+  // A swatch is on when it is tried in that place, or (nothing tried there) when it is worn.
+  const swatchOn = (slot: 'color' | 'beardColor', id: string) => {
+    if (slot === 'color' && natHair) return false;
+    const tryingHere = triedIn(slot);
+    return tryingHere !== null ? tryingHere === id : worn[slot] === id;
+  };
   // A row of colour swatches: the natural ones first (free), then the premium ones.
   const swatches = (target: 'color' | 'beardColor') => (
     <div className="barber-swatches">
@@ -127,7 +124,7 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
               className="barber-swatch natural"
               style={{ background: o.color }}
               aria-label={t(`character.opt.hairColor.${o.id}` as MessageKey)}
-              aria-pressed={natHair ? natHair === o.id : !worn.color && avatar.hairColor === o.id}
+              aria-pressed={natHair ? natHair === o.id : !triedIn('color') && !worn.color && avatar.hairColor === o.id}
               onClick={() => tryHair(o.id)}
             />
           ))
@@ -137,7 +134,7 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
               className="barber-swatch natural"
               style={{ background: color }}
               aria-label={t('barber.natural')}
-              aria-pressed={isTrying(id, 'beardColor') || (!trying && worn.beardColor === id)}
+              aria-pressed={swatchOn('beardColor', id)}
               onClick={() => {
                 setNatLast(false);
                 tryOn(id, 'beardColor');
@@ -150,7 +147,7 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
           className="barber-swatch"
           style={{ background: colorSwatch(item.id) }}
           aria-label={name(item.id)}
-          aria-pressed={isTrying(item.id, target) || (!isTrying(item.id, target) && worn[target] === item.id)}
+          aria-pressed={swatchOn(target, item.id)}
           onClick={() => tryPremium(item.id, target)}
         >
           {!store?.owned.has(item.id) && <span className="barber-lock">{item.price}</span>}
@@ -253,11 +250,13 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
           </div>
           <span className="barber-pole" aria-hidden="true" />
           <div className="store-booth-foot">
-            {footer ? (
+            {natLast && footer ? (
               <>
                 <b className="store-tried">{footer.label}</b>
                 {footer.action}
               </>
+            ) : cart.length ? (
+              <FittingCart shop={shop} />
             ) : (
               <span className="store-label">{t('barber.pick')}</span>
             )}

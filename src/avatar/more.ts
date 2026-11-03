@@ -375,7 +375,8 @@ const ACC_HEAD: Readonly<Record<string, string>> = {
       )
       .join('') + `<path d="M92 108h16" stroke="${INK}" stroke-width="3"/>`,
   visor: `<path d="M58 98h84l-4 20H62z" fill="#00e5ff" fill-opacity=".75" stroke="${INK}" stroke-width="3"/><path d="M64 104h72" stroke="#f1eee8" stroke-width="2" opacity=".7"/>`,
-  eyepatch: `<path d="M56 86l70 30" stroke="${INK}" stroke-width="3"/><ellipse cx="80" cy="108" rx="12" ry="10" fill="${INK}"/>`,
+  // The strap runs from the left ear through the patch and up over the forehead, straight.
+  eyepatch: `<path d="M48 112L80 106L150 86" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/><ellipse cx="80" cy="107" rx="13" ry="11" fill="${INK}"/><path d="M73 102c3-2 7-2 10 0" fill="none" stroke="#4a4552" stroke-width="2" stroke-linecap="round"/>`,
   monocle: `<circle cx="120" cy="108" r="12" fill="#fff" fill-opacity=".25" stroke="#e8c84a" stroke-width="3"/><path d="M132 112c6 14 4 30-4 42" fill="none" stroke="#e8c84a" stroke-width="1.5"/>`,
   hoops: `<circle cx="46" cy="132" r="7" fill="none" stroke="#e8c84a" stroke-width="2.5"/><circle cx="154" cy="132" r="7" fill="none" stroke="#e8c84a" stroke-width="2.5"/>`,
   mask: `<path d="M56 124c20 6 68 6 88 0l-6 34c-22 14-54 14-76 0z" fill="#141016" ${s3}/><g fill="#f1eee8">${[76, 92, 108, 124].map((x) => `<circle cx="${x}" cy="140" r="2"/>`).join('')}</g>`,
@@ -521,6 +522,10 @@ export const SKIRT_ITEMS: readonly { readonly id: string; readonly slot: OutfitS
     price: [220, 90, 180, 110, 160, 160, 150, 170, 200, 170, 140, 150, 210, 190, 200, 120, 160, 170, 150, 140][i],
   }));
 
+/** Which kind an accessory is: glasses, at the neck, or ears and face (one of each at a time). */
+const EYEWEAR = new Set(['roundglass', 'heartglass', 'starglass', 'visor', 'eyepatch', 'monocle', 'goggles']);
+const accKind = (id: string): OutfitSlot => (EYEWEAR.has(id) ? 'eyewear' : id in ACC_NECK ? 'neck' : 'acc');
+
 /** The new goods and their prices (punk coins). */
 export const MORE_ITEMS: readonly { readonly id: string; readonly slot: OutfitSlot; readonly price: number }[] = [
   ...Object.keys(JACKETS).map((id, i) => ({
@@ -540,7 +545,7 @@ export const MORE_ITEMS: readonly { readonly id: string; readonly slot: OutfitSl
   })),
   ...[...Object.keys(ACC_HEAD), ...Object.keys(ACC_NECK)].map((id, i) => ({
     id,
-    slot: 'acc' as const,
+    slot: accKind(id),
     price: [70, 80, 90, 160, 60, 100, 70, 90, 140, 120, 80, 110, 90, 130, 60][i],
   })),
 ];
