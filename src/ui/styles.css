@@ -12047,13 +12047,13 @@ a:focus-visible {
   /* No scrolling during a game: the board leaves room for both strips and the controls; the
      rest of the page (game box, new game, moves, share, sound) opens from ⋯ below the board. */
   .layout.game-fit:has(.more-toggle) {
-    --board: min(100vw, calc(100svh - 258px));
+    --board: min(100vw, calc(100dvh - 258px));
     padding-bottom: 0;
     justify-content: flex-start;
   }
   .layout.game-fit:has(.more-toggle) .board-wrap,
   .layout.game-fit:has(.more-toggle) .board-wrap.sized {
-    --board: min(100vw, calc(100svh - 258px));
+    --board: min(100vw, calc(100dvh - 258px));
   }
   .layout.game-fit:has(.more-toggle) .board-frame {
     align-self: center;
@@ -12089,7 +12089,7 @@ a:focus-visible {
     display: none;
   }
   .layout.game-fit.more-open {
-    height: calc(100svh - 61px);
+    height: calc(100dvh - 61px);
   }
   .layout.game-fit.more-open > .side {
     order: 3;
