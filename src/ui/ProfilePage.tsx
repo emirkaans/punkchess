@@ -205,6 +205,9 @@ export function ProfilePage({ username, onOpen }: Props) {
               <button className="link-button profile-edit-character" onClick={() => setRenaming(true)}>
                 {t('rename.open')}
               </button>
+              <button className="link-button profile-edit-character" onClick={() => onOpen('/wardrobe')}>
+                {t('wardrobe.title')}
+              </button>
             </>
           )}
           {renaming && (

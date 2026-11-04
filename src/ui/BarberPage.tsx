@@ -25,7 +25,7 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
   // The left list: cuts or beards (on phones the rail's kind decides it).
   const [list, setList] = useState<'cut' | 'beard'>('cut');
   const shop = useShop();
-  const { store, isTrying, shown, msg, name, tryOn, wearFree, busy, triedIn, untry, cart, total } = shop;
+  const { store, ready, isTrying, shown, msg, name, tryOn, wearFree, busy, triedIn, untry, cart, total } = shop;
   // A natural hair colour being tried (the character's own colour, free), and whether it is the
   // last thing picked (then the button below the mirror is for it).
   const [natHair, setNatHair] = useState<string | null>(null);
@@ -184,7 +184,7 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
               <span className="cp-short">{t(`barber.short.${s}` as MessageKey)}</span>
             </button>
           ))}
-          <button className="shop-switch" onClick={() => onOpen('/street')}>
+          <button className="shop-switch street-back" onClick={() => onOpen('/street')}>
             <svg className="cp-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d={STREET_ICON} />
             </svg>
@@ -240,13 +240,13 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
         <div className="barber-chair">
           <div className="barber-chair-top">
             {balance}
-            <button className="link-button" onClick={() => onOpen('/street')}>
+            <button className="street-back street-back-pill" onClick={() => onOpen('/street')}>
               ← {t('street.back')}
             </button>
           </div>
           <div className="barber-mirror">
             {/* The hat comes off at the barber's. */}
-            <AvatarView avatar={mirrorAvatar} outfit={mirrorOutfit} view={TALL_VIEW} />
+            {ready && <AvatarView avatar={mirrorAvatar} outfit={mirrorOutfit} view={TALL_VIEW} className="fig-in" />}
           </div>
           <span className="barber-pole" aria-hidden="true" />
           <div className="store-booth-foot">

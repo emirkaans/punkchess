@@ -12721,3 +12721,57 @@ a:focus-visible {
   display: block;
   width: 100%;
 }
+
+/* A shop's character arrives softly once the account is known (no undressed flash first). */
+.fig-in {
+  animation: fig-in 0.35s ease-out both;
+}
+@keyframes fig-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fig-in {
+    animation: none;
+  }
+}
+
+/* "Back to the street" in a shop: set apart at the right end, in lime, so it is easy to find. */
+.store-tabs .street-back {
+  margin-left: auto;
+  border-color: var(--lime);
+  background: var(--lime);
+  color: var(--bg);
+}
+.store-tabs .street-back:hover:not(:disabled) {
+  border-color: var(--fg);
+  background: var(--fg);
+  color: var(--bg);
+}
+.store-tabs .street-back .cp-icon {
+  stroke: currentColor;
+}
+.street-back-pill {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--lime);
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--bg);
+  font: 400 17px/1 var(--display);
+  letter-spacing: 0.05em;
+}
+.street-back-pill:hover:not(:disabled) {
+  border-color: var(--fg);
+  background: var(--fg);
+  color: var(--bg);
+}
+@media (max-width: 760px) {
+  /* The phone rail: the way back stays lime, just above the balance. */
+  .store-tabs .street-back {
+    margin-left: 0;
+    margin-top: 8px;
+  }
+}

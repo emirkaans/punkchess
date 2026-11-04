@@ -49,7 +49,11 @@ export function useShop() {
   }, [userId]);
 
   const name = (id: string) => t(`store.item.${id}` as MessageKey);
-  const worn = store?.outfit ?? EMPTY_OUTFIT;
+  // What is worn: the store's answer once it is there; until then the account's own record
+  // (it comes with the page), so the character never shows undressed first.
+  const worn = store?.outfit ?? account.user?.outfit ?? EMPTY_OUTFIT;
+  /** The character can be drawn: the account (and so its look) is known. */
+  const ready = !!account.user;
   const trying = last ? (tries[last] ?? null) : null;
   const tried = trying ? storeItem(trying) : undefined;
   /** The slot the last tried item goes to (a hair colour may be tried on the beard). */
@@ -217,6 +221,7 @@ export function useShop() {
 
   return {
     store,
+    ready,
     trying,
     tried,
     triedSlot,

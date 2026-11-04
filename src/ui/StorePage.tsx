@@ -55,7 +55,7 @@ export function StorePage({ onOpen, shoes = false }: { onOpen: (path: string) =>
     { path: '/street', icon: STREET_ICON, full: `← ${t('street.back')}`, short: t('menu.streetShort') },
   ];
   const shop = useShop();
-  const { store, isTrying, shown, msg, name, button, tryOn, cart, total } = shop;
+  const { store, ready, isTrying, shown, msg, name, button, tryOn, cart, total } = shop;
 
   if (!account.loading && !account.user) {
     return (
@@ -76,7 +76,8 @@ export function StorePage({ onOpen, shoes = false }: { onOpen: (path: string) =>
       <div className="store">
         <aside className="store-booth">
           <span className="store-label">{t('store.booth')}</span>
-          <Figure svg={figureSvg(avatar, shown)} className="store-figure" />
+          {/* Drawn once the account (and so its look) is known: never undressed first. */}
+          {ready && <Figure svg={figureSvg(avatar, shown)} className="store-figure fig-in" />}
           <div className="store-booth-foot">
             {/* Everything tried on, bought and worn together. */}
             {cart.length ? <FittingCart shop={shop} /> : <span className="store-label">{t('store.pick')}</span>}
@@ -115,7 +116,7 @@ export function StorePage({ onOpen, shoes = false }: { onOpen: (path: string) =>
               </button>
             ))}
             {switches.map((w) => (
-              <button key={w.path} className="shop-switch" onClick={() => onOpen(w.path)}>
+              <button key={w.path} className="shop-switch street-back" onClick={() => onOpen(w.path)}>
                 <svg className="cp-icon" viewBox="0 0 24 24" aria-hidden="true">
                   <path d={w.icon} />
                 </svg>

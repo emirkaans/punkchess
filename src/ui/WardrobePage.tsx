@@ -28,7 +28,7 @@ export function WardrobePage({ onOpen }: { onOpen: (path: string) => void }) {
   const [slot, setSlot] = useState<OutfitSlot>('jacket');
   // The saved outfit whose delete button asks "Sure?".
   const [sure, setSure] = useState<number | null>(null);
-  const { store, msg, name, act, busy, wearSaved, saveKombin } = useShop();
+  const { store, ready, msg, name, act, busy, wearSaved, saveKombin } = useShop();
 
   if (!account.loading && !account.user) {
     return (
@@ -44,7 +44,7 @@ export function WardrobePage({ onOpen }: { onOpen: (path: string) => void }) {
     );
   }
 
-  const worn = store?.outfit ?? EMPTY_OUTFIT;
+  const worn = store?.outfit ?? account.user?.outfit ?? EMPTY_OUTFIT;
   const mine = STORE_ITEMS.filter((i) => i.slot === slot && store?.owned.has(i.id));
   // A saved outfit is "on" when the clothes worn now are exactly its clothes.
   const isOn = (k: Outfit) => WARDROBE_SLOTS.every((s) => wearKombin(worn, k)[s] === worn[s]);
@@ -55,7 +55,7 @@ export function WardrobePage({ onOpen }: { onOpen: (path: string) => void }) {
         <div className="wardrobe-looks">
           <div className="wardrobe-card now">
             <span className="store-label">{t('wardrobe.now')}</span>
-            <Figure svg={figureSvg(avatar, worn)} className="wardrobe-fig" />
+            {ready && <Figure svg={figureSvg(avatar, worn)} className="wardrobe-fig fig-in" />}
             <h1 className="wardrobe-title">{t('wardrobe.title')}</h1>
           </div>
           <div className="wardrobe-kombins">
