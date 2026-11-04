@@ -77,7 +77,11 @@ export function StorePage({ onOpen, shoes = false }: { onOpen: (path: string) =>
         <aside className="store-booth">
           <span className="store-label">{t('store.booth')}</span>
           {/* Drawn once the account (and so its look) is known: never undressed first. */}
-          {ready && <Figure svg={figureSvg(avatar, shown)} className="store-figure fig-in" />}
+          {ready ? (
+            <Figure svg={figureSvg(avatar, shown)} className="store-figure fig-in" />
+          ) : (
+            <span className="store-figure fig-ghost" aria-hidden="true" />
+          )}
           <div className="store-booth-foot">
             {/* Everything tried on, bought and worn together. */}
             {cart.length ? <FittingCart shop={shop} /> : <span className="store-label">{t('store.pick')}</span>}

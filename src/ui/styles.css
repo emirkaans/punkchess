@@ -10353,7 +10353,7 @@ a:focus-visible {
   border-radius: 0 0 10px 10px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
 }
-.menu-group.open > .menu-drop {
+.menu-drop.shown {
   display: block;
 }
 .menu-drop-title {
@@ -12722,18 +12722,44 @@ a:focus-visible {
   width: 100%;
 }
 
-/* A shop's character arrives softly once the account is known (no undressed flash first). */
+/* A shop's character (design 2A, "Sisin içinden"): while the account is not known yet a grey
+   silhouette waits; then the character comes out of a fog, blurred to sharp. */
 .fig-in {
-  animation: fig-in 0.35s ease-out both;
+  animation: fig-in 0.7s ease-out both;
 }
 @keyframes fig-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    filter: blur(10px);
+    transform: scale(1.04);
+  }
+}
+.fig-ghost {
+  display: block;
+  background: linear-gradient(90deg, #1b1a20 0%, #26242c 50%, #1b1a20 100%) 0 0 / 200% 100%;
+  animation: fig-shimmer 1.2s linear infinite;
+  -webkit-mask:
+    radial-gradient(circle at 50% 17%, #000 15%, transparent 15.5%),
+    linear-gradient(#000, #000) 50% 100% / 56% 70% no-repeat;
+  mask:
+    radial-gradient(circle at 50% 17%, #000 15%, transparent 15.5%),
+    linear-gradient(#000, #000) 50% 100% / 56% 70% no-repeat;
+}
+.fig-ghost.head {
+  width: 70%;
+  aspect-ratio: 1;
+  margin: auto;
+  -webkit-mask: radial-gradient(circle at 50% 45%, #000 42%, transparent 43%);
+  mask: radial-gradient(circle at 50% 45%, #000 42%, transparent 43%);
+}
+@keyframes fig-shimmer {
+  to {
+    background-position: -200% 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fig-in {
+  .fig-in,
+  .fig-ghost {
     animation: none;
   }
 }
@@ -12774,4 +12800,137 @@ a:focus-visible {
     margin-left: 0;
     margin-top: 8px;
   }
+}
+
+/* The account menu (design 1A, "Kart"): a card with the character's head, the name and the coins
+   on top, rows with icons, signing out set apart. It opens with the genie (src/ui/genie.tsx). */
+.account-menu:not(.shown) {
+  display: none;
+}
+.account-menu.acc-card {
+  width: 280px;
+  min-width: 0;
+  padding: 0;
+  gap: 0;
+  background: var(--panel-2, #18181b);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+}
+.acc-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #2a0f1d, #18181b);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg);
+  text-decoration: none;
+}
+.acc-head:hover .acc-who small {
+  color: var(--pink);
+}
+.acc-face {
+  flex: none;
+  width: 50px;
+  height: 66px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 35%, #2b2532, #141016 75%);
+  box-shadow: 0 0 0 2px var(--lime);
+  display: grid;
+  place-items: center;
+}
+.acc-face .char-avatar,
+.acc-face .char-avatar svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.acc-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.acc-who b {
+  font: 400 22px/1 var(--display);
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.acc-who small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.acc-coins {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--lime);
+  font: 700 13px var(--mono, 'Space Mono', monospace);
+}
+.acc-rows {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+}
+.account-menu.acc-card .account-row {
+  min-height: 0;
+  padding: 10px;
+  gap: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--fg);
+  text-decoration: none;
+  font: inherit;
+}
+.account-menu.acc-card .account-row:hover {
+  background: #222127;
+  color: var(--fg);
+}
+.acc-ic {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: var(--pink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.acc-rows .account-row > span:first-of-type {
+  flex: 1;
+}
+.acc-out {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 8px 10px;
+  min-height: 40px;
+  border: 1px solid var(--pink);
+  border-radius: 8px;
+  background: none;
+  color: var(--pink);
+  font: 400 18px/1 var(--display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.acc-out:hover {
+  background: var(--pink);
+  color: var(--on-pink);
+}
+.account-menu.acc-card .account-back,
+.account-menu.acc-card .account-lang {
+  margin: 0 6px;
+}
+.account-menu.acc-card .account-back {
+  margin-top: 6px;
+}
+.account-menu.acc-card .account-lang:last-child {
+  margin-bottom: 6px;
 }

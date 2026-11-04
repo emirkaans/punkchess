@@ -55,7 +55,11 @@ export function WardrobePage({ onOpen }: { onOpen: (path: string) => void }) {
         <div className="wardrobe-looks">
           <div className="wardrobe-card now">
             <span className="store-label">{t('wardrobe.now')}</span>
-            {ready && <Figure svg={figureSvg(avatar, worn)} className="wardrobe-fig fig-in" />}
+            {ready ? (
+              <Figure svg={figureSvg(avatar, worn)} className="wardrobe-fig fig-in" />
+            ) : (
+              <span className="wardrobe-fig fig-ghost" aria-hidden="true" />
+            )}
             <h1 className="wardrobe-title">{t('wardrobe.title')}</h1>
           </div>
           <div className="wardrobe-kombins">

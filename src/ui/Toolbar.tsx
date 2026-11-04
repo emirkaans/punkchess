@@ -4,6 +4,7 @@ import { PlayerSearch } from './PlayerSearch.tsx';
 import { useI18n } from './i18n.tsx';
 import { Crown } from './Punk.tsx';
 import { storefront } from './storefront.ts';
+import { GenieDrop } from './genie.tsx';
 import type { Prefs } from './prefs.ts';
 import { formatClock } from '../clock/clock.ts';
 import { yourTime } from './online/current.ts';
@@ -140,6 +141,8 @@ export function Toolbar({
 
   // Wide screens: a group's menu opens while the pointer (or focus) is on it.
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  // Phones list the groups in the ☰ menu (no dropdowns, no motion).
+  const phoneMenu = typeof matchMedia === 'function' && matchMedia('(max-width: 760px)').matches;
   const groups: readonly MenuGroup[] = [
     {
       id: 'play',
@@ -277,6 +280,7 @@ export function Toolbar({
               >
                 <button
                   className={`menu-top${g.entries.some((e) => e.on) || g.more?.on ? ' on' : ''}`}
+                  data-menu-top={g.id}
                   aria-haspopup="true"
                   aria-expanded={openGroup === g.id}
                   onClick={close(g.go ?? g.entries[0].go!)}
@@ -284,7 +288,12 @@ export function Toolbar({
                   {t(g.label)}
                   <span className="menu-caret" aria-hidden="true" />
                 </button>
-                <div className={`menu-drop${g.id === 'street' ? ' menu-street' : ''}`}>
+                <GenieDrop
+                  open={openGroup === g.id}
+                  className={`menu-drop${g.id === 'street' ? ' menu-street' : ''}`}
+                  opener={() => document.querySelector(`[data-menu-top="${g.id}"]`)}
+                  off={phoneMenu}
+                >
                   <span className="menu-drop-title">{t(g.id === 'street' ? 'menu.street' : g.label)}</span>
                   <div className="menu-drop-items">
                     {g.entries.map((e) =>
@@ -331,7 +340,7 @@ export function Toolbar({
                       {t(g.more.label)} →
                     </button>
                   )}
-                </div>
+                </GenieDrop>
               </div>
             ),
           )}

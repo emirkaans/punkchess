@@ -7,6 +7,28 @@ import { signInWithGoogle, signOut, useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
 import { GearIcon } from './Punk.tsx';
 import { AvatarView } from './CharacterCreator.tsx';
+import { GenieDrop } from './genie.tsx';
+
+/** The menu card's character: the whole head, its hair and the neck (the avatar box with room above). */
+const FACE_VIEW = '24 -4 152 204';
+
+const ROW_ICONS = {
+  user: ['M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8z', 'M4 21c0-4 4-6 8-6s8 2 8 6'],
+  shield: ['M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z'],
+  globe: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', 'M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'],
+  gear: ['M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', 'M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2'],
+  sliders: ['M4 7h10M18 7h2M4 17h4M12 17h8', 'M16 5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM10 15a2 2 0 1 0 0 4 2 2 0 0 0 0-4z'],
+};
+
+function RowIcon({ d }: { d: readonly string[] }) {
+  return (
+    <svg className="ic acc-ic" viewBox="0 0 24 24" aria-hidden="true">
+      {d.map((p) => (
+        <path key={p} d={p} />
+      ))}
+    </svg>
+  );
+}
 
 function PersonIcon() {
   return (
@@ -106,73 +128,105 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
           <GearIcon />
         </button>
       )}
-      {open && view === 'language' && (
-        <div className="account-menu" role="menu" aria-label={t('toolbar.language')}>
-          <button role="menuitem" className="account-back" onClick={() => setView('main')}>
-            <Chevron back />
-            {t('toolbar.language')}
-          </button>
-          {(Object.entries(LOCALES) as [Locale, string][]).map(([code, name]) => (
-            <button
-              key={code}
-              role="menuitemradio"
-              aria-checked={code === locale}
-              className={code === locale ? 'account-lang on' : 'account-lang'}
-              lang={code}
-              onClick={() => {
-                onLocale(code);
-                setView('main');
-              }}
-            >
-              {name}
+      <GenieDrop
+        open={open}
+        className="account-menu acc-card"
+        opener={() => box.current?.querySelector('.account-button, .icon-button')}
+        role="menu"
+        aria-label={view === 'language' ? t('toolbar.language') : undefined}
+      >
+        {view === 'language' ? (
+          <>
+            <button role="menuitem" className="account-back" onClick={() => setView('main')}>
+              <Chevron back />
+              {t('toolbar.language')}
             </button>
-          ))}
-        </div>
-      )}
-      {open && view === 'main' && (
-        <div className="account-menu" role="menu">
-          {user && (
-            <a role="menuitem" className="account-profile" href={`/@/${user.username}`}>
-              {t('profile.mine')}
-            </a>
-          )}
-          {user?.role && (
-            <a role="menuitem" className="account-row" href="/admin">
-              <span>{t('admin.title')}</span>
-              <Chevron />
-            </a>
-          )}
-          <button role="menuitem" className="account-row" onClick={() => setView('language')}>
-            <span>{t('toolbar.language')}</span>
-            <span className="account-value">{LOCALES[locale]}</span>
-            <Chevron />
-          </button>
-          <button
-            role="menuitem"
-            className="account-row"
-            onClick={() => {
-              setOpen(false);
-              onSettings();
-            }}
-          >
-            <span>{t('toolbar.settings')}</span>
-            <Chevron />
-          </button>
-          <button
-            role="menuitem"
-            className="account-row"
-            onClick={() => {
-              setOpen(false);
-              onPreferences();
-            }}
-          >
-            <span>{t('toolbar.preferences')}</span>
-            <Chevron />
-          </button>
-          {user && (
-            <div className="account-section">
+            {(Object.entries(LOCALES) as [Locale, string][]).map(([code, name]) => (
+              <button
+                key={code}
+                role="menuitemradio"
+                aria-checked={code === locale}
+                className={code === locale ? 'account-lang on' : 'account-lang'}
+                lang={code}
+                onClick={() => {
+                  onLocale(code);
+                  setView('main');
+                }}
+              >
+                {name}
+              </button>
+            ))}
+          </>
+        ) : (
+          <>
+            {/* The card's head: the character (face and neck), the name and the coins. */}
+            {user && (
+              <a role="menuitem" className="acc-head" href={`/@/${user.username}`}>
+                <span className="acc-face">
+                  {user.avatar ? (
+                    <AvatarView avatar={user.avatar} outfit={user.outfit} view={FACE_VIEW} />
+                  ) : (
+                    <PersonIcon />
+                  )}
+                </span>
+                <span className="acc-who">
+                  <b>{user.username}</b>
+                  <small>{t('account.seeProfile')}</small>
+                </span>
+                {coins.balance !== null && (
+                  <span className="acc-coins">
+                    <CoinIcon />
+                    {coins.balance}
+                  </span>
+                )}
+              </a>
+            )}
+            <div className="acc-rows">
+              {user && (
+                <a role="menuitem" className="account-row" href={`/@/${user.username}`}>
+                  <RowIcon d={ROW_ICONS.user} />
+                  <span>{t('profile.mine')}</span>
+                </a>
+              )}
+              {user?.role && (
+                <a role="menuitem" className="account-row" href="/admin">
+                  <RowIcon d={ROW_ICONS.shield} />
+                  <span>{t('admin.title')}</span>
+                </a>
+              )}
+              <button role="menuitem" className="account-row" onClick={() => setView('language')}>
+                <RowIcon d={ROW_ICONS.globe} />
+                <span>{t('toolbar.language')}</span>
+                <span className="account-value">{LOCALES[locale]}</span>
+                <Chevron />
+              </button>
               <button
                 role="menuitem"
+                className="account-row"
+                onClick={() => {
+                  setOpen(false);
+                  onSettings();
+                }}
+              >
+                <RowIcon d={ROW_ICONS.gear} />
+                <span>{t('toolbar.settings')}</span>
+              </button>
+              <button
+                role="menuitem"
+                className="account-row"
+                onClick={() => {
+                  setOpen(false);
+                  onPreferences();
+                }}
+              >
+                <RowIcon d={ROW_ICONS.sliders} />
+                <span>{t('toolbar.preferences')}</span>
+              </button>
+            </div>
+            {user && (
+              <button
+                role="menuitem"
+                className="acc-out"
                 onClick={() => {
                   setOpen(false);
                   void signOut().then(() => location.reload());
@@ -180,10 +234,10 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
               >
                 {t('account.signOut')}
               </button>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </GenieDrop>
     </div>
   );
 }

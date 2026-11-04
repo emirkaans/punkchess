@@ -246,7 +246,11 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
           </div>
           <div className="barber-mirror">
             {/* The hat comes off at the barber's. */}
-            {ready && <AvatarView avatar={mirrorAvatar} outfit={mirrorOutfit} view={TALL_VIEW} className="fig-in" />}
+            {ready ? (
+              <AvatarView avatar={mirrorAvatar} outfit={mirrorOutfit} view={TALL_VIEW} className="fig-in" />
+            ) : (
+              <span className="fig-ghost head" aria-hidden="true" />
+            )}
           </div>
           <span className="barber-pole" aria-hidden="true" />
           <div className="store-booth-foot">
