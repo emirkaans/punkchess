@@ -1,29 +1,105 @@
 # punkchess
 
-Tarayıcıda çalışan satranç varyantları: **Standart**, **Bürokrat**, **Jester**, **Diplomat**.
-İki kişi aynı ekranda, bilgisayara karşı (5 seviye) ya da bot vs bot izleyerek oynanır. Satranç saati,
-her varyant için görsel kural kartları, oyun sonu analizi, link ile paylaşım, çevrimdışı çalışma (PWA),
-klavye/ekran okuyucu desteği ve Türkçe/İngilizce arayüz var. Kural motoru, tahta ve yapay zekâ sıfırdan
-yazıldı; harici satranç kütüphanesi ve backend yok.
+[punkchess.com](https://punkchess.com): tarayıcıda oynanan, punk havalı satranç ve satranç varyantları.
+Varyantlar **Standart**, **Anarşi** (kartlı kaos satrancı), **Bürokrat**, **Jester** ve **Diplomat**.
+
+Bota karşı (5 seviye), aynı ekranda iki kişi ya da internetten canlı oynanır. Hesabı olan oyuncular puanlı
+oynar (Glicko-2), bulmaca çözer, çetelere katılır, turnuvalara girer, kazandıkları punk coin'lerle
+karakterlerini giydirir. Kural motoru, tahta ve oyundaki bot sıfırdan yazıldı; harici satranç kütüphanesi
+yok. Sunucu tarafı Cloudflare Workers, Durable Objects ve D1 üzerinde çalışır. Arayüz Türkçe ve İngilizce.
+
+## Neler var
+
+**Oyun**
+
+- Beş varyant, her biri görsel kural kartıyla. Anarşi'de her oyuncu bir numara kartı ve gizli bir kaos kartı
+  alır (puansız oynanır).
+- Bota karşı 5 seviye (Çaylak'tan Punk'a), aynı ekranda iki kişi, bot vs bot izleme.
+- Satranç saati, ön hamle, oklar, geri alma, ipucu, oyun sonu analizi (standart satrançta Stockfish.js,
+  varyantlarda kendi motorumuz), PGN dışa/içe aktarma, link ile paylaşım, çevrimdışı çalışma (PWA).
+
+**Online**
+
+- Lobi (hızlı eşleşme ve ilanlar), arkadaşa meydan okuma, oyun içi çıkartmalar ve laf atma, rövanş.
+- Google ile giriş, kullanıcı adı (30 günde bir değiştirilebilir; ilki ücretsiz, sonrakiler 200 coin; yalnızca büyük/küçük harf
+  değişikliği serbest), profil sayfası, oyun geçmişi, takip.
+- Glicko-2 puanları: standart satrançta hıza göre (bullet, blitz, rapid, classical), her varyantta ayrı;
+  liderlik tablosu.
+- **Bulmacalar** (puanlı), **günlük bulmaca** (seri tutar), **Puzzle Rush**.
+- **Çeteler** ve 4'e 4 **çete savaşları**; **turnuvalar** (Arena ve İsviçre usulü); **TV** (canlı oyunlar).
+- Başarı ödülleri: savaş ceketleri, yamalar, mat atınca tahtaya sıkılan sprey imzalar.
+
+**Punk coin ve karakter**
+
+- Coin'ler online oyun kazanarak, bulmaca ve günlük bulmaca çözerek ve Puzzle Rush'ta kazanılır; günlük bir
+  tavanı vardır (kurallar tek yerde: `src/coins/rules.ts`). Kaybedilen, berabere biten ve bota karşı oynanan
+  oyunlar coin vermez.
+- Coin'ler görünüş ve kullanıcı adı değişikliği satın alır, oyunda avantaj sağlamaz: karakter oluşturma (ten rengi, vücut,
+  yüz), mağaza (ceket, pantolon, şapka, aksesuar, etek…), berber (saç, sakal, renkler), gardırop ve kombinler.
+
+**Yönetim**
+
+- Admin/moderatör sayfası: kullanıcı yasaklama ve yeniden adlandırma, rol verme, turnuva ve çete yönetimi,
+  hata bildirimleri, iletişim mesajları, site trafiği.
+- Çerezsiz site analitiği: sayfa türü, her gün değişen ziyaretçi özeti, ülke ve şehir (Cloudflare'den).
 
 ## Çalıştırma
 
 ```bash
 npm install
-npm run dev           # geliştirme sunucusu (http://localhost:5173)
+npm run dev           # arayüz (http://localhost:5173)
+npm run dev:server    # Worker + D1 yerelde (http://localhost:8787): online, hesap, bulmacalar için
 npm run build         # üretim derlemesi (dist/, service worker dahil)
 npm run preview       # derlemeyi yerelde sun (PWA/çevrimdışı denemek için)
 ```
 
+Yerel sunucu `.dev.vars` dosyasını okur (git'e girmez): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Google
+ile giriş) ve `PUBLIC_ORIGIN` (sitenin adresi, örneğin `http://localhost:5173`). Yerel veritabanı için önce
+`npx wrangler d1 migrations apply punkchess --local`.
+
 Kontroller (CI'da da aynı sırayla çalışır, `.github/workflows/ci.yml`, Node 22):
 
 ```bash
-npm run typecheck     # uygulama + motorun DOM'suz tip kontrolü
+npm run typecheck     # uygulama, motor (DOM'suz) ve sunucu tip kontrolü
 npm run lint          # ESLint (typescript-eslint, react-hooks)
 npm run format:check  # Prettier; düzeltmek için: npm run format
-npm test              # Vitest: motor, YZ, oturum reducer'ı, bileşen testleri (happy-dom)
+npm test              # Vitest: motor, YZ, oturum reducer'ı, sunucu kuralları, bileşen testleri (happy-dom)
 npm run build
 ```
+
+## Yayına alma
+
+Site tek bir Cloudflare Worker'dır (`wrangler.jsonc`, adı `punkchess`): statik dosyalar (`dist/`), API
+(`server/index.ts`), canlı oyunlar, lobi ve turnuvalar için Durable Objects, veritabanı için D1.
+
+1. Şema değiştiyse önce canlı veritabanına migration uygulanır ve ✅ görülür:
+   `npx wrangler d1 migrations apply punkchess --remote`. Kod yeni tabloyu ya da sütunu ancak bundan sonra bulur.
+2. `main`'e push. Workers Builds (GitHub entegrasyonu) derleyip yayına alır; takılırsa elle: `npm run deploy`.
+3. Gizli değerler `npx wrangler secret put <AD>` ile girilir. Komuta yalnızca ad yazılır, değer sorulunca
+   yapıştırılır: `GOOGLE_CLIENT_SECRET`, `REPORT_KEY`, `TELEGRAM_BOT_TOKEN`.
+4. Acil durdurma: Cloudflare panelinde `PAUSE_API=1` değişkeni API'yi, canlı oyunları ve veritabanını kapatır
+   (site yüklenmeye devam eder); kaldırınca her şey geri gelir.
+
+Canlı veritabanının yedeği: `npm run backup:db` (`backups/` klasörüne SQL olarak, son 8 kopya; git'e girmez).
+
+## Raporlama ve ajanlar
+
+Siteyi Claude ajanları izler ve sahibine Telegram'dan rapor verir. Ajanlar kodu kendiliğinden değiştirmez;
+geliştirme yalnızca sahibin onayıyla yapılır.
+
+| Ne | Ne zaman | Ne yapar |
+| --- | --- | --- |
+| Günlük rapor | her gün 23:05 (TR) | günün sayıları, dünle karşılaştırma, hatalar, yorum |
+| Haftalık inceleme | pazar 12:00 | haftanın eğilimleri, haftanın commit'lerine güvenlik taraması, numaralı öneriler ("Öneri N") |
+| Aylık araştırma | ayın 1'i 12:00 | diğer satranç sitelerinde ve topluluklarda olanlar, 3 fikir ("Fikir N") |
+| Anlık uyarı | her 5 dakikada | 15 dakikada 5 ya da daha fazla hata bildirimi gelirse Telegram mesajı (saatte en fazla bir) |
+| QA ajanı | her değişiklikte | commit'ten önce bağımsız kod incelemesi (`.claude/agents/qa-reviewer.md`) |
+
+İlk üçü Claude Code'un bulutta zamanlanmış işleridir (routines). Sitedeki uçları `REPORT_KEY` ile korunur
+(`server/report.ts`): `GET /api/report/daily` son 24 saati, `GET /api/report/history?days=N` her gece 23:00'te
+saklanan raporları (`daily_reports`), `GET|POST /api/report/suggestions` önerilerin kaydını (`suggestions`)
+verir. Raporlarda yalnızca toplamlar ve herkese açık adlar bulunur, e-posta ya da mesaj içeriği bulunmaz. Anlık
+uyarıyı Worker'ın kendi zamanlanmış görevi gönderir (`server/alerts.ts`).
 
 ## Geliştirme araçları (`scripts/`)
 
@@ -39,15 +115,19 @@ Hepsi Node 22.6+ ile TypeScript'i doğrudan çalıştırır (`--experimental-str
 | `npm run sf-label -- --in data/standard.txt --out data/standard-sf.txt` | konumları Stockfish değerlendirmesiyle etiketler |
 | `npm run tune -- --data data/standard-sf.txt --write` | Texel ayarı; `src/ai/eval-params.ts`'i yeniden yazar |
 | `npm run sf-match -- --sf <stockfish> --elo 2500 --games 40` | kalibrasyon: seviye 5'e karşı sınırlı Stockfish |
-| `npm run icons` | `public/icons/` PWA ikonlarını üretir |
+| `npm run gen-variant-puzzles` | varyantlar için bulmaca üretir |
+| `npm run backup:db` | canlı veritabanının SQL yedeği |
+| `npm run icons` / `npm run og-assets` | PWA ikonları / paylaşım önizleme görselleri |
 
-**Stockfish yalnızca geliştirme aracıdır** (kalibrasyon ve etiketleme): yerel bir dosyadır, `data/` klasöründe
-durur (git'e girmez) ve uygulamanın parçası değildir. Oyundaki bot tamamen bu projenin kodudur.
+**Oyundaki bot tamamen bu projenin kodudur.** Stockfish iki yerde kullanılır: geliştirmede kalibrasyon ve
+etiketleme için (yerel dosya, `data/` klasöründe, git'e girmez) ve sitede standart satranç analizinde
+(değiştirilmemiş Stockfish.js 18 lite, GPLv3, `public/stockfish/`, lisansı `/licenses` sayfasında).
+Varyantların analizi kendi motorumuzla yapılır, çünkü Stockfish onların kurallarını bilmez.
 
 ## Yapı
 
 ```
-src/engine/            saf TypeScript kural motoru (React/DOM import etmez) — referans uygulama
+src/engine/            saf TypeScript kural motoru (React/DOM import etmez), referans uygulama
   types.ts             Color, Piece, Move, Position, GameState, MovePattern,
                        PieceDefinition, VariantDefinition, VariantTexts
   board.ts             0..63 kare indeksi (a1 = 0), yönler, kare yardımcıları
@@ -57,33 +137,49 @@ src/engine/            saf TypeScript kural motoru (React/DOM import etmez) — 
   notation.ts          FEN benzeri konum metni, kısa cebirsel notasyon (SAN)
   premove.ts           ön hamle hedefleri
   fast/                botun hızlı tahtası (make/unmake, Zobrist) ve varyant kancaları
-  variants/            standard.ts, burokrat.ts, jester.ts, diplomat.ts, icons.ts, index.ts (registry)
+  variants/            standard, anarsi, burokrat, jester, diplomat, icons, index (registry)
 src/ai/                yapay zekâ (React/DOM import etmez; worker'da ve Node'da çalışır)
   search.ts            PVS araması (aşağıda)
   evaluate.ts          değerlendirme; eval-params.ts ayarlanmış parametreler, eval-features.ts ayar için özellikler
-  analysis.ts          oyun sonu analizi: Beyaz'ın bakışından skor, hata işaretleri
+  analysis.ts          oyun sonu analizi; stockfish.ts standart satrançta Stockfish.js'e bağlanır
   levels.ts            seviye ayarları (tek yapılandırma nesnesi), bot süresi, beraberlik kararı
   rng.ts, match.ts     tohumlanabilir rastgelelik; worker'sız bot vs bot
   protocol.ts, worker.ts, client.ts   Web Worker mesajları, giriş noktası ve UI'nin kullandığı API
+src/online/            sunucuyla arayüzün paylaştığı saf kurallar ve tipler: oda ve lobi protokolü,
+                       hesap ve kullanıcı adı, bulmaca, günlük bulmaca, turnuva, çete, analitik, rapor
+src/rating/            Glicko-2 ve puan kategorileri
+src/coins/rules.ts     punk coin kuralları (kazanım miktarları, günlük tavanlar)
+src/avatar/            karakter, mağaza ürünleri, berber
+src/achievements/      savaş ceketleri, yamalar, sprey imzalar
 src/clock/clock.ts     saf saat mantığı (zaman dışarıdan verilir)
 src/rules/cards.ts     kural kartı veri tipleri (içerik varyant tanımlarında)
 src/storage/           local.ts (localStorage, try/catch), games.ts (oyun kaydı, PGN benzeri metin),
                        share.ts (paylaşım linkleri)
 src/i18n/              sözlükler (messages.ts), translate, varyant metinleri, kayıt metinleri (React'siz)
+src/legal/             gizlilik, kullanım şartları, lisanslar (TR/EN)
 src/pwa/               service worker kaynağı ve kaydı / güncelleme bildirimi
-src/ui/                React
-  game/                session.ts + reducer.ts: oyun oturumu, saf reducer (React'siz, Node'da test edilir);
-                       hooks.ts: bot, saat, ses/kayıt, ipucu/beraberlik efektleri
-  App.tsx, Board.tsx, GameViewer.tsx (analiz), Modal.tsx, useDialogFocus.ts, i18n.tsx, ...
+src/ui/                React: sayfalar (HomePage, OnlinePage, PuzzlePage, StorePage, AdminPage…),
+                       tahta ve oyun bileşenleri; game/ oyun oturumu (saf reducer + efekt kancaları),
+                       online/ sunucu bağlantıları (oda, lobi, turnuva)
+server/                Cloudflare Worker
+  index.ts             giriş: güvenlik başlıkları, istek sınırları, API yönlendirme, zamanlanmış görev
+  game-room.ts         canlı oyun (Durable Object, WebSocket); lobby.ts lobi; tournament.ts turnuvalar
+  auth.ts              Google ile giriş, oturumlar; rename.ts kullanıcı adı değişikliği
+  ratings.ts, leaderboard.ts, profiles.ts, follows.ts, challenges.ts, gangs.ts
+  puzzles.ts, daily.ts, rush.ts, coins.ts, store.ts
+  admin.ts, analytics.ts, errors.ts, contact.ts, limits.ts
+  report.ts, alerts.ts raporlama uçları ve Telegram uyarıları
+  og*.ts, pages.ts     paylaşım önizleme görselleri ve sayfa etiketleri
+migrations/            D1 şeması, sırayla numaralı SQL dosyaları
 scripts/               geliştirme araçları (yukarıda)
-tests/                 motor, hızlı tahta eşliği, YZ, saat, reducer, paylaşım, PWA, i18n, mimari;
-                       tests/ui/ bileşen testleri (happy-dom + Testing Library)
+tests/                 motor, hızlı tahta eşliği, YZ, saat, reducer, paylaşım, PWA, i18n, mimari, sunucu
+                       kuralları; tests/ui/ bileşen testleri (happy-dom + Testing Library)
 ```
 
 `GameState` değişmezdir (immutable): `makeMove` yeni bir durum döndürür, `previous` alanı geri almayı sağlar.
-Motor fonksiyonları varyant tanımını parametre olarak alır, bu yüzden sunucuda da aynen çalışır.
-`tests/architecture.test.ts` motorun, YZ'nin, depolamanın, i18n'in ve oyun reducer'ının React/DOM'a
-bağlanmadığını ve UI kodunda varyanta özel dal olmadığını denetler.
+Motor fonksiyonları varyant tanımını parametre olarak alır, bu yüzden sunucuda da aynen çalışır: canlı
+oyunlarda her hamle sunucuda motorla doğrulanır. `tests/architecture.test.ts` motorun, YZ'nin, depolamanın,
+i18n'in ve oyun reducer'ının React/DOM'a bağlanmadığını ve UI kodunda varyanta özel dal olmadığını denetler.
 
 ## Motor tasarımı
 
@@ -154,7 +250,7 @@ hamle listesindeki bir hamleyi oynar.
 | 2 | Mahalle | 2 ply | en iyi 3 hamleden puana göre ağırlıklı | 0.3 sn |
 | 3 | Kulüp | 3 ply + quiescence | en iyiye 50 puan yakınlar arasından (bulunan mat asla bırakılmaz) | 0.7 sn |
 | 4 | Usta | tam arama + TT | en iyi (eşitler arasında rastgele) | 0.5 sn |
-| 5 | Dork | tam arama + TT + hareketlilik/şah saldırısı | en iyi | 0.95 sn |
+| 5 | Punk | tam arama + TT + hareketlilik/şah saldırısı | en iyi | 0.95 sn |
 
 Saatli oyunda bot süresi = min(seviye sınırı, kalan süre / 30 + artış). İpucu seviye 4 ile 1 sn arar.
 Beraberlik teklifini seviye 3+ kendi değerlendirmesi −150'den kötüyse kabul eder; 1–2 her zaman reddeder.
@@ -217,7 +313,8 @@ Analiz istenince durdurulup kaldığı yerden sürdürülebilir.
 
 ## Paylaşım
 
-Linkler sunucu gerektirmez; her şey adresin `#` kısmındadır (`src/storage/share.ts`), base64url JSON:
+Bu linkler sunucu gerektirmez (online oyunların ayrıca kalıcı bir adresi vardır: `punkchess.com/<8 karakter>`);
+her şey adresin `#` kısmındadır (`src/storage/share.ts`), base64url JSON:
 
 - `#g=` — bir oyun: varyant, başlangıç FEN'i (varsayılandan farklıysa) ve SAN hamleleri. Açılınca oyun
   görüntüleyicide (analiz dahil) gösterilir.
@@ -366,8 +463,8 @@ ya da varyantın `generateMoves(pos, from, base)` override'ını kullanın. Vary
 - **Seviye süreleri**: seviye 4 0.5 sn, seviye 5 0.95 sn (önceden 1.5 / 3 sn); güç hızlı tahta ve daha iyi
   aramayla arttı. Hareketlilik ve şaha saldırı terimleri yalnızca seviye 5'te ve skor alfa-beta sınırlarına
   yakınken hesaplanır.
-- **Stockfish** yalnızca kalibrasyon ve değerlendirme ayarı için kullanıldı; uygulamaya girmez, çalışma
-  zamanında hiçbir dış motor ya da sunucu yoktur.
+- **Stockfish** bot için yalnızca kalibrasyon ve değerlendirme ayarında kullanıldı; oyundaki bot hiçbir dış
+  motora başvurmaz. (Standart satranç analizi için sonradan Stockfish.js eklendi, yukarıda.)
 - **Ön hamle terfisi** her zaman vezire yapılır (seçim penceresi bot hamlesini bekletmesin diye).
 - **Analiz eşikleri**: hata 200, yanlışlık 100 santipiyon düşüş (hamle yapanın bakışından); her konum 0.3 sn.
 - **Paylaşım linki** yalnızca hamleleri taşır (saat, oyuncular, sonuç yok); açan kişi oyunu baştan doğrular.
