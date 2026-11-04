@@ -111,7 +111,8 @@ export async function handleRename(request: Request, env: AuthEnv, url: URL): Pr
         ),
         env.DB.prepare(
           `INSERT INTO username_history (user_id, old_name, new_name, changed_at, paid, by_staff)
-           SELECT ?1, ?2, ?3, ?4, 0, ?5 WHERE (SELECT username FROM users WHERE id = ?1) = ?3`,
+           SELECT ?1, ?2, ?3, ?4, 0, ?5 WHERE (SELECT username FROM users WHERE id = ?1) = ?3
+             AND NOT EXISTS (SELECT 1 FROM username_history WHERE user_id = ?1 AND new_name = ?3 AND changed_at >= ?4 - 60000)`,
         ).bind(user.id, user.username, name, now, staff),
       ]);
     } catch {
@@ -120,7 +121,9 @@ export async function handleRename(request: Request, env: AuthEnv, url: URL): Pr
     const row = await env.DB.prepare('SELECT username FROM users WHERE id = ?1')
       .bind(user.id)
       .first<{ username: string }>();
-    if (row?.username !== name) return json({ error: 'too-soon', nextAt: nextRenameAt(now) }, 429);
+    if (row?.username !== name) {
+      return json({ error: 'too-soon', nextAt: nextRenameAt((await changes(env.DB, user.id)).lastAt) }, 429);
+    }
     return json({ username: name });
   }
   // Paid: the charge only when the balance covers it; the name and the history only with it.

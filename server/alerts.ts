@@ -22,13 +22,19 @@ async function send(env: Env, kind: string, html: string, now: number): Promise<
     .bind(kind, now, ALERT_COOLDOWN_MS)
     .run();
   if (!claimed.meta.changes) return false;
-  const res = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+  const ok = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: html, parse_mode: 'HTML' }),
-  });
-  if (!res.ok) console.error('alert not sent', kind, res.status);
-  return res.ok;
+  })
+    .then((r) => r.ok)
+    .catch(() => false);
+  if (!ok) {
+    // Not sent: the claim is given back, so the next cron run tries again.
+    console.error('alert not sent', kind);
+    await db.prepare('DELETE FROM alerts_sent WHERE kind = ?1 AND at = ?2').bind(kind, now).run();
+  }
+  return ok;
 }
 
 /** From the cron: looks for a problem worth telling the owner about now. */
