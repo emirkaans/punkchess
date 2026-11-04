@@ -77,7 +77,7 @@ export async function sampleLive(env: Env, now = Date.now()): Promise<void> {
   ]);
 }
 
-async function traffic(env: Env, db: D1Database, days: TrafficRange, now: number): Promise<TrafficStats> {
+export async function traffic(env: Env, db: D1Database, days: TrafficRange, now: number): Promise<TrafficStats> {
   const since = now - days * DAY;
   const all = <T>(sql: string) =>
     db

@@ -42,6 +42,8 @@ export interface AuthEnv {
    * if something runs away; remove it to turn everything back on.
    */
   readonly PAUSE_API?: string;
+  /** Key of the daily report for the reporting routine (server/report.ts). Empty: no report. */
+  readonly REPORT_KEY?: string;
 }
 
 const SESSION_COOKIE = 'pc_session';

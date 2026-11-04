@@ -29,6 +29,7 @@ import { handleContact } from './contact.ts';
 import { handleErrors } from './errors.ts';
 import { handleAnalytics, sampleLive } from './analytics.ts';
 import { handleRename } from './rename.ts';
+import { handleReport } from './report.ts';
 import { handleAdmin } from './admin.ts';
 import { handleFollows } from './follows.ts';
 import { handleGangs } from './gangs.ts';
@@ -175,6 +176,8 @@ async function handle(request: Request, env: Env): Promise<Response> {
   // Before the admin routes: /api/admin/traffic is answered here.
   const analytics = await handleAnalytics(request, env, url);
   if (analytics) return analytics;
+  const report = await handleReport(request, env, url);
+  if (report) return report;
   const admin = await handleAdmin(request, env, url);
   if (admin) return admin;
   const errors = await handleErrors(request, url, env.DB);

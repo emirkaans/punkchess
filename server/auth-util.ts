@@ -37,6 +37,12 @@ export async function sha256(text: string): Promise<Uint8Array> {
 export const sha256hex = async (text: string) =>
   Array.from(await sha256(text), (b) => b.toString(16).padStart(2, '0')).join('');
 
+/** Whether an Authorization header carries `key` (compared as hashes, so not by timing). */
+export async function keyMatches(header: string | null, key: string | undefined): Promise<boolean> {
+  if (!key || !header?.startsWith('Bearer ')) return false;
+  return (await sha256hex(header.slice(7))) === (await sha256hex(key));
+}
+
 /**
  * Only paths on this site are followed after signing in. Backslashes and control characters are
  * refused too: browsers read "/\evil.com" as "//evil.com", another site.
