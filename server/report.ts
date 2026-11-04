@@ -1,11 +1,16 @@
-// The daily report for the reporting routine (a scheduled Claude agent), which reads it and
-// sends the owner a summary:
+// The daily report for the reporting routines (scheduled Claude agents), which read it and
+// send the owner a summary:
 //
-//   GET /api/report/daily   Authorization: Bearer <REPORT_KEY>
+//   GET /api/report/daily              the last 24 hours, now
+//   GET /api/report/history?days=7     the reports kept at 23:00 on the days before, newest first
 //
-// Only totals and public names (usernames, page kinds, countries), never emails or messages.
-// Without REPORT_KEY (wrangler secret put REPORT_KEY) the endpoint does not exist.
+// both with Authorization: Bearer <REPORT_KEY>; and from 23:00 Turkey time the Worker's cron
+// keeps the day's report (migrations/0025_daily_reports.sql). Only totals and public names
+// (usernames, page kinds, countries), never emails or messages. Without REPORT_KEY
+// (wrangler secret put REPORT_KEY) the endpoints do not exist.
 
+import { dailyDay } from '../src/online/daily.ts';
+import { historyDays, reportDue } from '../src/online/report.ts';
 import { traffic } from './analytics.ts';
 import { keyMatches } from './auth-util.ts';
 import type { Env } from './game-room.ts';
@@ -18,16 +23,8 @@ const json = (data: unknown, status = 200) =>
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
 
-/** Answers the report request, or returns null when `url` is not it. */
-export async function handleReport(request: Request, env: Env, url: URL): Promise<Response | null> {
-  if (url.pathname !== '/api/report/daily' || !env.REPORT_KEY) return null;
-  if (request.method !== 'GET') return new Response(null, { status: 405 });
-  if (!(await keyMatches(request.headers.get('authorization'), env.REPORT_KEY))) {
-    return json({ error: 'forbidden' }, 403);
-  }
-  if (!env.DB) return json({ error: 'accounts-off' }, 503);
-  const db = env.DB;
-  const now = Date.now();
+/** The last 24 hours before `now`. */
+async function dailyReport(env: Env, db: D1Database, now: number) {
   const since = now - DAY;
   const all = <T>(sql: string) =>
     db
@@ -61,7 +58,7 @@ export async function handleReport(request: Request, env: Env, url: URL): Promis
     one<{ n: number }>('SELECT count(*) AS n FROM contact_messages WHERE at >= ?1'),
   ]);
 
-  return json({
+  return {
     from: since,
     to: now,
     site: {
@@ -82,5 +79,37 @@ export async function handleReport(request: Request, env: Env, url: URL): Promis
     puzzles: { attempts: puzzles?.attempts ?? 0, solved: puzzles?.solved ?? 0 },
     errors: { total: errorCount?.n ?? 0, top: errors },
     contactMessages: contact?.n ?? 0,
-  });
+  };
+}
+
+/** From the cron, every 5 minutes: from 23:00 Turkey time, keeps the day's report once. */
+export async function keepDailyReport(env: Env, now = Date.now()): Promise<void> {
+  if (!env.DB || !reportDue(now)) return;
+  const day = dailyDay(now);
+  const kept = await env.DB.prepare('SELECT 1 FROM daily_reports WHERE day = ?1').bind(day).first();
+  if (kept) return;
+  const report = await dailyReport(env, env.DB, now);
+  await env.DB.prepare('INSERT OR IGNORE INTO daily_reports (day, at, report) VALUES (?1, ?2, ?3)')
+    .bind(day, now, JSON.stringify(report))
+    .run();
+}
+
+/** Answers a report request, or returns null when `url` is not one. */
+export async function handleReport(request: Request, env: Env, url: URL): Promise<Response | null> {
+  if ((url.pathname !== '/api/report/daily' && url.pathname !== '/api/report/history') || !env.REPORT_KEY) {
+    return null;
+  }
+  if (request.method !== 'GET') return new Response(null, { status: 405 });
+  if (!(await keyMatches(request.headers.get('authorization'), env.REPORT_KEY))) {
+    return json({ error: 'forbidden' }, 403);
+  }
+  if (!env.DB) return json({ error: 'accounts-off' }, 503);
+  const now = Date.now();
+
+  if (url.pathname === '/api/report/daily') return json(await dailyReport(env, env.DB, now));
+
+  const rows = await env.DB.prepare('SELECT day, report FROM daily_reports ORDER BY day DESC LIMIT ?1')
+    .bind(historyDays(url.searchParams.get('days')))
+    .all<{ day: string; report: string }>();
+  return json({ days: rows.results.map((r) => ({ day: r.day, report: JSON.parse(r.report) as unknown })) });
 }

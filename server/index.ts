@@ -29,7 +29,7 @@ import { handleContact } from './contact.ts';
 import { handleErrors } from './errors.ts';
 import { handleAnalytics, sampleLive } from './analytics.ts';
 import { handleRename } from './rename.ts';
-import { handleReport } from './report.ts';
+import { handleReport, keepDailyReport } from './report.ts';
 import { handleAdmin } from './admin.ts';
 import { handleFollows } from './follows.ts';
 import { handleGangs } from './gangs.ts';
@@ -125,9 +125,11 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     return withSecurityHeaders(await handle(request, env));
   },
-  // Every 5 minutes (wrangler.jsonc triggers): a sample of who is on the site.
+  // Every 5 minutes (wrangler.jsonc triggers): a sample of who is on the site, and from 23:00
+  // the day's report.
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(sampleLive(env));
+    ctx.waitUntil(keepDailyReport(env).catch((e: unknown) => console.error('daily report', e)));
   },
 } satisfies ExportedHandler<Env>;
 
