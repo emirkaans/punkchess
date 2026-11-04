@@ -64,16 +64,29 @@ async function outfitOf(db: D1Database, userId: string): Promise<Outfit> {
   return parseOutfit(row?.outfit ?? null);
 }
 
-/** The charge and the item for one purchase (run in a batch: each sees the ones before it). */
-const purchase = (db: D1Database, userId: string, item: StoreItem, now: number) => [
+/**
+ * The charge and the item for one purchase (run in a batch: each sees the ones before it). In a
+ * purchase of several, `need` is what this and the items after it cost, and `first` is the
+ * batch's first item: a later charge is only made when the first one was, so a balance spent
+ * meanwhile by another request buys nothing rather than some of the items.
+ */
+const purchase = (
+  db: D1Database,
+  userId: string,
+  item: StoreItem,
+  now: number,
+  need = item.price,
+  first: string | null = null,
+) => [
   db
     .prepare(
       `INSERT OR IGNORE INTO coin_ledger (user_id, amount, reason, ref, day, created_at)
        SELECT ?1, -?2, 'store', ?3, ?4, ?5
-       WHERE (SELECT coalesce(sum(amount), 0) FROM coin_ledger WHERE user_id = ?1) >= ?2
-         AND NOT EXISTS (SELECT 1 FROM user_items WHERE user_id = ?1 AND item_id = ?3)`,
+       WHERE (SELECT coalesce(sum(amount), 0) FROM coin_ledger WHERE user_id = ?1) >= ?6
+         AND NOT EXISTS (SELECT 1 FROM user_items WHERE user_id = ?1 AND item_id = ?3)
+         AND (?7 IS NULL OR EXISTS (SELECT 1 FROM coin_ledger WHERE user_id = ?1 AND reason = 'store' AND ref = ?7 AND created_at = ?5))`,
     )
-    .bind(userId, item.price, item.id, dailyDay(now), now),
+    .bind(userId, item.price, item.id, dailyDay(now), now, need, first),
   db
     .prepare(
       `INSERT OR IGNORE INTO user_items (user_id, item_id, price, bought_at)
@@ -104,7 +117,16 @@ async function buyMany(db: D1Database, userId: string, input: unknown[], now: nu
   const toBuy = [...new Map(wanted.filter((w) => w.item && !have.has(w.id)).map((w) => [w.id, w.item!])).values()];
   const total = toBuy.reduce((sum, i) => sum + i.price, 0);
   if (total > (await coinBalance(db, userId, now)).balance) return json({ error: 'not-enough' }, 409);
-  if (toBuy.length) await db.batch(toBuy.flatMap((item) => purchase(db, userId, item, now)));
+  let need = total;
+  if (toBuy.length) {
+    await db.batch(
+      toBuy.flatMap((item, i) => {
+        const statements = purchase(db, userId, item, now, need, i ? toBuy[0].id : null);
+        need -= item.price;
+        return statements;
+      }),
+    );
+  }
   const items = await owned(db, userId);
   const outfit: Record<OutfitSlot, string | null> = { ...(await outfitOf(db, userId)) };
   for (const w of wanted) if (!w.item || items.has(w.id)) outfit[w.slot] = w.id;

@@ -5,7 +5,8 @@
 //
 // A change of capitals only is free and not limited. A paid change is one entry of −price in the
 // coin ledger (reason 'rename'), written in one batch with the new name, and only when the
-// balance covers it.
+// balance covers it. Two requests at once make one change: each is only written while the
+// player's changes are still what they were when it was priced.
 
 import { usernameProblem } from '../src/online/account.ts';
 import { isStaffRole } from '../src/online/admin.ts';
@@ -21,6 +22,10 @@ const json = (data: unknown, status = 200) =>
     status,
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
+
+/** SQL true while user ?1 still has ?2 real changes: a change made meanwhile (a second request) fails it. */
+const UNCHANGED = `(SELECT count(*) FROM username_history
+  WHERE user_id = ?1 AND lower(old_name) <> lower(new_name) AND by_staff IS NULL) = ?2`;
 
 /** A player's real changes (not capitals only): how many, and the latest's time. */
 async function changes(db: D1Database, userId: string): Promise<{ count: number; lastAt: number | null }> {
@@ -95,10 +100,27 @@ export async function handleRename(request: Request, env: AuthEnv, url: URL): Pr
   if (await usernameTaken(env, name, user.id)) return json({ error: 'taken' }, 409);
   const cost = renameCost(before.count);
   if (cost === 0) {
-    await env.DB.batch([
-      env.DB.prepare('UPDATE users SET username = ?1 WHERE id = ?2').bind(name, user.id),
-      history.bind(user.id, user.username, name, now, 0, staff),
-    ]);
+    // Only while no other change was made since `before` (staff: always); the history with it.
+    try {
+      await env.DB.batch([
+        env.DB.prepare(`UPDATE users SET username = ?3 WHERE id = ?1 AND (?4 IS NOT NULL OR ${UNCHANGED})`).bind(
+          user.id,
+          before.count,
+          name,
+          staff,
+        ),
+        env.DB.prepare(
+          `INSERT INTO username_history (user_id, old_name, new_name, changed_at, paid, by_staff)
+           SELECT ?1, ?2, ?3, ?4, 0, ?5 WHERE (SELECT username FROM users WHERE id = ?1) = ?3`,
+        ).bind(user.id, user.username, name, now, staff),
+      ]);
+    } catch {
+      return json({ error: 'taken' }, 409);
+    }
+    const row = await env.DB.prepare('SELECT username FROM users WHERE id = ?1')
+      .bind(user.id)
+      .first<{ username: string }>();
+    if (row?.username !== name) return json({ error: 'too-soon', nextAt: nextRenameAt(now) }, 429);
     return json({ username: name });
   }
   // Paid: the charge only when the balance covers it; the name and the history only with it.
@@ -107,9 +129,9 @@ export async function handleRename(request: Request, env: AuthEnv, url: URL): Pr
     await env.DB.batch([
       env.DB.prepare(
         `INSERT INTO coin_ledger (user_id, amount, reason, ref, day, created_at)
-         SELECT ?1, -?2, 'rename', ?3, ?4, ?5
-         WHERE (SELECT coalesce(sum(amount), 0) FROM coin_ledger WHERE user_id = ?1) >= ?2`,
-      ).bind(user.id, cost, ref, dailyDay(now), now),
+         SELECT ?1, -?3, 'rename', ?4, ?5, ?6
+         WHERE (SELECT coalesce(sum(amount), 0) FROM coin_ledger WHERE user_id = ?1) >= ?3 AND ${UNCHANGED}`,
+      ).bind(user.id, before.count, cost, ref, dailyDay(now), now),
       env.DB.prepare(
         `UPDATE users SET username = ?1 WHERE id = ?2
          AND EXISTS (SELECT 1 FROM coin_ledger WHERE user_id = ?2 AND reason = 'rename' AND ref = ?3)`,
@@ -127,6 +149,11 @@ export async function handleRename(request: Request, env: AuthEnv, url: URL): Pr
   const paid = await env.DB.prepare("SELECT 1 FROM coin_ledger WHERE user_id = ?1 AND reason = 'rename' AND ref = ?2")
     .bind(user.id, ref)
     .first();
-  if (!paid) return json({ error: 'not-enough' }, 409);
+  if (!paid) {
+    // Not charged: another change was made meanwhile, or the balance does not cover it.
+    const after = await changes(env.DB, user.id);
+    if (after.count !== before.count) return json({ error: 'too-soon', nextAt: nextRenameAt(after.lastAt) }, 429);
+    return json({ error: 'not-enough' }, 409);
+  }
   return json({ username: name });
 }

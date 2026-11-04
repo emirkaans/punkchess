@@ -44,6 +44,9 @@ export interface AuthEnv {
   readonly PAUSE_API?: string;
   /** Key of the daily report for the reporting routine (server/report.ts). Empty: no report. */
   readonly REPORT_KEY?: string;
+  /** The owner's alerts on Telegram (server/alerts.ts): the bot's token (a secret) and the chat. */
+  readonly TELEGRAM_BOT_TOKEN?: string;
+  readonly TELEGRAM_CHAT_ID?: string;
 }
 
 const SESSION_COOKIE = 'pc_session';
