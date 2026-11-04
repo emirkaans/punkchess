@@ -12707,3 +12707,17 @@ a:focus-visible {
 .menu .menu-more.on {
   color: var(--pink);
 }
+
+/* Phones: bulbs strung across the street, over the roofs (they never take a tap). */
+.street-top-lights {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+.street-top-lights svg {
+  display: block;
+  width: 100%;
+}

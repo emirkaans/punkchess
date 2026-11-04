@@ -31,6 +31,19 @@ function useNarrow(): boolean {
   return narrow;
 }
 
+/** Phones: one string of bulbs across the street seen from above (a sagging line, bulbs on it). */
+function topLightsSvg(): string {
+  const colors = ['#ffe9a8', '#ff2e93', '#c6ff3d'];
+  let s = '<path d="M2 6 Q195 40 388 6" fill="none" stroke="#3a3640" stroke-width="2"/>';
+  for (let i = 1; i < 12; i++) {
+    const t = i / 12;
+    const x = 2 + t * 386;
+    const y = 6 + 2 * (1 - t) * t * 34;
+    s += `<circle cx="${x.toFixed(1)}" cy="${(y + 3).toFixed(1)}" r="4" fill="${colors[i % 3]}"/>`;
+  }
+  return `<svg viewBox="0 0 390 44" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${s}</svg>`;
+}
+
 /** Strings of coloured bulbs across the alley (flat, in front of the 3D street). */
 function lightsSvg(w: number): string {
   let s = '';
@@ -152,6 +165,7 @@ export function StreetPage({ onOpen }: { onOpen: (path: string) => void }) {
     [account.user?.avatar, account.user?.outfit],
   );
   const lights = useMemo(() => lightsSvg(SCENE_W), []);
+  const topLights = useMemo(() => topLightsSvg(), []);
 
   if (narrow) {
     return (
@@ -159,6 +173,15 @@ export function StreetPage({ onOpen }: { onOpen: (path: string) => void }) {
         <h1 className="street-title">{t('menu.street')}</h1>
         <div className="street-map">
           <div className="street-road" aria-hidden="true" />
+          {/* Strings of bulbs over the street, as in the alley on wide screens. */}
+          {[1, 50, 99].map((top) => (
+            <span
+              key={top}
+              className="street-top-lights"
+              style={{ top: `${top}%` }}
+              dangerouslySetInnerHTML={{ __html: topLights }}
+            />
+          ))}
           {shops.map((s, i) => (
             <Shop
               key={s.id}
