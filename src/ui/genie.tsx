@@ -5,8 +5,8 @@ import type { ReactNode } from 'react';
 // the word that opened it, its bottom edge widening first and then its top, while it grows down;
 // closing runs the same path back. Many small keyframes on one linear clock keep it smooth.
 
-const OPEN_MS = 380;
-const CLOSE_MS = 260;
+const OPEN_MS = 260;
+const CLOSE_MS = 200;
 
 /** The keyframes for a panel whose opener sits at `ox` (% of its width). Pure. */
 export function genieFrames(ox: number): Keyframe[] {
