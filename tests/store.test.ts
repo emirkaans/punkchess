@@ -137,15 +137,16 @@ describe('aksesuar türleri', () => {
     expect(parseOutfit({ acc: 'phones' })).toMatchObject({ acc: 'phones' });
   });
 
-  it('tasma kafadan sonra çizilir (boyun onu örtmez); pantolon tişörtün üstünde', () => {
+  it('tasma kafadan sonra çizilir (boyun onu örtmez); pantolon her üstün üstünde', () => {
     const svg = figureSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, neck: 'choker', pants: 'camo' });
     expect(svg.lastIndexOf('<svg x="40"')).toBeLessThan(
       svg.indexOf('M84 108') === -1 ? svg.length : svg.lastIndexOf('#d8d4dc'),
     );
     // The plain T-shirt's anarchy sign comes before the trousers' camo.
     expect(svg.indexOf('#ff2e93')).toBeLessThan(svg.indexOf('#6b7a45'));
+    // A jacket too: the trousers go over it.
     const coat = figureSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, jacket: 'leather', pants: 'camo' });
-    expect(coat.indexOf('#6b7a45')).toBeLessThan(coat.indexOf('#1d1b21'));
+    expect(coat.indexOf('#1d1b21')).toBeLessThan(coat.indexOf('#6b7a45'));
   });
 });
 

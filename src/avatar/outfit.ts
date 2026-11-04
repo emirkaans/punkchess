@@ -263,14 +263,11 @@ const studs = (pts: readonly (readonly [number, number])[]) =>
     .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="#d8d4dc" stroke="${INK}" stroke-width=".8"/>`)
     .join('');
 
-/** The hands, drawn again over trousers or a skirt tucked over a T-shirt. */
+/** The hands, drawn again over the trousers or skirt (which go over the top). */
 export const handsSvg = (skin: string, g: BodyGeom): string =>
   g.hands
     .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="${skin}" stroke="${INK}" stroke-width="3"/>`)
     .join('');
-
-/** Tops worn under the trousers or skirt (the plain T-shirt, a band tee, a mesh top). */
-export const isTuckedTop = (id: string | null): boolean => id === null || id === 'bandtee' || id === 'mesh';
 
 /** The upper body: a jacket, or a plain punk T-shirt; arms and hands in `skin`. */
 export function jacketSvg(id: string | null, skin: string, g: BodyGeom = bodyGeom()): string {

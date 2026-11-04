@@ -7,7 +7,7 @@ import type { Avatar } from './avatar.ts';
 import { isHeadAcc } from './more.ts';
 import { bodyGeom, bootsSvg } from './body.ts';
 import { shoesSvg } from './shoes.ts';
-import { handsSvg, isTuckedTop, jacketSvg, neckAccessorySvg, pantsSvg, skirtSvg } from './outfit.ts';
+import { handsSvg, jacketSvg, neckAccessorySvg, pantsSvg, skirtSvg } from './outfit.ts';
 import type { Outfit, OutfitSlot } from './outfit.ts';
 
 const FULL = '0 0 200 360';
@@ -24,11 +24,12 @@ export function figureSvg(avatar: Avatar, outfit: Outfit, view = FULL): string {
   const shoes = shoesSvg(outfit.shoes, g);
   const trousers = pantsSvg(outfit.pants ?? (outfit.skirt ? 'bare' : null), skin, g);
   const legs = (shoes ? trousers.replace(bootsSvg(g, '#141016'), '') + shoes : trousers) + skirtSvg(outfit.skirt, g);
-  const tucked = isTuckedTop(outfit.jacket);
   return (
     `<svg viewBox="${view}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">` +
-    // A T-shirt goes under the trousers or skirt (the hands stay on top); a jacket over them.
-    (tucked ? jacketSvg(outfit.jacket, skin, g) + legs + handsSvg(skin, g) : legs + jacketSvg(outfit.jacket, skin, g)) +
+    // The top first, the trousers or skirt over it (whatever the top), the hands over both.
+    jacketSvg(outfit.jacket, skin, g) +
+    legs +
+    handsSvg(skin, g) +
     `<svg x="40" y="2" width="120" height="120" viewBox="0 0 200 200" overflow="visible">${head}</svg>` +
     // Neckwear after the head, or the neck would hide a collar.
     neckAccessorySvg(outfit.neck) +
