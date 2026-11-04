@@ -49,7 +49,7 @@ function storefront(color: string, sign: string, closed: boolean): string {
     `<rect x="14" y="40" width="50" height="42" fill="${closed ? '#141016' : '#2b2532'}" stroke="#0a0a0b" stroke-width="3"/>` +
     `<rect x="72" y="40" width="34" height="66" fill="#141016" stroke="#0a0a0b" stroke-width="3"/>` +
     `<circle cx="100" cy="74" r="2.5" fill="${color}"/>` +
-    `<text x="39" y="66" text-anchor="middle" font-family="Permanent Marker, cursive" font-size="13" fill="${closed ? '#55525a' : color}">${sign.replace(/[<&]/g, '')}</text></svg>`
+    `<text x="39" y="66" text-anchor="middle" font-family="Sedgwick Ave, Permanent Marker, cursive" font-size="13" fill="${closed ? '#55525a' : color}">${sign.replace(/[<&]/g, '')}</text></svg>`
   );
 }
 
@@ -234,7 +234,6 @@ export function Toolbar({
           go: onShoes,
         },
         { label: 'menu.tattoo', desc: 'menu.soon', sign: 'menu.sign.tattoo', color: '#c6ff3d', icon: '', on: false },
-        { label: 'menu.spray', desc: 'menu.soon', sign: 'menu.sign.spray', color: '#ffb02e', icon: '', on: false },
       ],
     },
   ];
@@ -310,7 +309,6 @@ export function Toolbar({
                             dangerouslySetInnerHTML={{ __html: storefront(e.color, t(e.sign!), !e.go) }}
                           />
                           <b>{t(e.label)}</b>
-                          <span>{t(e.desc)}</span>
                         </button>
                       ) : (
                         <button

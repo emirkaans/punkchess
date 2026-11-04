@@ -10410,7 +10410,7 @@ a:focus-visible {
   color: var(--muted);
 }
 .menu-street {
-  width: 600px;
+  width: 440px;
   padding: 14px 16px 16px;
   border-top-color: var(--lime);
 }
@@ -10432,6 +10432,8 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
+  align-self: stretch;
   gap: 4px;
   min-height: 0;
   padding: 0;
@@ -10445,7 +10447,10 @@ a:focus-visible {
   width: 100%;
 }
 .menu-shop b {
-  font: 400 17px/1 var(--display);
+  min-height: 2em;
+  display: flex;
+  align-items: center;
+  font: 400 15px/1 var(--display);
   letter-spacing: 0.05em;
 }
 .menu .menu-shop:hover:not(:disabled),
