@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { DEFAULT_AVATAR } from '../avatar/avatar.ts';
 import { figureSvg, itemView } from '../avatar/figure.ts';
 import { EMPTY_OUTFIT, STORE_ITEMS, STORE_SLOTS } from '../avatar/outfit.ts';
-import type { OutfitSlot } from '../avatar/outfit.ts';
+import type { StoreItem } from '../avatar/outfit.ts';
+import { SHOE_KINDS, shoeKind } from '../avatar/shoes.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import { signInWithGoogle, useAccount } from './account.ts';
 import { CoinIcon } from './CoinToast.tsx';
@@ -13,26 +14,59 @@ const Figure = ({ svg, className }: { svg: string; className: string }) => (
   <span className={className} dangerouslySetInnerHTML={{ __html: svg }} />
 );
 
+interface Tab {
+  readonly id: string;
+  readonly label: string;
+  readonly short: string;
+  readonly icon: string;
+  readonly items: readonly StoreItem[];
+}
+
 /**
- * The store ("Butik"): a fitting room on the left (the character full length, wearing what is
+ * A clothes shop: the store ("Butik", clothes by kind) or the shoe shop ("Bot & Bağcık": boots,
+ * combat boots, sneakers). A fitting room on the left (the character full length, wearing what is
  * tried on), the goods by kind on the right; an item is bought with punk coins, then worn or
  * taken off. Coins only buy looks.
  */
-export function StorePage({ onOpen }: { onOpen: (path: string) => void }) {
+export function StorePage({ onOpen, shoes = false }: { onOpen: (path: string) => void; shoes?: boolean }) {
   const { t } = useI18n();
   const account = useAccount();
   const avatar = account.user?.avatar ?? DEFAULT_AVATAR;
-  const [slot, setSlot] = useState<OutfitSlot>('jacket');
+  const tabs: readonly Tab[] = shoes
+    ? SHOE_KINDS.map((k) => ({
+        id: k,
+        label: t(`shoes.kind.${k}` as MessageKey),
+        short: t(`shoes.short.${k}` as MessageKey),
+        icon: SHOP_ICONS.shoes,
+        items: STORE_ITEMS.filter((i) => i.slot === 'shoes' && shoeKind(i.id) === k),
+      }))
+    : STORE_SLOTS.map((s) => ({
+        id: s,
+        label: t(`store.slot.${s}` as MessageKey),
+        short: t(`store.short.${s}` as MessageKey),
+        icon: SHOP_ICONS[s],
+        items: STORE_ITEMS.filter((i) => i.slot === s),
+      }));
+  const [tabId, setTab] = useState(tabs[0].id);
+  const tab = tabs.find((x) => x.id === tabId) ?? tabs[0];
+  const title = t(shoes ? 'shoes.title' : 'store.title');
+  // The other shops, one tap away.
+  const switches = shoes
+    ? [{ path: '/store', icon: SHOP_ICONS.jacket, full: `${t('store.title')} →`, short: t('shoes.toStore') }]
+    : [
+        { path: '/barber', icon: SHOP_ICONS.cut, full: `${t('barber.title')} →`, short: t('barber.short') },
+        { path: '/shoes', icon: SHOP_ICONS.shoes, full: `${t('shoes.title')} →`, short: t('shoes.short') },
+      ];
   const shop = useShop();
   const { store, isTrying, shown, msg, name, button, tryOn, cart, total } = shop;
 
   if (!account.loading && !account.user) {
     return (
       <main className="store-page">
-        <h1 className="store-title">{t('store.title')}</h1>
+        <h1 className="store-title">{title}</h1>
         <p className="muted">{t('store.signIn')}</p>
         {account.canSignIn && (
-          <button className="primary" onClick={() => signInWithGoogle('/store')}>
+          <button className="primary" onClick={() => signInWithGoogle(shoes ? '/shoes' : '/store')}>
             {t('account.signIn')}
           </button>
         )}
@@ -56,7 +90,7 @@ export function StorePage({ onOpen }: { onOpen: (path: string) => void }) {
         </aside>
         <section className="store-shop">
           <div className="store-top">
-            <h1 className="store-title">{t('store.title')}</h1>
+            <h1 className="store-title">{title}</h1>
             {store && (
               <span className="store-balance" title={t('coins.balance', { n: String(store.balance) })}>
                 <CoinIcon />
@@ -65,33 +99,35 @@ export function StorePage({ onOpen }: { onOpen: (path: string) => void }) {
             )}
           </div>
           <div className="store-tabs" role="tablist">
-            {STORE_SLOTS.map((s) => (
+            {tabs.map((x) => (
               <button
-                key={s}
+                key={x.id}
                 role="tab"
-                aria-selected={slot === s}
-                className={slot === s ? 'on' : ''}
-                onClick={() => setSlot(s)}
+                aria-selected={tab.id === x.id}
+                className={tab.id === x.id ? 'on' : ''}
+                onClick={() => setTab(x.id)}
               >
                 {/* Phones: an icon and a short name in a narrow rail; wider screens: the full name. */}
                 <svg className="cp-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d={SHOP_ICONS[s]} />
+                  <path d={x.icon} />
                 </svg>
-                <span className="cp-full">{t(`store.slot.${s}` as MessageKey)}</span>
+                <span className="cp-full">{x.label}</span>
                 <span className="cp-short" aria-hidden="true">
-                  {t(`store.short.${s}` as MessageKey)}
+                  {x.short}
                 </span>
               </button>
             ))}
-            <button className="shop-switch" onClick={() => onOpen('/barber')}>
-              <svg className="cp-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d={SHOP_ICONS.cut} />
-              </svg>
-              <span className="cp-full">{t('barber.title')} →</span>
-              <span className="cp-short" aria-hidden="true">
-                {t('barber.short')}
-              </span>
-            </button>
+            {switches.map((w) => (
+              <button key={w.path} className="shop-switch" onClick={() => onOpen(w.path)}>
+                <svg className="cp-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d={w.icon} />
+                </svg>
+                <span className="cp-full">{w.full}</span>
+                <span className="cp-short" aria-hidden="true">
+                  {w.short}
+                </span>
+              </button>
+            ))}
             {store && (
               <span className="store-rail-balance" title={t('coins.balance', { n: String(store.balance) })}>
                 <CoinIcon />
@@ -100,7 +136,7 @@ export function StorePage({ onOpen }: { onOpen: (path: string) => void }) {
             )}
           </div>
           <div className="store-grid" role="tabpanel">
-            {STORE_ITEMS.filter((i) => i.slot === slot).map((item) => (
+            {tab.items.map((item) => (
               <div
                 key={item.id}
                 className={isTrying(item.id) ? 'store-card on' : 'store-card'}

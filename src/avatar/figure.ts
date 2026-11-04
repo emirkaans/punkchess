@@ -5,7 +5,8 @@
 import { avatarSvg, skinColor } from './avatar.ts';
 import type { Avatar } from './avatar.ts';
 import { isHeadAcc } from './more.ts';
-import { bodyGeom } from './body.ts';
+import { bodyGeom, bootsSvg } from './body.ts';
+import { shoesSvg } from './shoes.ts';
 import { handsSvg, isTuckedTop, jacketSvg, neckAccessorySvg, pantsSvg, skirtSvg } from './outfit.ts';
 import type { Outfit, OutfitSlot } from './outfit.ts';
 
@@ -19,7 +20,10 @@ export function figureSvg(avatar: Avatar, outfit: Outfit, view = FULL): string {
     .replace(/^<svg[^>]*>/, '')
     .replace(/<\/svg>$/, '');
   // A skirt without trousers: bare legs under it.
-  const legs = pantsSvg(outfit.pants ?? (outfit.skirt ? 'bare' : null), skin, g) + skirtSvg(outfit.skirt, g);
+  // Shoes from the shoe shop take the plain boots' place: over the trouser legs, under a skirt.
+  const shoes = shoesSvg(outfit.shoes, g);
+  const trousers = pantsSvg(outfit.pants ?? (outfit.skirt ? 'bare' : null), skin, g);
+  const legs = (shoes ? trousers.replace(bootsSvg(g, '#141016'), '') + shoes : trousers) + skirtSvg(outfit.skirt, g);
   const tucked = isTuckedTop(outfit.jacket);
   return (
     `<svg viewBox="${view}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">` +
@@ -36,6 +40,7 @@ export function figureSvg(avatar: Avatar, outfit: Outfit, view = FULL): string {
 export function itemView(slot: OutfitSlot, id: string): string {
   if (slot === 'hat' || slot === 'eyewear' || slot === 'acc' || isHeadAcc(id)) return '30 0 140 130';
   if (slot === 'neck') return '40 70 120 120';
+  if (slot === 'shoes') return '48 266 104 86';
   if (slot === 'pants') return '20 220 160 140';
   if (slot === 'skirt') return '20 180 160 160';
   return '20 90 160 160';

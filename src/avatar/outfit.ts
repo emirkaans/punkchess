@@ -16,10 +16,22 @@ import {
   drawSkirt,
 } from './more.ts';
 import { NECK_BAND, bodyGeom, bootsSvg, clipTo } from './body.ts';
+import { SHOE_ITEMS } from './shoes.ts';
 import type { BodyGeom } from './body.ts';
 
 export type OutfitSlot =
-  'jacket' | 'pants' | 'skirt' | 'hat' | 'eyewear' | 'neck' | 'acc' | 'cut' | 'color' | 'beard' | 'beardColor';
+  | 'jacket'
+  | 'pants'
+  | 'skirt'
+  | 'hat'
+  | 'eyewear'
+  | 'neck'
+  | 'acc'
+  | 'shoes'
+  | 'cut'
+  | 'color'
+  | 'beard'
+  | 'beardColor';
 
 export interface StoreItem {
   readonly id: string;
@@ -38,6 +50,7 @@ export const OUTFIT_SLOTS: readonly OutfitSlot[] = [
   'eyewear',
   'neck',
   'acc',
+  'shoes',
   'cut',
   'color',
   'beard',
@@ -47,6 +60,7 @@ export const OUTFIT_SLOTS: readonly OutfitSlot[] = [
 /** Accessories come in three kinds, one of each worn at a time: glasses, at the neck, ears and face. */
 export const STORE_SLOTS: readonly OutfitSlot[] = ['jacket', 'pants', 'skirt', 'hat', 'eyewear', 'neck', 'acc'];
 export const BARBER_SLOTS: readonly OutfitSlot[] = ['cut', 'color', 'beard'];
+export const SHOE_SLOTS: readonly OutfitSlot[] = ['shoes'];
 
 /**
  * The beard's colour (slot beardColor): a premium colour the player owns (the same items as the
@@ -112,6 +126,7 @@ export const STORE_ITEMS: readonly StoreItem[] = [
   ...MORE_ITEMS,
   ...MORE_BARBER_ITEMS,
   ...SKIRT_ITEMS,
+  ...SHOE_ITEMS,
 ];
 
 export const storeItem = (id: string): StoreItem | undefined => STORE_ITEMS.find((i) => i.id === id);
@@ -124,6 +139,7 @@ export const EMPTY_OUTFIT: Outfit = {
   eyewear: null,
   neck: null,
   acc: null,
+  shoes: null,
   cut: null,
   color: null,
   beard: null,
@@ -160,7 +176,7 @@ export const KOMBIN_COUNT = 3;
 /** The clothes of an outfit (the store's slots), the rest left empty: what a saved outfit keeps. */
 export const clothesOf = (o: Outfit): Outfit => ({
   ...EMPTY_OUTFIT,
-  ...Object.fromEntries(STORE_SLOTS.map((s) => [s, o[s]])),
+  ...Object.fromEntries([...STORE_SLOTS, ...SHOE_SLOTS].map((s) => [s, o[s]])),
 });
 
 /** Saved outfits from anything (stored JSON): always `KOMBIN_COUNT` places, clothes only. */

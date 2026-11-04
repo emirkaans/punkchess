@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { DEFAULT_AVATAR } from '../avatar/avatar.ts';
 import { figureSvg, itemView } from '../avatar/figure.ts';
-import { EMPTY_OUTFIT, STORE_ITEMS, STORE_SLOTS, wearKombin } from '../avatar/outfit.ts';
+import { EMPTY_OUTFIT, SHOE_SLOTS, STORE_ITEMS, STORE_SLOTS, wearKombin } from '../avatar/outfit.ts';
+
+/** The wardrobe's kinds: the clothes and the shoes. */
+const WARDROBE_SLOTS = [...STORE_SLOTS, ...SHOE_SLOTS];
 import type { Outfit, OutfitSlot } from '../avatar/outfit.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import { signInWithGoogle, useAccount } from './account.ts';
@@ -44,7 +47,7 @@ export function WardrobePage({ onOpen }: { onOpen: (path: string) => void }) {
   const worn = store?.outfit ?? EMPTY_OUTFIT;
   const mine = STORE_ITEMS.filter((i) => i.slot === slot && store?.owned.has(i.id));
   // A saved outfit is "on" when the clothes worn now are exactly its clothes.
-  const isOn = (k: Outfit) => STORE_SLOTS.every((s) => wearKombin(worn, k)[s] === worn[s]);
+  const isOn = (k: Outfit) => WARDROBE_SLOTS.every((s) => wearKombin(worn, k)[s] === worn[s]);
 
   return (
     <main className="store-page">
@@ -111,7 +114,7 @@ export function WardrobePage({ onOpen }: { onOpen: (path: string) => void }) {
           </div>
         </div>
         <div className="wardrobe-tabs" role="tablist">
-          {STORE_SLOTS.map((s) => (
+          {WARDROBE_SLOTS.map((s) => (
             <button
               key={s}
               role="tab"

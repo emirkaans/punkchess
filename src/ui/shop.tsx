@@ -248,6 +248,7 @@ export const SHOP_ICONS: Readonly<Record<OutfitSlot, string>> = {
   hat: 'M4 16c0-6 4-10 8-10s8 4 8 10zM2 16h20',
   eyewear: 'M7 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM17 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM11 13h2',
   neck: 'M6 4c0 9 3 13 6 13s6-4 6-13M12 17v3',
+  shoes: 'M4 6h6v8l9 3c1 .4 1 2 0 3H4zM4 17h16',
   acc: 'M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v6H4zM17 14h3v6h-3z',
   cut: 'M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM8 16L19 4M16 16L5 4',
   color: 'M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z',

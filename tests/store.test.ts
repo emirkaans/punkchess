@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_AVATAR, TALL_VIEW, avatarSvg } from '../src/avatar/avatar.ts';
 import { figureSvg, itemView } from '../src/avatar/figure.ts';
+import { shoeKind } from '../src/avatar/shoes.ts';
 import {
   BARBER_SLOTS,
   EMPTY_OUTFIT,
+  SHOE_SLOTS,
   OUTFIT_SLOTS,
   STORE_SLOTS,
   parseKombins,
@@ -42,7 +44,7 @@ describe('mağaza', () => {
 
   it('her yuva tek bir dükkânda satılır', () => {
     // The beard's colour is not sold on its own: it takes the hair colours (or a natural one).
-    expect([...STORE_SLOTS, ...BARBER_SLOTS, 'beardColor'].sort()).toEqual([...OUTFIT_SLOTS].sort());
+    expect([...STORE_SLOTS, ...BARBER_SLOTS, ...SHOE_SLOTS, 'beardColor'].sort()).toEqual([...OUTFIT_SLOTS].sort());
   });
 
   it('kuaför: saç kendi saçın yerine çizilir, renk ve sakal karakterde görünür', () => {
@@ -144,5 +146,30 @@ describe('aksesuar türleri', () => {
     expect(svg.indexOf('#ff2e93')).toBeLessThan(svg.indexOf('#6b7a45'));
     const coat = figureSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, jacket: 'leather', pants: 'camo' });
     expect(coat.indexOf('#6b7a45')).toBeLessThan(coat.indexOf('#1d1b21'));
+  });
+});
+
+describe('ayakkabıcı', () => {
+  it('30 çift, üç türde; çoğu postal ve çizme, spor da var', () => {
+    const shoes = STORE_ITEMS.filter((i) => i.slot === 'shoes');
+    expect(shoes).toHaveLength(30);
+    const kinds = shoes.map((i) => shoeKind(i.id));
+    expect(kinds.filter((k) => k === 'sneaker').length).toBeGreaterThanOrEqual(5);
+    expect(kinds.filter((k) => k !== 'sneaker').length).toBeGreaterThanOrEqual(20);
+  });
+
+  it('bir çift düz siyah botların yerine çizilir, etek üstünde kalır', () => {
+    const plain = figureSvg(DEFAULT_AVATAR, EMPTY_OUTFIT);
+    const shod = figureSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, shoes: 'pinkcombat' });
+    expect(plain).not.toContain('#ff2e93" stroke="#141016" stroke-width="2" stroke-linejoin');
+    expect(shod).toContain('fill="#ff2e93" stroke="#141016" stroke-width="2" stroke-linejoin="round"');
+    expect(shod).not.toContain('h28c4 4');
+    const skirt = figureSvg(DEFAULT_AVATAR, { ...EMPTY_OUTFIT, shoes: 'kneehigh', skirt: 'tutupink' });
+    expect(skirt.indexOf('translate(')).toBeLessThan(skirt.lastIndexOf('#ff2e93'));
+  });
+
+  it('kaydedilen kombin ayakkabıyı da tutar', () => {
+    const [k] = parseKombins([{ jacket: 'leather', shoes: 'combat8' }]);
+    expect(k?.shoes).toBe('combat8');
   });
 });

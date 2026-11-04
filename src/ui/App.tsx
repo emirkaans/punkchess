@@ -362,6 +362,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         r.kind === 'character' ||
         r.kind === 'store' ||
         r.kind === 'barber' ||
+        r.kind === 'shoes' ||
         r.kind === 'wardrobe'
       )
         return setPage(r.kind);
@@ -676,6 +677,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           history.pushState(null, '', '/barber');
           setPage('barber');
         })}
+        onShoes={leaveGame(() => {
+          history.pushState(null, '', '/shoes');
+          setPage('shoes');
+        })}
         onGangs={leaveGame(() => {
           setGangTag(null);
           setPage('gangs');
@@ -754,7 +759,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           />
         ) : page === 'contact' ? (
           <ContactPage />
-        ) : page === 'store' || page === 'barber' || page === 'wardrobe' ? (
+        ) : page === 'store' || page === 'barber' || page === 'shoes' || page === 'wardrobe' ? (
           (() => {
             const open = (path: string) => {
               history.pushState(null, '', path);
@@ -764,6 +769,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
               <StorePage onOpen={open} />
             ) : page === 'barber' ? (
               <BarberPage onOpen={open} />
+            ) : page === 'shoes' ? (
+              <StorePage onOpen={open} shoes />
             ) : (
               <WardrobePage onOpen={open} />
             );

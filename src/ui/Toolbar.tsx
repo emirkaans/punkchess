@@ -76,6 +76,7 @@ export type Page =
   | 'character'
   | 'store'
   | 'barber'
+  | 'shoes'
   | 'wardrobe'
   | 'loading';
 
@@ -90,6 +91,7 @@ interface Props {
   /** The shops (punk coins buy clothes, cuts). */
   onStore: () => void;
   onBarber: () => void;
+  onShoes: () => void;
   onPuzzles: () => void;
   onLeaderboard: () => void;
   onTv: () => void;
@@ -112,6 +114,7 @@ export function Toolbar({
   onAnalysis,
   onStore,
   onBarber,
+  onShoes,
   onPuzzles,
   onLeaderboard,
   onTv,
@@ -220,6 +223,15 @@ export function Toolbar({
           icon: '',
           on: page === 'barber',
           go: onBarber,
+        },
+        {
+          label: 'menu.shoes',
+          desc: 'menu.desc.shoes',
+          sign: 'menu.sign.shoes',
+          color: '#e8c84a',
+          icon: '',
+          on: page === 'shoes',
+          go: onShoes,
         },
         { label: 'menu.tattoo', desc: 'menu.soon', sign: 'menu.sign.tattoo', color: '#c6ff3d', icon: '', on: false },
         { label: 'menu.spray', desc: 'menu.soon', sign: 'menu.sign.spray', color: '#ffb02e', icon: '', on: false },
