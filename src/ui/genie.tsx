@@ -52,6 +52,7 @@ export function GenieDrop({ open, className, opener, off = false, children, ...r
   const anim = useRef<Animation | null>(null);
   const [shown, setShown] = useState(open);
   const was = useRef(open);
+  const held = useRef<Animation | null>(null);
 
   if (open && !shown) setShown(true);
 
@@ -63,6 +64,18 @@ export function GenieDrop({ open, className, opener, off = false, children, ...r
       if (!open) setShown(false);
       return;
     }
+    // Closing: the panel no longer takes the pointer, so a cursor passing over the shrinking
+    // panel does not open it again (and close it again, over and over).
+    el.style.pointerEvents = open ? '' : 'none';
+    held.current?.cancel();
+    held.current = null;
+    const running = anim.current;
+    if (running && running.playState === 'running') {
+      // Turned back halfway: run the same motion back from where it is, with no jump.
+      running.reverse();
+      running.onfinish = () => finish(running, open);
+      return;
+    }
     const panel = el.getBoundingClientRect();
     const from = opener()?.getBoundingClientRect();
     const ox =
@@ -71,20 +84,36 @@ export function GenieDrop({ open, className, opener, off = false, children, ...r
         : 50;
     el.style.transformOrigin = `${ox}% 0`;
     const frames = genieFrames(ox);
-    anim.current?.cancel();
     const a = el.animate(
       open ? frames : [...frames].reverse().map((f) => ({ ...f, offset: 1 - (f.offset as number) })),
       {
         duration: open ? OPEN_MS : CLOSE_MS,
         easing: 'linear',
+        // A closed panel holds its last, folded frame until it is hidden (no full-size flash).
+        fill: 'forwards',
       },
     );
     anim.current = a;
-    a.onfinish = () => {
-      if (anim.current === a) anim.current = null;
-      if (!open) setShown(false);
-    };
+    a.onfinish = () => finish(a, open);
+
+    function finish(a: Animation, opened: boolean) {
+      if (anim.current !== a || !el) return;
+      anim.current = null;
+      if (opened) {
+        a.cancel();
+        return;
+      }
+      // The held frame is see-through; it is dropped once React has hidden the panel.
+      held.current = a;
+      setShown(false);
+    }
   }, [open, off, opener]);
+
+  useLayoutEffect(() => {
+    if (shown) return;
+    held.current?.cancel();
+    held.current = null;
+  }, [shown]);
 
   return (
     <div ref={ref} className={`${className}${shown ? ' shown' : ''}`} {...rest}>
