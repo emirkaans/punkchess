@@ -685,6 +685,11 @@ a.logo {
   border-color: var(--pink);
   color: var(--pink);
 }
+/* A menu word without a dropdown (İzle) sits on the same line as the ones with one. */
+.menu > a {
+  display: flex;
+  align-items: center;
+}
 button:disabled {
   opacity: 0.4;
   cursor: default;
