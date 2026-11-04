@@ -1,8 +1,8 @@
-// A sound for each shop on Punk Street, played as the player walks in. Made in code with the
-// Web Audio API like the other sounds (no audio files).
+// A sound for each shop on Punk Street, played as the player walks in, and one for the street.
+// Made in code with the Web Audio API like the other sounds (no audio files).
 
-/** The shops with a sound of their own. */
-export type Shop = 'store' | 'barber' | 'shoes';
+/** The shops with a sound of their own, and the street itself. */
+export type Shop = 'store' | 'barber' | 'shoes' | 'street';
 
 let noise: AudioBuffer | null = null;
 
@@ -83,6 +83,57 @@ function bell(ac: BaseAudioContext, out: AudioNode, f: number, t: number, len: n
   ].forEach(([m, v], i) => tone(ac, out, 'sine', f * m, f * m, t, len / (1 + i * 0.8), vol * v, 0.002));
 }
 
+/** The street: a car passes from left to right over the city's hum, its engine falling in pitch. */
+function passingCar(ac: BaseAudioContext, out: AudioNode, t: number) {
+  const pan = ac.createStereoPanner();
+  pan.connect(out);
+  pan.pan.setValueAtTime(-0.9, t);
+  pan.pan.linearRampToValueAtTime(0.9, t + 1.3);
+  // Loudest as it passes, in the middle.
+  const swell = (vol: number) => {
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.65);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.35);
+    g.connect(pan);
+    return g;
+  };
+  // The tyres on the asphalt.
+  const tyres = noiseSource(ac);
+  const f = ac.createBiquadFilter();
+  f.type = 'lowpass';
+  f.Q.value = 0.7;
+  f.frequency.setValueAtTime(400, t);
+  f.frequency.linearRampToValueAtTime(1400, t + 0.65);
+  f.frequency.linearRampToValueAtTime(350, t + 1.3);
+  tyres.connect(f);
+  f.connect(swell(0.45));
+  tyres.start(t);
+  tyres.stop(t + 1.4);
+  // The engine, its pitch dropping as it goes away.
+  const engine = ac.createOscillator();
+  engine.type = 'sawtooth';
+  engine.frequency.setValueAtTime(95, t);
+  engine.frequency.linearRampToValueAtTime(88, t + 0.6);
+  engine.frequency.linearRampToValueAtTime(70, t + 1.3);
+  const lp = ac.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 300;
+  engine.connect(lp);
+  lp.connect(swell(0.18));
+  engine.start(t);
+  engine.stop(t + 1.4);
+  // The city's hum under it.
+  const hum = noiseSource(ac);
+  const hf = ac.createBiquadFilter();
+  hf.type = 'lowpass';
+  hf.frequency.value = 200;
+  hum.connect(hf);
+  hf.connect(envelope(ac, out, t, 0.08, 0.3, 1.4));
+  hum.start(t);
+  hum.stop(t + 1.45);
+}
+
 /** Plays `shop`'s sound at `t` on `ac`. */
 export function playShopSound(ac: BaseAudioContext, shop: Shop, t: number): void {
   const out = ac.createGain();
@@ -112,6 +163,9 @@ export function playShopSound(ac: BaseAudioContext, shop: Shop, t: number): void
         hiss(ac, out, 'lowpass', 1800, 400, 1, t + dt, 0.09, 0.35);
         hiss(ac, out, 'bandpass', 3000, 3000, 2, t + dt + 0.01, 0.03, 0.12);
       });
+      break;
+    case 'street':
+      passingCar(ac, out, t);
       break;
   }
 }

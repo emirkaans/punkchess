@@ -213,9 +213,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const [sound] = useState(() => (kind: SoundKind) => {
     if (soundOn.current) playSound(kind);
   });
-  // Walking into a shop on Punk Street: the shop's own sound (the till, the scissors, the boots).
+  // Walking into a shop on Punk Street: the shop's own sound (the till, the scissors, the boots);
+  // out on the street, a car passing.
   useEffect(() => {
-    if (page === 'store' || page === 'barber' || page === 'shoes') sound(`shop:${page}`);
+    if (page === 'store' || page === 'barber' || page === 'shoes' || page === 'street') sound(`shop:${page}`);
   }, [page, sound]);
 
   const clients = useBotClients();
