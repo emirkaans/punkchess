@@ -40,6 +40,7 @@ export type Route =
   | { readonly kind: 'store' }
   | { readonly kind: 'barber' }
   | { readonly kind: 'shoes' }
+  | { readonly kind: 'street' }
   | { readonly kind: 'wardrobe' }
   | { readonly kind: 'game'; readonly id: string }
   | { readonly kind: 'review'; readonly id: string };
@@ -71,6 +72,7 @@ const RESERVED = new Set([
   'store',
   'barber',
   'shoes',
+  'street',
   'wardrobe',
 ]);
 /** Game ids: 8 letters / digits; older history records also have dashes. */
@@ -106,6 +108,7 @@ export function parseRoute(pathname: string): Route {
   if (p === '/store') return { kind: 'store' };
   if (p === '/barber') return { kind: 'barber' };
   if (p === '/shoes') return { kind: 'shoes' };
+  if (p === '/street') return { kind: 'street' };
   if (p === '/wardrobe') return { kind: 'wardrobe' };
   if (p === '/privacy' || p === '/terms' || p === '/licenses')
     return { kind: p.slice(1) as 'privacy' | 'terms' | 'licenses' };
@@ -156,6 +159,8 @@ export function pathOf(r: Route): string {
       return '/barber';
     case 'shoes':
       return '/shoes';
+    case 'street':
+      return '/street';
     case 'wardrobe':
       return '/wardrobe';
     case 'privacy':

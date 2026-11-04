@@ -79,6 +79,7 @@ const AnalysisPage = lazy(() => import('./AnalysisPage.tsx').then((m) => ({ defa
 const ReviewPage = lazy(() => import('./ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
 const SignupPage = lazy(() => import('./SignupPage.tsx').then((m) => ({ default: m.SignupPage })));
 const StorePage = lazy(() => import('./StorePage.tsx').then((m) => ({ default: m.StorePage })));
+const StreetPage = lazy(() => import('./StreetPage.tsx').then((m) => ({ default: m.StreetPage })));
 const WardrobePage = lazy(() => import('./WardrobePage.tsx').then((m) => ({ default: m.WardrobePage })));
 const BarberPage = lazy(() => import('./BarberPage.tsx').then((m) => ({ default: m.BarberPage })));
 const CharacterCreator = lazy(() => import('./CharacterCreator.tsx').then((m) => ({ default: m.CharacterCreator })));
@@ -363,6 +364,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         r.kind === 'store' ||
         r.kind === 'barber' ||
         r.kind === 'shoes' ||
+        r.kind === 'street' ||
         r.kind === 'wardrobe'
       )
         return setPage(r.kind);
@@ -681,6 +683,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           history.pushState(null, '', '/shoes');
           setPage('shoes');
         })}
+        onStreet={leaveGame(() => {
+          history.pushState(null, '', '/street');
+          setPage('street');
+        })}
         onGangs={leaveGame(() => {
           setGangTag(null);
           setPage('gangs');
@@ -759,7 +765,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           />
         ) : page === 'contact' ? (
           <ContactPage />
-        ) : page === 'store' || page === 'barber' || page === 'shoes' || page === 'wardrobe' ? (
+        ) : page === 'store' || page === 'barber' || page === 'shoes' || page === 'street' || page === 'wardrobe' ? (
           (() => {
             const open = (path: string) => {
               history.pushState(null, '', path);
@@ -771,6 +777,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
               <BarberPage onOpen={open} />
             ) : page === 'shoes' ? (
               <StorePage onOpen={open} shoes />
+            ) : page === 'street' ? (
+              <StreetPage onOpen={open} />
             ) : (
               <WardrobePage onOpen={open} />
             );

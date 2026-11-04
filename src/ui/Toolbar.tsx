@@ -3,6 +3,7 @@ import { AccountButton } from './AccountButton.tsx';
 import { PlayerSearch } from './PlayerSearch.tsx';
 import { useI18n } from './i18n.tsx';
 import { Crown } from './Punk.tsx';
+import { storefront } from './storefront.ts';
 import type { Prefs } from './prefs.ts';
 import { formatClock } from '../clock/clock.ts';
 import { yourTime } from './online/current.ts';
@@ -26,6 +27,9 @@ interface MenuGroup {
   readonly id: string;
   readonly label: MessageKey;
   readonly entries: readonly MenuEntry[];
+  /** Where the group's own button goes (else its first entry), and a link under its entries. */
+  readonly go?: () => void;
+  readonly more?: { readonly label: MessageKey; readonly go: () => void; readonly on: boolean };
 }
 
 /** The menu's icons (24×24 strokes). */
@@ -37,21 +41,6 @@ const ICONS = {
   crown: 'M3 18h18M4 16l-1-9 5 4 4-7 4 7 5-4-1 9z',
   gang: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 11a3 3 0 1 0 0-6M3 20c0-4 3-6 6-6s6 2 6 6M15 14c3 0 6 2 6 6',
 };
-
-/** A shop's storefront on the street (awning, window with its sign, door); closed ones are dim. */
-function storefront(color: string, sign: string, closed: boolean): string {
-  const stripes = [0, 1, 2, 3, 4, 5]
-    .map((i) => `<path d="M${10 + i * 18} 20h9l-2 10h-9z" fill="${i % 2 ? '#f1eee8' : color}"/>`)
-    .join('');
-  return (
-    `<svg viewBox="0 0 120 110"><rect x="6" y="20" width="108" height="86" fill="#1f1b24" stroke="#0a0a0b" stroke-width="3"/>` +
-    `<path d="M2 20h116l-8-14H10z" fill="${color}" stroke="#0a0a0b" stroke-width="3"/>${stripes}` +
-    `<rect x="14" y="40" width="50" height="42" fill="${closed ? '#141016' : '#2b2532'}" stroke="#0a0a0b" stroke-width="3"/>` +
-    `<rect x="72" y="40" width="34" height="66" fill="#141016" stroke="#0a0a0b" stroke-width="3"/>` +
-    `<circle cx="100" cy="74" r="2.5" fill="${color}"/>` +
-    `<text x="39" y="66" text-anchor="middle" font-family="Sedgwick Ave, Permanent Marker, cursive" font-size="13" fill="${closed ? '#55525a' : color}">${sign.replace(/[<&]/g, '')}</text></svg>`
-  );
-}
 
 export type Page =
   | 'home'
@@ -77,6 +66,7 @@ export type Page =
   | 'store'
   | 'barber'
   | 'shoes'
+  | 'street'
   | 'wardrobe'
   | 'loading';
 
@@ -92,6 +82,7 @@ interface Props {
   onStore: () => void;
   onBarber: () => void;
   onShoes: () => void;
+  onStreet: () => void;
   onPuzzles: () => void;
   onLeaderboard: () => void;
   onTv: () => void;
@@ -115,6 +106,7 @@ export function Toolbar({
   onStore,
   onBarber,
   onShoes,
+  onStreet,
   onPuzzles,
   onLeaderboard,
   onTv,
@@ -205,6 +197,8 @@ export function Toolbar({
     {
       id: 'street',
       label: 'menu.streetShort',
+      go: onStreet,
+      more: { label: 'street.walk', go: onStreet, on: page === 'street' },
       entries: [
         {
           label: 'menu.store',
@@ -282,10 +276,10 @@ export function Toolbar({
                 }}
               >
                 <button
-                  className={`menu-top${g.entries.some((e) => e.on) ? ' on' : ''}`}
+                  className={`menu-top${g.entries.some((e) => e.on) || g.more?.on ? ' on' : ''}`}
                   aria-haspopup="true"
                   aria-expanded={openGroup === g.id}
-                  onClick={close(g.entries[0].go!)}
+                  onClick={close(g.go ?? g.entries[0].go!)}
                 >
                   {t(g.label)}
                   <span className="menu-caret" aria-hidden="true" />
@@ -328,6 +322,15 @@ export function Toolbar({
                       ),
                     )}
                   </div>
+                  {g.more && (
+                    <button
+                      className={`menu-more${g.more.on ? ' on' : ''}`}
+                      aria-current={g.more.on ? 'page' : undefined}
+                      onClick={close(g.more.go)}
+                    >
+                      {t(g.more.label)} →
+                    </button>
+                  )}
                 </div>
               </div>
             ),

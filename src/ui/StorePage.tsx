@@ -8,7 +8,7 @@ import type { MessageKey } from '../i18n/index.ts';
 import { signInWithGoogle, useAccount } from './account.ts';
 import { CoinIcon } from './CoinToast.tsx';
 import { useI18n } from './i18n.tsx';
-import { FittingCart, SHOP_ICONS, useShop } from './shop.tsx';
+import { FittingCart, SHOP_ICONS, STREET_ICON, useShop } from './shop.tsx';
 
 const Figure = ({ svg, className }: { svg: string; className: string }) => (
   <span className={className} dangerouslySetInnerHTML={{ __html: svg }} />
@@ -50,13 +50,10 @@ export function StorePage({ onOpen, shoes = false }: { onOpen: (path: string) =>
   const [tabId, setTab] = useState(tabs[0].id);
   const tab = tabs.find((x) => x.id === tabId) ?? tabs[0];
   const title = t(shoes ? 'shoes.title' : 'store.title');
-  // The other shops, one tap away.
-  const switches = shoes
-    ? [{ path: '/store', icon: SHOP_ICONS.jacket, full: `${t('store.title')} →`, short: t('shoes.toStore') }]
-    : [
-        { path: '/barber', icon: SHOP_ICONS.cut, full: `${t('barber.title')} →`, short: t('barber.short') },
-        { path: '/shoes', icon: SHOP_ICONS.shoes, full: `${t('shoes.title')} →`, short: t('shoes.short') },
-      ];
+  // Back to the street (the shops are entered from there).
+  const switches = [
+    { path: '/street', icon: STREET_ICON, full: `← ${t('street.back')}`, short: t('menu.streetShort') },
+  ];
   const shop = useShop();
   const { store, isTrying, shown, msg, name, button, tryOn, cart, total } = shop;
 

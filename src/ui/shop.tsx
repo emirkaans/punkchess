@@ -240,6 +240,9 @@ export function useShop() {
   };
 }
 
+/** The way back to Punk Street (a storefront with an arrow). */
+export const STREET_ICON = 'M3 9l2-5h14l2 5zM4 9v11h16V9M10 20v-6h4v6M9 13H5';
+
 /** Each kind's icon for the shops' phone rails (24×24 strokes). */
 export const SHOP_ICONS: Readonly<Record<OutfitSlot, string>> = {
   jacket: 'M8 3l-5 4 2 4 2-1v11h10V10l2 1 2-4-5-4-2 3h-4z',

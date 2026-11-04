@@ -12372,3 +12372,338 @@ a:focus-visible {
 .card-pickbar.pick-mid {
   justify-content: center;
 }
+
+/* ---------- Punk Street (src/ui/StreetPage.tsx, design F) ---------- */
+.street-page {
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.street-box {
+  position: relative;
+  width: 100%;
+  max-width: 1500px;
+  display: flex;
+  justify-content: center;
+}
+.street-scene {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  transform-origin: top center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: linear-gradient(#120f16, #0a0a0b);
+}
+.street-3d {
+  position: absolute;
+  inset: 0;
+  perspective: 1050px;
+  perspective-origin: 50% 40%;
+}
+.street-origin {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform-style: preserve-3d;
+}
+.st-wall,
+.st-floor,
+.st-end {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  transform-style: preserve-3d;
+}
+.st-wall,
+.st-end {
+  height: 500px;
+  background-color: #1d151a;
+  background-image:
+    repeating-linear-gradient(0deg, #120d11 0 3px, transparent 3px 22px),
+    repeating-linear-gradient(90deg, #120d11 0 3px, transparent 3px 44px);
+}
+/* The street is 940 wide and 1060 deep; its walls start 330 in front of the screen. */
+.st-left {
+  width: 1060px;
+  transform: translate3d(-470px, -240px, 330px) rotateY(90deg);
+}
+.st-right {
+  width: 1060px;
+  transform: translate3d(470px, -240px, -730px) rotateY(-90deg);
+}
+.st-floor {
+  width: 940px;
+  height: 1060px;
+  background:
+    repeating-linear-gradient(180deg, rgba(232, 200, 74, 0.6) 0 90px, transparent 90px 200px) 461px 0 / 18px 100%
+      no-repeat,
+    linear-gradient(90deg, #1d1c21 0 110px, #141317 110px 830px, #1d1c21 830px);
+  transform: translate3d(-470px, 260px, 330px) rotateX(-90deg);
+}
+.st-end {
+  width: 940px;
+  transform: translate3d(-470px, -240px, -730px);
+}
+.st-end img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* A shop on a wall: standing on the street, turned a little towards it so the far ones show too. */
+.st-shop {
+  position: absolute;
+  bottom: 0;
+  width: 290px;
+  padding: 0;
+  border: 0;
+  background: none;
+  min-height: 0;
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+.st-shop.l {
+  transform-origin: left bottom;
+  transform: rotateY(-16deg);
+}
+.st-shop.r {
+  transform-origin: right bottom;
+  transform: rotateY(16deg);
+}
+.st-shop:disabled {
+  cursor: default;
+}
+.st-front,
+.st-front svg {
+  display: block;
+  width: 100%;
+}
+.st-shop .st-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  transform: translateZ(4px);
+  font: 400 26px/1 var(--display);
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--fg);
+}
+.st-shop:disabled .st-name {
+  color: #6d6a72;
+}
+.st-sign {
+  display: none;
+}
+.st-shop .sf-door,
+.st-roof .sf-door {
+  transition:
+    opacity 0.2s,
+    fill 0.2s;
+}
+.st-shop.open:hover .sf-door,
+.st-shop.open:focus-visible .sf-door {
+  opacity: 0.9;
+  fill: var(--c);
+  filter: drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 14px var(--c));
+}
+.st-shop.open:hover .st-front,
+.st-shop.open:focus-visible .st-front {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--c) 45%, transparent));
+}
+.st-shop:hover:not(:disabled),
+.st-shop:focus-visible {
+  border: 0;
+  background: none;
+  outline: none;
+}
+.street-lights,
+.street-me {
+  position: absolute;
+  pointer-events: none;
+}
+.street-lights {
+  left: 0;
+  top: 0;
+  width: 100%;
+}
+.street-lights svg {
+  display: block;
+  width: 100%;
+}
+.street-me {
+  left: 50%;
+  bottom: 6px;
+  width: 128px;
+  height: 230px;
+  margin-left: -64px;
+}
+.street-me svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.street-title {
+  margin: 0;
+  font: 400 42px/1 var(--marker);
+  color: var(--lime);
+}
+.street-scene .street-title {
+  position: absolute;
+  top: 26px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+}
+.street-pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: rgba(10, 10, 11, 0.92);
+  font: 400 19px/1 var(--display);
+  letter-spacing: 0.1em;
+}
+.street-scene .street-pager {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+}
+.street-pager button {
+  min-width: 34px;
+  min-height: 30px;
+  padding: 0;
+  font: 400 24px/1 var(--display);
+  color: var(--lime);
+}
+.street-pager button:disabled {
+  color: #55525a;
+}
+.street-dots {
+  display: flex;
+  gap: 5px;
+}
+.street-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3a3640;
+}
+.street-dots i.on {
+  background: var(--pink);
+}
+
+/* Phones: the street from above, the road down the middle, two shops' roofs on each side. */
+.street-top {
+  gap: 14px;
+  padding: 14px 12px 20px;
+}
+.street-top .street-title {
+  font-size: 30px;
+}
+.street-map {
+  position: relative;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px minmax(0, 1fr);
+  grid-template-rows: repeat(2, minmax(200px, 1fr));
+  gap: 22px 0;
+  padding: 0 4px;
+  min-height: calc(100dvh - 61px - 150px);
+}
+.street-road {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  margin: -22px 0;
+  background:
+    repeating-linear-gradient(180deg, rgba(232, 200, 74, 0.55) 0 30px, transparent 30px 56px) center / 6px 100%
+      no-repeat,
+    linear-gradient(90deg, #1d1c21 0 12px, #141317 12px calc(100% - 12px), #1d1c21 calc(100% - 12px));
+}
+.st-roof {
+  position: relative;
+  min-height: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 3px solid #0a0a0b;
+  border-radius: 0;
+  background:
+    linear-gradient(to top right, transparent calc(50% - 1px), #1f1b24 50%, transparent calc(50% + 1px)),
+    linear-gradient(to bottom right, transparent calc(50% - 1px), #1f1b24 50%, transparent calc(50% + 1px)), #2b2532;
+}
+.st-roof.l {
+  grid-column: 1;
+  margin-right: 6px;
+}
+.st-roof.r {
+  grid-column: 3;
+  margin-left: 6px;
+}
+/* The awning, on the road side. */
+.st-roof::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background: repeating-linear-gradient(180deg, var(--c) 0 6px, #f1eee8 6px 12px);
+}
+.st-roof.l::after {
+  right: 0;
+}
+.st-roof.r::after {
+  left: 0;
+}
+.st-roof .st-front {
+  display: none;
+}
+.st-roof .st-sign {
+  display: block;
+  padding: 4px 10px;
+  border-radius: 3px;
+  background: #0a0a0b;
+  font: 400 17px/1.2 var(--marker);
+  color: var(--c);
+}
+.st-roof .st-name {
+  font: 400 13px/1 var(--display);
+  letter-spacing: 0.08em;
+  color: var(--fg);
+}
+.st-roof:disabled {
+  opacity: 0.5;
+}
+.st-roof.open:active,
+.st-roof.open:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--c),
+    0 0 18px color-mix(in srgb, var(--c) 50%, transparent);
+  outline: none;
+}
+
+/* The street menu's link to the whole street. */
+.menu .menu-more {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 6px 0 0;
+  border: 0;
+  background: none;
+  text-align: right;
+  font: 400 18px/1 var(--marker);
+  color: var(--lime);
+}
+.menu .menu-more:hover,
+.menu .menu-more.on {
+  color: var(--pink);
+}

@@ -8,7 +8,7 @@ import { refreshAccount, signInWithGoogle, useAccount } from './account.ts';
 import { AvatarView } from './CharacterCreator.tsx';
 import { CoinIcon } from './CoinToast.tsx';
 import { useI18n } from './i18n.tsx';
-import { FittingCart, SHOP_ICONS, useShop } from './shop.tsx';
+import { FittingCart, SHOP_ICONS, STREET_ICON, useShop } from './shop.tsx';
 
 /**
  * The barber ("Makas & Jilet", design "Salon Koltuğu"): premium cuts in a priced list on the
@@ -184,11 +184,11 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
               <span className="cp-short">{t(`barber.short.${s}` as MessageKey)}</span>
             </button>
           ))}
-          <button className="shop-switch" onClick={() => onOpen('/store')}>
+          <button className="shop-switch" onClick={() => onOpen('/street')}>
             <svg className="cp-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d={SHOP_ICONS.jacket} />
+              <path d={STREET_ICON} />
             </svg>
-            <span className="cp-short">{t('barber.toStore')}</span>
+            <span className="cp-short">{t('menu.streetShort')}</span>
           </button>
           <span className="barber-pole" aria-hidden="true" />
           {store && (
@@ -240,8 +240,8 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
         <div className="barber-chair">
           <div className="barber-chair-top">
             {balance}
-            <button className="link-button" onClick={() => onOpen('/store')}>
-              {t('store.title')} →
+            <button className="link-button" onClick={() => onOpen('/street')}>
+              ← {t('street.back')}
             </button>
           </div>
           <div className="barber-mirror">
