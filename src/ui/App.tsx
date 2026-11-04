@@ -213,6 +213,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const [sound] = useState(() => (kind: SoundKind) => {
     if (soundOn.current) playSound(kind);
   });
+  // Walking into a shop on Punk Street: the shop's own sound (the till, the scissors, the boots).
+  useEffect(() => {
+    if (page === 'store' || page === 'barber' || page === 'shoes') sound(`shop:${page}`);
+  }, [page, sound]);
 
   const clients = useBotClients();
   // The bot waits while a dialog is open or another page is shown.

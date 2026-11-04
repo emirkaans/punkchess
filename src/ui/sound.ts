@@ -5,6 +5,8 @@
 import { CHAOS } from '../engine/index.ts';
 import type { Move } from '../engine/index.ts';
 import { playCardSound } from './cardSounds.ts';
+import { playShopSound } from './shopSounds.ts';
+import type { Shop } from './shopSounds.ts';
 
 /** A sound; `card:<id>` is that card's own sound (Anarşi), played instead of the move sound. */
 export type SoundKind =
@@ -19,7 +21,8 @@ export type SoundKind =
   | 'spray'
   | 'blast'
   | 'clear'
-  | `card:${string}`;
+  | `card:${string}`
+  | `shop:${Shop}`;
 
 /** Sound of a played move: a capture always cracks (with a check ping on top when it also checks). */
 export const moveSound = (captured: boolean, check: boolean): SoundKind =>
@@ -214,6 +217,10 @@ export function playSound(kind: SoundKind): void {
   if (kind.startsWith('card:')) {
     // A card without a sound of its own gets the plain move sound.
     if (!playCardSound(ac, kind.slice(5), t)) tok(ac, t);
+    return;
+  }
+  if (kind.startsWith('shop:')) {
+    playShopSound(ac, kind.slice(5) as Shop, t);
     return;
   }
   switch (kind) {
