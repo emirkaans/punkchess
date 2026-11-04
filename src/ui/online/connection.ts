@@ -12,6 +12,7 @@ import type {
   ServerMessage,
 } from '../../online/protocol.ts';
 import { loadJSON, saveJSON } from '../../storage/local.ts';
+import { randomId } from './randomId.ts';
 import type { Color } from '../../engine/index.ts';
 import type { StickerId } from '../../online/stickers.ts';
 import type { GameInfo, GameRecord, RecordSaved, RecordUpload } from '../../online/record.ts';
@@ -202,7 +203,7 @@ export async function fetchGameInfo(id: string): Promise<GameInfo | null> {
 function ownerToken(): string {
   let token = loadJSON<string>('owner', '');
   if (token.length < 16) {
-    token = crypto.randomUUID();
+    token = randomId();
     saveJSON('owner', token);
   }
   return token;

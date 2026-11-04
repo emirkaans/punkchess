@@ -9,6 +9,7 @@ import type { LobbyClientMessage, LobbyErrorCode, LobbyServerMessage, Seek } fro
 import type { SeatTicket } from '../../online/protocol.ts';
 import { loadJSON, saveJSON } from '../../storage/local.ts';
 import { guestName } from '../../online/room.ts';
+import { randomId } from './randomId.ts';
 import { saveTicket } from './connection.ts';
 
 /**
@@ -18,7 +19,7 @@ import { saveTicket } from './connection.ts';
 export function playerIdentity(): { id: string; name: string } {
   let id = loadJSON<string>('player:id', '');
   if (!id) {
-    id = crypto.randomUUID();
+    id = randomId();
     saveJSON('player:id', id);
   }
   return { id, name: guestName(id) };

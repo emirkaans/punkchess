@@ -11,17 +11,21 @@ export const COIN_RULES = {
    * A won online game (at least `minPlies` half-moves). Against the same opponent only
    * `pairDailyMax` games a day pay (two accounts trading wins earn little).
    */
-  online: { win: 5, minPlies: 10, dailyMax: 50, pairDailyMax: 3 },
+  online: { win: 10, minPlies: 10, dailyMax: 80, pairDailyMax: 3 },
   /** A puzzle solved at the first try (rated puzzles; each puzzle once). */
-  puzzle: { solved: 1, dailyMax: 10 },
+  puzzle: { solved: 2, dailyMax: 20 },
   /** The daily puzzle, solved. */
-  daily: { solved: 3, dailyMax: 3 },
+  daily: { solved: 10, dailyMax: 10 },
   /** A Puzzle Rush run: one coin per `perPoints` points. */
-  rush: { perPoints: 5, dailyMax: 5 },
+  rush: { perPoints: 3, dailyMax: 15 },
 } as const;
 
-/** Most coins a player can earn in a day, all sources together. */
-export const DAILY_COIN_CAP = 60;
+/**
+ * Most coins a player can earn in a day, all sources together. Set against the store's prices
+ * (most goods 100 to 200): a player who solves the daily and a few puzzles (about 20 a day) buys
+ * something in a week; one who also wins online games, in two or three days.
+ */
+export const DAILY_COIN_CAP = 100;
 
 /** A source's daily ceiling. */
 export const dailyMax = (reason: CoinReason): number => COIN_RULES[reason].dailyMax;
