@@ -662,6 +662,29 @@ select:hover {
   border-color: var(--pink);
   color: var(--pink);
 }
+/* The top bar's links (src/ui/Toolbar.tsx, NavLink) look like its buttons. */
+a.logo {
+  color: var(--fg);
+  text-decoration: none;
+}
+.menu a {
+  font: inherit;
+  min-height: 40px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background-color 0.15s;
+}
+.menu a:hover {
+  border-color: var(--pink);
+  color: var(--pink);
+}
 button:disabled {
   opacity: 0.4;
   cursor: default;
@@ -730,7 +753,7 @@ button.primary:hover:not(:disabled) {
   background: transparent;
   border-bottom-color: transparent;
 }
-.topbar.over-hero .menu button,
+.topbar.over-hero .menu :is(button, a),
 .topbar.over-hero .logo {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
@@ -778,7 +801,7 @@ button.primary:hover:not(:disabled) {
   gap: 4px 26px;
   flex: 1;
 }
-.menu button {
+.menu :is(button, a) {
   min-height: 44px;
   padding: 8px 2px;
   border: none;
@@ -787,7 +810,7 @@ button.primary:hover:not(:disabled) {
   font: 400 22px/1 var(--display);
   letter-spacing: 0.04em;
 }
-.menu button.on {
+.menu :is(button, a).on {
   color: var(--pink);
   border-bottom-color: var(--pink);
 }
@@ -6038,11 +6061,11 @@ a:focus-visible {
   .menu.open {
     display: flex;
   }
-  .menu button {
+  .menu :is(button, a) {
     text-align: left;
     border-bottom: 1px solid var(--border);
   }
-  .menu button.on {
+  .menu :is(button, a).on {
     border-bottom-color: var(--pink);
   }
   .menu-lang {

@@ -1,7 +1,7 @@
 import { refreshCoins } from './coins.ts';
 import { trackPage } from './analytics.ts';
 import { CoinToast } from './CoinToast.tsx';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { CHAOS, getVariant, isInCheck, listVariants, opposite, toFen } from '../engine/index.ts';
 import type { Color, Move, PieceType } from '../engine/index.ts';
@@ -511,8 +511,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
     }
   }, [pendingReview, session.gameId, finished]);
 
-  // The address bar follows the page: every page and every game has its own address.
-  useEffect(() => {
+  // The address bar follows the page: every page and every game has its own address. A new
+  // address starts at the top of its page (before it is painted), as a page load would.
+  const shownPath = useRef(location.pathname);
+  useLayoutEffect(() => {
     let want: string;
     if (page === 'loading') return;
     else if (page === 'online') want = pathOf(onlineId ? { kind: 'game', id: onlineId } : { kind: 'online' });
@@ -528,6 +530,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
       want = profileName ? pathOf({ kind: 'profile', username: profileName }) : location.pathname;
     else want = pathOf({ kind: page });
     if (want !== location.pathname) history.pushState(null, '', want);
+    if (want !== shownPath.current) {
+      shownPath.current = want;
+      window.scrollTo(0, 0);
+    }
   }, [page, onlineId, review, session.gameId, profileName, puzzleId, gangTag, tournamentId]);
 
   const humanToMove = toMove.kind === 'human';

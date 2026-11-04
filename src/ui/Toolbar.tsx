@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { AnchorHTMLAttributes } from 'react';
 import { AccountButton } from './AccountButton.tsx';
 import { PlayerSearch } from './PlayerSearch.tsx';
 import { useI18n } from './i18n.tsx';
@@ -19,6 +20,8 @@ interface MenuEntry {
   readonly on: boolean;
   /** Absent: a shop still to open. */
   readonly go?: () => void;
+  /** The page's address, so the entry is a real link (open in a new tab). */
+  readonly href?: string;
   readonly color?: string;
   readonly sign?: MessageKey;
 }
@@ -30,7 +33,26 @@ interface MenuGroup {
   readonly entries: readonly MenuEntry[];
   /** Where the group's own button goes (else its first entry), and a link under its entries. */
   readonly go?: () => void;
-  readonly more?: { readonly label: MessageKey; readonly go: () => void; readonly on: boolean };
+  readonly href?: string;
+  readonly more?: { readonly label: MessageKey; readonly go: () => void; readonly href: string; readonly on: boolean };
+}
+
+/**
+ * A menu link: a plain click stays in the page (the handler), while a middle click, a click
+ * with Ctrl/Cmd/Shift or the right-click menu opens the address in a new tab or window.
+ */
+function NavLink({ href, go, ...rest }: { href: string; go: () => void } & AnchorHTMLAttributes<HTMLAnchorElement>) {
+  return (
+    <a
+      href={href}
+      {...rest}
+      onClick={(e) => {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        go();
+      }}
+    />
+  );
 }
 
 /** The menu's icons (24×24 strokes). */
@@ -154,6 +176,7 @@ export function Toolbar({
           icon: ICONS.play,
           on: page === 'online' || page === 'game',
           go: onPlay,
+          href: '/online',
         },
         {
           label: 'menu.tournaments',
@@ -161,6 +184,7 @@ export function Toolbar({
           icon: ICONS.trophy,
           on: page === 'tournaments',
           go: onTournaments,
+          href: '/tournaments',
         },
         {
           label: 'menu.puzzles',
@@ -168,6 +192,7 @@ export function Toolbar({
           icon: ICONS.puzzle,
           on: page === 'puzzles' || page === 'daily' || page === 'rush',
           go: onPuzzles,
+          href: '/puzzles',
         },
         {
           label: 'menu.analysis',
@@ -175,13 +200,14 @@ export function Toolbar({
           icon: ICONS.board,
           on: page === 'analysis',
           go: onAnalysis,
+          href: '/analysis',
         },
       ],
     },
     {
       id: 'tv',
       label: 'menu.tv',
-      entries: [{ label: 'menu.tv', desc: 'menu.tv', icon: '', on: page === 'tv', go: onTv }],
+      entries: [{ label: 'menu.tv', desc: 'menu.tv', icon: '', on: page === 'tv', go: onTv, href: '/tv' }],
     },
     {
       id: 'social',
@@ -193,15 +219,24 @@ export function Toolbar({
           icon: ICONS.crown,
           on: page === 'leaderboard',
           go: onLeaderboard,
+          href: '/leaderboard',
         },
-        { label: 'menu.gangs', desc: 'menu.desc.gangs', icon: ICONS.gang, on: page === 'gangs', go: onGangs },
+        {
+          label: 'menu.gangs',
+          desc: 'menu.desc.gangs',
+          icon: ICONS.gang,
+          on: page === 'gangs',
+          go: onGangs,
+          href: '/gangs',
+        },
       ],
     },
     {
       id: 'street',
       label: 'menu.streetShort',
       go: onStreet,
-      more: { label: 'street.walk', go: onStreet, on: page === 'street' },
+      href: '/street',
+      more: { label: 'street.walk', go: onStreet, href: '/street', on: page === 'street' },
       entries: [
         {
           label: 'menu.store',
@@ -211,6 +246,7 @@ export function Toolbar({
           icon: '',
           on: page === 'store',
           go: onStore,
+          href: '/store',
         },
         {
           label: 'menu.barber',
@@ -220,6 +256,7 @@ export function Toolbar({
           icon: '',
           on: page === 'barber',
           go: onBarber,
+          href: '/barber',
         },
         {
           label: 'menu.shoes',
@@ -229,6 +266,7 @@ export function Toolbar({
           icon: '',
           on: page === 'shoes',
           go: onShoes,
+          href: '/shoes',
         },
         { label: 'menu.tattoo', desc: 'menu.soon', sign: 'menu.sign.tattoo', color: '#c6ff3d', icon: '', on: false },
       ],
@@ -251,22 +289,23 @@ export function Toolbar({
   return (
     <header className={`topbar${overHero ? ' over-hero' : ''}`} ref={ref}>
       <div className="toolbar">
-        <button className="logo" onClick={close(onHome)} aria-label={t('menu.logo')}>
+        <NavLink href="/" className="logo" go={close(onHome)} aria-label={t('menu.logo')}>
           <Crown className="logo-crown" />
           <span className="logo-punk">punk</span>
           <span className="logo-chess">chess</span>
-        </button>
+        </NavLink>
         <nav className={`menu${menuOpen ? ' open' : ''}`} id="main-menu" aria-label={t('menu.label')}>
           {groups.map((g) =>
             g.entries.length === 1 ? (
-              <button
+              <NavLink
                 key={g.id}
+                href={g.entries[0].href!}
                 className={g.entries[0].on ? 'on' : ''}
                 aria-current={g.entries[0].on ? 'page' : undefined}
-                onClick={close(g.entries[0].go!)}
+                go={close(g.entries[0].go!)}
               >
                 {t(g.label)}
-              </button>
+              </NavLink>
             ) : (
               <div
                 key={g.id}
@@ -278,16 +317,17 @@ export function Toolbar({
                   if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpenGroup(null);
                 }}
               >
-                <button
+                <NavLink
+                  href={g.href ?? g.entries[0].href!}
                   className={`menu-top${g.entries.some((e) => e.on) || g.more?.on ? ' on' : ''}`}
                   data-menu-top={g.id}
                   aria-haspopup="true"
                   aria-expanded={openGroup === g.id}
-                  onClick={close(g.go ?? g.entries[0].go!)}
+                  go={close(g.go ?? g.entries[0].go!)}
                 >
                   {t(g.label)}
                   <span className="menu-caret" aria-hidden="true" />
-                </button>
+                </NavLink>
                 <GenieDrop
                   open={openGroup === g.id}
                   className={`menu-drop${g.id === 'street' ? ' menu-street' : ''}`}
@@ -297,48 +337,59 @@ export function Toolbar({
                   <span className="menu-drop-title">{t(g.id === 'street' ? 'menu.street' : g.label)}</span>
                   <div className="menu-drop-items">
                     {g.entries.map((e) =>
-                      e.color ? (
-                        <button
+                      e.color && !e.go ? (
+                        <button key={e.label} className="menu-shop" aria-label={t(e.label)} disabled>
+                          <span
+                            className="menu-front"
+                            aria-hidden="true"
+                            dangerouslySetInnerHTML={{ __html: storefront(e.color, t(e.sign!), true) }}
+                          />
+                          <b>{t(e.label)}</b>
+                        </button>
+                      ) : e.color ? (
+                        <NavLink
                           key={e.label}
+                          href={e.href!}
                           className={`menu-shop${e.on ? ' on' : ''}`}
                           aria-label={t(e.label)}
-                          disabled={!e.go}
                           aria-current={e.on ? 'page' : undefined}
-                          onClick={e.go ? close(e.go) : undefined}
+                          go={close(e.go!)}
                         >
                           <span
                             className="menu-front"
                             aria-hidden="true"
-                            dangerouslySetInnerHTML={{ __html: storefront(e.color, t(e.sign!), !e.go) }}
+                            dangerouslySetInnerHTML={{ __html: storefront(e.color, t(e.sign!), false) }}
                           />
                           <b>{t(e.label)}</b>
-                        </button>
+                        </NavLink>
                       ) : (
-                        <button
+                        <NavLink
                           key={e.label}
+                          href={e.href!}
                           className={`menu-row${e.on ? ' on' : ''}`}
                           aria-label={t(e.label)}
                           aria-describedby={`${e.label}-desc`}
                           aria-current={e.on ? 'page' : undefined}
-                          onClick={close(e.go!)}
+                          go={close(e.go!)}
                         >
                           <svg className="menu-ic" viewBox="0 0 24 24" aria-hidden="true">
                             <path d={e.icon} />
                           </svg>
                           <b>{t(e.label)}</b>
                           <span id={`${e.label}-desc`}>{t(e.desc)}</span>
-                        </button>
+                        </NavLink>
                       ),
                     )}
                   </div>
                   {g.more && (
-                    <button
+                    <NavLink
+                      href={g.more.href}
                       className={`menu-more${g.more.on ? ' on' : ''}`}
                       aria-current={g.more.on ? 'page' : undefined}
-                      onClick={close(g.more.go)}
+                      go={close(g.more.go)}
                     >
                       {t(g.more.label)} →
-                    </button>
+                    </NavLink>
                   )}
                 </GenieDrop>
               </div>

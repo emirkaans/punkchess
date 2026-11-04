@@ -3,7 +3,7 @@
 // bot turns (fake bot client), premoves, undo against the bot, the clock
 // (fake timers) and right-click arrows.
 
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ThinkOptions } from '../../src/ai/client.ts';
 import type { Move } from '../../src/engine/types.ts';
@@ -543,7 +543,7 @@ describe('uygulama: dil', () => {
 describe('analiz tahtası', () => {
   it('menüden açılır; tahta yapıcıda konum kurulur, analizde motor sorulur ve hamle oynanır', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Analiz' }));
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('link', { name: 'Analiz' }));
     expect(await screen.findByRole('heading', { name: 'Tahta yapıcı' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Tahtayı temizle' }));
