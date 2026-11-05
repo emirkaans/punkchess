@@ -5,7 +5,7 @@ import { TOURNAMENT_TIME_CONTROLS } from '../online/tournament.ts';
 import { timeControl } from '../clock/clock.ts';
 import { scoreText } from './TournamentsPage.tsx';
 import type { MessageKey } from '../i18n/index.ts';
-import { useAccount } from './account.ts';
+import { signInWithGoogle, useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
 import { ProfileLink } from './ProfileLink.tsx';
 import { Crown } from './Punk.tsx';
@@ -238,16 +238,42 @@ function GangView({ tag, onOpen }: { tag: string; onOpen: (path: string) => void
               {t('gang.all')}
             </a>
           </p>
-          {account.user && (
+          {/* Always say what a visitor can do here: join, sign in to join, or why not. */}
+          {account.user ? (
             <div className="profile-actions">
               {member ? (
                 <button onClick={() => void act('leave')}>{t('gang.leave')}</button>
-              ) : !mine ? (
+              ) : mine ? (
+                <p className="muted">
+                  {t('gang.inOther', { tag: mine })}{' '}
+                  <a
+                    href={`/gang/${mine}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onOpen(`/gang/${mine}`);
+                    }}
+                  >
+                    [{mine}]
+                  </a>
+                </p>
+              ) : gang.members >= GANG_SIZE ? (
+                <p className="muted">{t('gang.problem.full')}</p>
+              ) : (
                 <button className="primary" onClick={() => void act('join')}>
                   {t('gang.join')}
                 </button>
-              ) : null}
+              )}
             </div>
+          ) : (
+            !account.loading &&
+            account.canSignIn &&
+            gang.members < GANG_SIZE && (
+              <div className="profile-actions">
+                <button className="primary" onClick={() => signInWithGoogle(`/gang/${gang.tag}`)}>
+                  {t('gang.join')}
+                </button>
+              </div>
+            )
           )}
           {error && <p className="error">{t(error)}</p>}
         </div>
