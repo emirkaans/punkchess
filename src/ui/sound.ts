@@ -5,7 +5,7 @@
 import { CHAOS } from '../engine/index.ts';
 import type { Move } from '../engine/index.ts';
 import { playCardSound } from './cardSounds.ts';
-import { playFanfare, playShopSound } from './shopSounds.ts';
+import { playCoin, playFanfare, playShopSound } from './shopSounds.ts';
 import type { Shop } from './shopSounds.ts';
 
 /** A sound; `card:<id>` is that card's own sound (Anarşi), played instead of the move sound. */
@@ -22,6 +22,7 @@ export type SoundKind =
   | 'blast'
   | 'clear'
   | 'crown'
+  | 'coin'
   | `card:${string}`
   | `shop:${Shop}`;
 
@@ -230,6 +231,9 @@ export function playSound(kind: SoundKind): void {
       break;
     case 'crown':
       playFanfare(ac, t);
+      break;
+    case 'coin':
+      playCoin(ac, t);
       break;
     case 'spray':
       spray(ac, t);

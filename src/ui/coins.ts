@@ -3,6 +3,8 @@
 
 import { useSyncExternalStore } from 'react';
 import type { CoinsResponse } from '../coins/rules.ts';
+import { loadPrefs } from './prefs.ts';
+import { playSound } from './sound.ts';
 
 interface CoinState {
   /** The balance; null until asked (or signed out). */
@@ -29,13 +31,14 @@ export async function refreshCoins(): Promise<void> {
   }
 }
 
-/** Coins just earned (`amount` from a server answer): the balance goes up and the toast shows. */
+/** Coins just earned (`amount` from a server answer): the balance goes up, the toast shows and a coin rings (sound on). */
 export function noteCoins(amount: number | undefined | null): void {
   if (!amount || amount <= 0) return;
   set({
     balance: state.balance === null ? null : state.balance + amount,
     news: { key: (state.news?.key ?? 0) + 1, amount },
   });
+  if (loadPrefs().sound) playSound('coin');
   if (state.balance === null) void refreshCoins();
 }
 

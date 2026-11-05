@@ -153,6 +153,27 @@ function passingCar(ac: BaseAudioContext, out: AudioNode, t: number) {
   hum.stop(t + 1.45);
 }
 
+/** A metal coin's ring: inharmonic partials, the high ones short, and the click of the hit. */
+function clink(ac: BaseAudioContext, out: AudioNode, f: number, t: number, vol: number, len: number) {
+  [
+    [1, 1],
+    [2.32, 0.6],
+    [4.25, 0.35],
+    [6.63, 0.2],
+  ].forEach(([m, v], i) => tone(ac, out, 'sine', f * m, f * m, t, len / (1 + i * 0.7), vol * v, 0.001));
+  hiss(ac, out, 'highpass', 7000, 7000, 0.7, t, 0.015, vol * 0.8);
+}
+
+/** Punk coins earned (src/ui/coins.ts): a coin dropped on a counter, ringing, then two small bounces. */
+export function playCoin(ac: BaseAudioContext, t: number): void {
+  const out = ac.createGain();
+  out.gain.value = 0.7;
+  out.connect(ac.destination);
+  clink(ac, out, 2400, t, 0.3, 0.5);
+  clink(ac, out, 2450, t + 0.11, 0.14, 0.25);
+  clink(ac, out, 2480, t + 0.18, 0.07, 0.15);
+}
+
 /**
  * The crowning at the end of a tournament or a war (src/ui/Coronation.tsx): one distorted
  * power chord as the crown lands, two bells over it.
