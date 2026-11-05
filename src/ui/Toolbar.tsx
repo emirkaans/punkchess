@@ -89,6 +89,7 @@ export type Page =
   | 'store'
   | 'barber'
   | 'shoes'
+  | 'tattoo'
   | 'street'
   | 'wardrobe'
   | 'loading';
@@ -105,6 +106,7 @@ interface Props {
   onStore: () => void;
   onBarber: () => void;
   onShoes: () => void;
+  onTattoo: () => void;
   onStreet: () => void;
   onPuzzles: () => void;
   onLeaderboard: () => void;
@@ -129,6 +131,7 @@ export function Toolbar({
   onStore,
   onBarber,
   onShoes,
+  onTattoo,
   onStreet,
   onPuzzles,
   onLeaderboard,
@@ -268,7 +271,16 @@ export function Toolbar({
           go: onShoes,
           href: '/shoes',
         },
-        { label: 'menu.tattoo', desc: 'menu.soon', sign: 'menu.sign.tattoo', color: '#c6ff3d', icon: '', on: false },
+        {
+          label: 'menu.tattoo',
+          desc: 'menu.desc.tattoo',
+          sign: 'menu.sign.tattoo',
+          color: '#c6ff3d',
+          icon: '',
+          on: page === 'tattoo',
+          go: onTattoo,
+          href: '/tattoo',
+        },
       ],
     },
   ];

@@ -40,6 +40,7 @@ export type Route =
   | { readonly kind: 'store' }
   | { readonly kind: 'barber' }
   | { readonly kind: 'shoes' }
+  | { readonly kind: 'tattoo' }
   | { readonly kind: 'street' }
   | { readonly kind: 'wardrobe' }
   | { readonly kind: 'game'; readonly id: string }
@@ -72,6 +73,7 @@ const RESERVED = new Set([
   'store',
   'barber',
   'shoes',
+  'tattoo',
   'street',
   'wardrobe',
 ]);
@@ -108,6 +110,7 @@ export function parseRoute(pathname: string): Route {
   if (p === '/store') return { kind: 'store' };
   if (p === '/barber') return { kind: 'barber' };
   if (p === '/shoes') return { kind: 'shoes' };
+  if (p === '/tattoo') return { kind: 'tattoo' };
   if (p === '/street') return { kind: 'street' };
   if (p === '/wardrobe') return { kind: 'wardrobe' };
   if (p === '/privacy' || p === '/terms' || p === '/licenses')
@@ -159,6 +162,8 @@ export function pathOf(r: Route): string {
       return '/barber';
     case 'shoes':
       return '/shoes';
+    case 'tattoo':
+      return '/tattoo';
     case 'street':
       return '/street';
     case 'wardrobe':

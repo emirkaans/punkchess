@@ -17,6 +17,7 @@ import {
 } from './more.ts';
 import { NECK_BAND, bodyGeom, bootsSvg, clipTo } from './body.ts';
 import { SHOE_ITEMS } from './shoes.ts';
+import { TATTOO_ITEMS } from './tattoos.ts';
 import type { BodyGeom } from './body.ts';
 
 export type OutfitSlot =
@@ -31,7 +32,9 @@ export type OutfitSlot =
   | 'cut'
   | 'color'
   | 'beard'
-  | 'beardColor';
+  | 'beardColor'
+  | 'tattooFace'
+  | 'tattooNeck';
 
 export interface StoreItem {
   readonly id: string;
@@ -55,12 +58,16 @@ export const OUTFIT_SLOTS: readonly OutfitSlot[] = [
   'color',
   'beard',
   'beardColor',
+  'tattooFace',
+  'tattooNeck',
 ];
 /** What each shop sells. */
 /** Accessories come in three kinds, one of each worn at a time: glasses, at the neck, ears and face. */
 export const STORE_SLOTS: readonly OutfitSlot[] = ['jacket', 'pants', 'skirt', 'hat', 'eyewear', 'neck', 'acc'];
 export const BARBER_SLOTS: readonly OutfitSlot[] = ['cut', 'color', 'beard'];
 export const SHOE_SLOTS: readonly OutfitSlot[] = ['shoes'];
+/** The tattoo parlour (src/avatar/tattoos.ts): one tattoo on the face and one on the neck. */
+export const TATTOO_SLOTS: readonly OutfitSlot[] = ['tattooFace', 'tattooNeck'];
 
 /**
  * The beard's colour (slot beardColor): a premium colour the player owns (the same items as the
@@ -127,6 +134,7 @@ export const STORE_ITEMS: readonly StoreItem[] = [
   ...MORE_BARBER_ITEMS,
   ...SKIRT_ITEMS,
   ...SHOE_ITEMS,
+  ...TATTOO_ITEMS,
 ];
 
 export const storeItem = (id: string): StoreItem | undefined => STORE_ITEMS.find((i) => i.id === id);
@@ -144,6 +152,8 @@ export const EMPTY_OUTFIT: Outfit = {
   color: null,
   beard: null,
   beardColor: null,
+  tattooFace: null,
+  tattooNeck: null,
 };
 
 /** An outfit from anything (stored JSON, a request): unknown items or items in the wrong slot are dropped. */
@@ -193,13 +203,14 @@ export function parseKombins(input: unknown): readonly (Outfit | null)[] {
   return Array.from({ length: KOMBIN_COUNT }, (_, i) => (list[i] ? clothesOf(parseOutfit(list[i])) : null));
 }
 
-/** A saved outfit put on: its clothes replace the worn ones; the hair, colour and beard stay. */
+/** A saved outfit put on: its clothes replace the worn ones; the hair, colour, beard and tattoos stay. */
 export const wearKombin = (worn: Outfit, kombin: Outfit): Outfit => ({
   ...worn,
   ...clothesOf(kombin),
   ...barberOf(worn),
 });
-const barberOf = (o: Outfit) => Object.fromEntries([...BARBER_SLOTS, 'beardColor'].map((s) => [s, o[s as OutfitSlot]]));
+const barberOf = (o: Outfit) =>
+  Object.fromEntries([...BARBER_SLOTS, 'beardColor', ...TATTOO_SLOTS].map((s) => [s, o[s as OutfitSlot]]));
 
 /** The outfit as stored. */
 export const serializeOutfit = (o: Outfit): string =>

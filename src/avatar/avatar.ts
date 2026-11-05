@@ -4,6 +4,7 @@
 // stays (only `offered: false`), and an unknown one falls back to the default. Pure: no DOM.
 
 import { beardSvg, cutBack, cutFront, hairPaint, painted } from './barber.ts';
+import { faceTattooSvg, neckTattooSvg } from './tattoos.ts';
 import { isBody } from './body.ts';
 import { hatSvg, headAccessorySvg, naturalBeard } from './outfit.ts';
 import type { Outfit } from './outfit.ts';
@@ -305,6 +306,7 @@ export function avatarSvg(a: Avatar, outfit: Outfit | null = null, view = '0 0 2
     (defs ? `<defs>${defs}</defs>` : '') +
     painted(cut ? cutBack(cut, hair) : hairBack(a.hair, hair), paint) +
     `<path d="M72 168c6 10 50 10 56 0l6 32H66z" fill="${shade(skin, 0.85)}" stroke="${INK}" stroke-width="3"/>` +
+    neckTattooSvg(outfit?.tattooNeck ?? null) +
     `<ellipse cx="46" cy="114" rx="8" ry="12" fill="${skin}" stroke="${INK}" stroke-width="3"/>` +
     `<ellipse cx="154" cy="114" rx="8" ry="12" fill="${skin}" stroke="${INK}" stroke-width="3"/>` +
     `<path d="${headPath(a.head)}" fill="${skin}" stroke="${INK}" stroke-width="4"/>` +
@@ -314,6 +316,7 @@ export function avatarSvg(a: Avatar, outfit: Outfit | null = null, view = '0 0 2
     lashes(a.lashes) +
     lipsMouth(a.mouth, a.lips) +
     extra(a.extra) +
+    faceTattooSvg(outfit?.tattooFace ?? null) +
     (beardPaint
       ? painted(beardSvg(outfit?.beard ?? null, beardPaint.fill), beardPaint)
       : beardSvg(outfit?.beard ?? null, natural ?? undefined)) +

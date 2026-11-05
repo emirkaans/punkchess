@@ -262,6 +262,8 @@ export const SHOP_ICONS: Readonly<Record<OutfitSlot, string>> = {
   color: 'M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z',
   beard: 'M5 9c0 7 3 12 7 12s7-5 7-12c-2 2-4 3-7 3S7 11 5 9z',
   beardColor: 'M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z',
+  tattooFace: 'M12 3a8 9 0 1 0 0 18 8 9 0 0 0 0-18zM8 11h1M15 11h1M9 15l1 3',
+  tattooNeck: 'M8 3v6c0 4 2 6 4 6s4-2 4-6V3M6 21c1-3 3-5 6-5s5 2 6 5M10 18l2 2 2-2',
 };
 
 /**

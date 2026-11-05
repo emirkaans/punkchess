@@ -2,7 +2,7 @@
 // Made in code with the Web Audio API like the other sounds (no audio files).
 
 /** The shops with a sound of their own, and the street itself. */
-export type Shop = 'store' | 'barber' | 'shoes' | 'street';
+export type Shop = 'store' | 'barber' | 'shoes' | 'tattoo' | 'street';
 
 let noise: AudioBuffer | null = null;
 
@@ -81,6 +81,25 @@ function bell(ac: BaseAudioContext, out: AudioNode, f: number, t: number, len: n
     [5.4, 0.25],
     [8.9, 0.12],
   ].forEach(([m, v], i) => tone(ac, out, 'sine', f * m, f * m, t, len / (1 + i * 0.8), vol * v, 0.002));
+}
+
+/** The parlour: a tattoo machine's coil buzzing for a moment, rising as it starts. */
+function tattooMachine(ac: BaseAudioContext, out: AudioNode, t: number) {
+  const len = 0.6;
+  const f = ac.createBiquadFilter();
+  f.type = 'bandpass';
+  f.frequency.value = 1400;
+  f.Q.value = 1.5;
+  f.connect(out);
+  const coil = ac.createOscillator();
+  coil.type = 'sawtooth';
+  coil.frequency.setValueAtTime(90, t);
+  coil.frequency.exponentialRampToValueAtTime(150, t + 0.12);
+  coil.connect(envelope(ac, f, t, 0.3, 0.04, len));
+  coil.start(t);
+  coil.stop(t + len + 0.05);
+  // The needle's tick on every stroke.
+  hiss(ac, out, 'highpass', 6000, 6000, 0.7, t, len, 0.05);
 }
 
 /** The street: a car passes from left to right over the city's hum, its engine falling in pitch. */
@@ -163,6 +182,9 @@ export function playShopSound(ac: BaseAudioContext, shop: Shop, t: number): void
         hiss(ac, out, 'lowpass', 1800, 400, 1, t + dt, 0.09, 0.35);
         hiss(ac, out, 'bandpass', 3000, 3000, 2, t + dt + 0.01, 0.03, 0.12);
       });
+      break;
+    case 'tattoo':
+      tattooMachine(ac, out, t);
       break;
     case 'street':
       passingCar(ac, out, t);

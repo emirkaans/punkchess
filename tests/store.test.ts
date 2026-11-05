@@ -6,6 +6,7 @@ import {
   BARBER_SLOTS,
   EMPTY_OUTFIT,
   SHOE_SLOTS,
+  TATTOO_SLOTS,
   OUTFIT_SLOTS,
   STORE_SLOTS,
   parseKombins,
@@ -44,7 +45,9 @@ describe('mağaza', () => {
 
   it('her yuva tek bir dükkânda satılır', () => {
     // The beard's colour is not sold on its own: it takes the hair colours (or a natural one).
-    expect([...STORE_SLOTS, ...BARBER_SLOTS, ...SHOE_SLOTS, 'beardColor'].sort()).toEqual([...OUTFIT_SLOTS].sort());
+    expect([...STORE_SLOTS, ...BARBER_SLOTS, ...SHOE_SLOTS, ...TATTOO_SLOTS, 'beardColor'].sort()).toEqual(
+      [...OUTFIT_SLOTS].sort(),
+    );
   });
 
   it('kuaför: saç kendi saçın yerine çizilir, renk ve sakal karakterde görünür', () => {

@@ -29,6 +29,9 @@ export const PAGE_KINDS: ReadonlySet<string> = new Set([
   'character',
   'store',
   'barber',
+  'shoes',
+  'tattoo',
+  'street',
   'wardrobe',
 ]);
 

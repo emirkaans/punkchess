@@ -7,13 +7,15 @@ describe('punk sokağı', () => {
   it('/street sayfası', () => {
     expect(parseRoute('/street')).toEqual({ kind: 'street' });
     expect(pathOf({ kind: 'street' })).toBe('/street');
+    expect(parseRoute('/tattoo')).toEqual({ kind: 'tattoo' });
+    expect(pathOf({ kind: 'tattoo' })).toBe('/tattoo');
   });
 
   it('her sokakta en fazla 4 dükkân; açık dükkânlar kendi sayfasına gider', () => {
     const all = streets();
     expect(all.flat()).toEqual(STREET_SHOPS);
     expect(all.every((s) => s.length <= SHOPS_PER_STREET)).toBe(true);
-    expect(all[0].map((s) => s.path)).toEqual(['/store', '/shoes', '/barber', null]);
+    expect(all[0].map((s) => s.path)).toEqual(['/store', '/shoes', '/barber', '/tattoo']);
   });
 
   it('vitrin: açık dükkânın kapısı parlayabilir, kapalısında kepenk iner', () => {

@@ -40,6 +40,8 @@ export function figureSvg(avatar: Avatar, outfit: Outfit, view = FULL): string {
 /** Where an item shows best on the figure: the head for hats and glasses, else the body or legs. */
 export function itemView(slot: OutfitSlot, id: string): string {
   if (slot === 'hat' || slot === 'eyewear' || slot === 'acc' || isHeadAcc(id)) return '30 0 140 130';
+  if (slot === 'tattooFace') return '60 50 80 60';
+  if (slot === 'tattooNeck') return '74 94 52 34';
   if (slot === 'neck') return '40 70 120 120';
   if (slot === 'shoes') return '48 266 104 86';
   if (slot === 'pants') return '20 220 160 140';

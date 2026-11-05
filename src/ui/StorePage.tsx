@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { DEFAULT_AVATAR } from '../avatar/avatar.ts';
 import { figureSvg, itemView } from '../avatar/figure.ts';
-import { EMPTY_OUTFIT, STORE_ITEMS, STORE_SLOTS } from '../avatar/outfit.ts';
+import { EMPTY_OUTFIT, STORE_ITEMS, STORE_SLOTS, TATTOO_SLOTS } from '../avatar/outfit.ts';
 import type { StoreItem } from '../avatar/outfit.ts';
 import { SHOE_KINDS, shoeKind } from '../avatar/shoes.ts';
 import type { MessageKey } from '../i18n/index.ts';
@@ -9,6 +9,9 @@ import { signInWithGoogle, useAccount } from './account.ts';
 import { CoinIcon } from './CoinToast.tsx';
 import { useI18n } from './i18n.tsx';
 import { FittingCart, SHOP_ICONS, STREET_ICON, useShop } from './shop.tsx';
+
+/** The parlour's fitting room: the head and the neck, close. */
+const TATTOO_BOOTH = '36 4 128 136';
 
 const Figure = ({ svg, className }: { svg: string; className: string }) => (
   <span className={className} dangerouslySetInnerHTML={{ __html: svg }} />
@@ -23,12 +26,21 @@ interface Tab {
 }
 
 /**
- * A clothes shop: the store ("Butik", clothes by kind) or the shoe shop ("Bot & Bağcık": boots,
- * combat boots, sneakers). A fitting room on the left (the character full length, wearing what is
+ * A shop with a fitting room: the store ("Butik", clothes by kind), the shoe shop ("Bot & Bağcık":
+ * boots, combat boots, sneakers) or the tattoo parlour ("Dövmeci": the face and the neck, the
+ * fitting room showing the head). A fitting room on the left (the character full length, wearing what is
  * tried on), the goods by kind on the right; an item is bought with punk coins, then worn or
  * taken off. Coins only buy looks.
  */
-export function StorePage({ onOpen, shoes = false }: { onOpen: (path: string) => void; shoes?: boolean }) {
+export function StorePage({
+  onOpen,
+  shop: kind = 'store',
+}: {
+  onOpen: (path: string) => void;
+  shop?: 'store' | 'shoes' | 'tattoo';
+}) {
+  const shoes = kind === 'shoes';
+  const tattoo = kind === 'tattoo';
   const { t } = useI18n();
   const account = useAccount();
   const avatar = account.user?.avatar ?? DEFAULT_AVATAR;
@@ -40,7 +52,7 @@ export function StorePage({ onOpen, shoes = false }: { onOpen: (path: string) =>
         icon: SHOP_ICONS.shoes,
         items: STORE_ITEMS.filter((i) => i.slot === 'shoes' && shoeKind(i.id) === k),
       }))
-    : STORE_SLOTS.map((s) => ({
+    : (tattoo ? TATTOO_SLOTS : STORE_SLOTS).map((s) => ({
         id: s,
         label: t(`store.slot.${s}` as MessageKey),
         short: t(`store.short.${s}` as MessageKey),
@@ -49,7 +61,7 @@ export function StorePage({ onOpen, shoes = false }: { onOpen: (path: string) =>
       }));
   const [tabId, setTab] = useState(tabs[0].id);
   const tab = tabs.find((x) => x.id === tabId) ?? tabs[0];
-  const title = t(shoes ? 'shoes.title' : 'store.title');
+  const title = t(shoes ? 'shoes.title' : tattoo ? 'tattoo.title' : 'store.title');
   // Back to the street (the shops are entered from there).
   const switches = [
     { path: '/street', icon: STREET_ICON, full: `← ${t('street.back')}`, short: t('menu.streetShort') },
@@ -63,7 +75,7 @@ export function StorePage({ onOpen, shoes = false }: { onOpen: (path: string) =>
         <h1 className="store-title">{title}</h1>
         <p className="muted">{t('store.signIn')}</p>
         {account.canSignIn && (
-          <button className="primary" onClick={() => signInWithGoogle(shoes ? '/shoes' : '/store')}>
+          <button className="primary" onClick={() => signInWithGoogle(`/${kind}`)}>
             {t('account.signIn')}
           </button>
         )}
@@ -78,7 +90,7 @@ export function StorePage({ onOpen, shoes = false }: { onOpen: (path: string) =>
           <span className="store-label">{t('store.booth')}</span>
           {/* Drawn once the account (and so its look) is known: never undressed first. */}
           {ready ? (
-            <Figure svg={figureSvg(avatar, shown)} className="store-figure fig-in" />
+            <Figure svg={figureSvg(avatar, shown, tattoo ? TATTOO_BOOTH : undefined)} className="store-figure fig-in" />
           ) : (
             <span className="store-figure fig-ghost" aria-hidden="true" />
           )}

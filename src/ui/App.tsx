@@ -216,7 +216,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   // Walking into a shop on Punk Street: the shop's own sound (the till, the scissors, the boots);
   // out on the street, a car passing.
   useEffect(() => {
-    if (page === 'store' || page === 'barber' || page === 'shoes' || page === 'street') sound(`shop:${page}`);
+    if (page === 'store' || page === 'barber' || page === 'shoes' || page === 'tattoo' || page === 'street')
+      sound(`shop:${page}`);
   }, [page, sound]);
 
   const clients = useBotClients();
@@ -369,6 +370,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         r.kind === 'store' ||
         r.kind === 'barber' ||
         r.kind === 'shoes' ||
+        r.kind === 'tattoo' ||
         r.kind === 'street' ||
         r.kind === 'wardrobe'
       )
@@ -694,6 +696,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           history.pushState(null, '', '/shoes');
           setPage('shoes');
         })}
+        onTattoo={leaveGame(() => {
+          history.pushState(null, '', '/tattoo');
+          setPage('tattoo');
+        })}
         onStreet={leaveGame(() => {
           history.pushState(null, '', '/street');
           setPage('street');
@@ -776,7 +782,12 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
           />
         ) : page === 'contact' ? (
           <ContactPage />
-        ) : page === 'store' || page === 'barber' || page === 'shoes' || page === 'street' || page === 'wardrobe' ? (
+        ) : page === 'store' ||
+          page === 'barber' ||
+          page === 'shoes' ||
+          page === 'tattoo' ||
+          page === 'street' ||
+          page === 'wardrobe' ? (
           (() => {
             const open = (path: string) => {
               history.pushState(null, '', path);
@@ -787,7 +798,9 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
             ) : page === 'barber' ? (
               <BarberPage onOpen={open} />
             ) : page === 'shoes' ? (
-              <StorePage onOpen={open} shoes />
+              <StorePage onOpen={open} shop="shoes" />
+            ) : page === 'tattoo' ? (
+              <StorePage onOpen={open} shop="tattoo" />
             ) : page === 'street' ? (
               <StreetPage onOpen={open} />
             ) : (

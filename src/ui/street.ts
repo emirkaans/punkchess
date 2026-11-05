@@ -15,7 +15,7 @@ export const STREET_SHOPS: readonly StreetShop[] = [
   { id: 'store', label: 'menu.store', sign: 'menu.sign.store', color: '#ff2e93', path: '/store' },
   { id: 'shoes', label: 'menu.shoes', sign: 'menu.sign.shoes', color: '#e8c84a', path: '/shoes' },
   { id: 'barber', label: 'menu.barber', sign: 'menu.sign.barber', color: '#4aa8ff', path: '/barber' },
-  { id: 'tattoo', label: 'menu.tattoo', sign: 'menu.sign.tattoo', color: '#c6ff3d', path: null },
+  { id: 'tattoo', label: 'menu.tattoo', sign: 'menu.sign.tattoo', color: '#c6ff3d', path: '/tattoo' },
   { id: 'spray', label: 'menu.spray', sign: 'menu.sign.spray', color: '#ffb02e', path: null },
   { id: 'vinyl', label: 'menu.vinyl', sign: 'menu.sign.vinyl', color: '#a77bff', path: null },
 ];
