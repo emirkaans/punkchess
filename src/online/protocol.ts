@@ -149,6 +149,8 @@ export interface GameView {
   readonly rematchId: string | null;
   /** The tournament the game is part of, or null. */
   readonly tournamentId?: string | null;
+  /** An Armageddon game (a gang war's last playoff game): Black has less time, a draw is Black's win. */
+  readonly armageddon?: boolean;
   /** Server time when this view was made (clients use it to sync their clocks). */
   readonly now: number;
 }

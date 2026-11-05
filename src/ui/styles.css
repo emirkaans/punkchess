@@ -12967,8 +12967,12 @@ a:focus-visible {
   gap: 2px;
 }
 .acc-who b {
-  font: 400 22px/1 var(--display);
-  letter-spacing: 0.04em;
+  /* A username as it is written (Bebas Neue has capitals only). */
+  font:
+    500 19px/1.15 'Oswald',
+    'Arial Narrow',
+    sans-serif;
+  letter-spacing: 0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -13223,4 +13227,16 @@ a:focus-visible {
 }
 .crown-show.still .crown-spot {
   transform: translateX(-50%);
+}
+
+/* The note before an Armageddon game (src/ui/online/OnlinePage.tsx). */
+.armageddon-modal {
+  max-width: 420px;
+  text-align: center;
+}
+.armageddon-modal h2 {
+  margin: 0 0 8px;
+  font: 400 40px/1 var(--display);
+  letter-spacing: 0.04em;
+  color: var(--lime);
 }

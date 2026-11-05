@@ -378,7 +378,7 @@ export class Tournament extends DurableObject<Env> {
     const joined = joinRoom(created.room, '', tokens.b, seat(b));
     let room: Room = { ...joined.room, tournamentId: state.id };
     // Armageddon: Black starts with less time (and a draw is Black's win, see result()).
-    if (playoff?.armageddon) room = { ...room, clock: armageddonClock(room.clock) };
+    if (playoff?.armageddon) room = { ...room, armageddon: true, clock: armageddonClock(room.clock) };
     const res = await this.env.GAME.get(this.env.GAME.idFromName(gameId))
       .fetch(`https://room/adopt?id=${gameId}`, { method: 'POST', body: JSON.stringify(room) })
       .catch(() => null);

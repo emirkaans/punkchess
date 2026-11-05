@@ -1,7 +1,7 @@
 import { noteCoins } from '../coins.ts';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
-import { LOW_TIME_MS, remainingMs, timeControl } from '../../clock/clock.ts';
+import { LOW_TIME_MS, formatClock, remainingMs, timeControl } from '../../clock/clock.ts';
 import type { ClockState } from '../../clock/clock.ts';
 import {
   CHAOS,
@@ -30,6 +30,7 @@ import { BoardResizer } from '../BoardResizer.tsx';
 import { MoveList } from '../MoveList.tsx';
 import { useStepKeys } from '../stepKeys.ts';
 import { GameOverOverlay } from '../GameOverOverlay.tsx';
+import { Modal } from '../Modal.tsx';
 import { SprayTag } from '../SprayTag.tsx';
 import { PlayerRow } from '../PlayerRow.tsx';
 import { PromotionDialog } from '../PromotionDialog.tsx';
@@ -187,6 +188,8 @@ function OnlineGame({
 
   const link = useOnlineGame(gameId, ticket?.token ?? null, { onView });
   const { view, offset, status, send } = link;
+  // An Armageddon game: what it means, told once before the first move.
+  const [armageddonRead, setArmageddonRead] = useState(false);
   // Your own game opened on another device (signed in, no seat ticket here): take your seat back.
   const me = useAccount().user?.username ?? null;
   const claimed = useRef(false);
@@ -580,8 +583,24 @@ function OnlineGame({
   const away = (['w', 'b'] as const).filter((c) => playing && view.players[c]?.deadline);
   const canSticker = prefs.stickers && !!you && (playing || view.phase === 'over');
 
+  const armageddonNote = view.armageddon && !armageddonRead && view.phase !== 'over' && view.moves.length === 0;
+
   return (
     <main className={`layout game-fit${more ? ' more-open' : ''}${cardPick ? ' picking' : ''}`}>
+      {armageddonNote && (
+        <Modal label={t('game.armageddon.title')} className="armageddon-modal" onClose={() => setArmageddonRead(true)}>
+          <h2>{t('game.armageddon.title')}</h2>
+          <p>
+            {t('game.armageddon.body', {
+              w: formatClock(view.clock.remaining.w ?? Infinity),
+              b: formatClock(view.clock.remaining.b ?? Infinity),
+            })}
+          </p>
+          <button className="primary" onClick={() => setArmageddonRead(true)}>
+            {t('game.armageddon.ok')}
+          </button>
+        </Modal>
+      )}
       <section className={prefs.boardSize ? 'board-wrap sized' : 'board-wrap'} style={sized}>
         <aside className="players" aria-label={t('game.players')}>
           {[top, bottom].map((c, i) => (

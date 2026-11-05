@@ -362,14 +362,20 @@ function TournamentRoom({
   const now = useNow() + link.skew;
   const [copied, setCopied] = useState(false);
   const v: TournamentView | null = link.view;
-  // The crowning: once, when the tournament ends while the page is open (not when it is opened ended).
+  // The crowning, once: when the tournament ends while the page is open, or when a player comes
+  // back to it soon after (from their last game, which may have been the one that ended it).
   const [crowned, setCrowned] = useState(false);
   const lastStatus = useRef<string | null>(null);
   const status = v?.status ?? null;
+  const justEnded = !!v && v.status === 'finished' && !!v.you && v.now - v.endsAt < CROWN_RECENT_MS;
   useEffect(() => {
-    if (lastStatus.current && lastStatus.current !== 'finished' && status === 'finished') setCrowned(true);
+    const live = !!lastStatus.current && lastStatus.current !== 'finished' && status === 'finished';
     lastStatus.current = status;
-  }, [status]);
+    if ((live || justEnded) && !crownSeen(id)) {
+      markCrownSeen(id);
+      setCrowned(true);
+    }
+  }, [status, justEnded, id]);
 
   if (link.status === 'missing') {
     return (
@@ -578,6 +584,28 @@ function TournamentRoom({
       {crowned && <Coronation v={v} onClose={() => setCrowned(false)} onOpen={onOpen} />}
     </main>
   );
+}
+
+/** How soon after a tournament ends a player coming back to its page still gets the crowning. */
+const CROWN_RECENT_MS = 10 * 60_000;
+const CROWN_SEEN = 'pc-crowned';
+
+/** Whether the crowning of tournament `id` was shown in this browser. */
+function crownSeen(id: string): boolean {
+  try {
+    return (JSON.parse(localStorage.getItem(CROWN_SEEN) ?? '[]') as string[]).includes(id);
+  } catch {
+    return false;
+  }
+}
+
+function markCrownSeen(id: string) {
+  try {
+    const seen = (JSON.parse(localStorage.getItem(CROWN_SEEN) ?? '[]') as string[]).filter((x) => x !== id);
+    localStorage.setItem(CROWN_SEEN, JSON.stringify([...seen, id].slice(-30)));
+  } catch {
+    // no storage: it may show again
+  }
 }
 
 /**

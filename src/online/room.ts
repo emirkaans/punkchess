@@ -92,6 +92,8 @@ export interface Room {
   readonly outfits?: Readonly<Partial<Record<Color, string>>>;
   /** The arena tournament the game belongs to (server/tournament.ts): no rematch, the result is reported there. */
   readonly tournamentId?: string;
+  /** A gang war's Armageddon playoff game: Black has less time and a draw is Black's win (told to the players). */
+  readonly armageddon?: boolean;
   /** Each player's hidden chaos card (variants with cards), dealt when the game starts. */
   readonly chaos?: Readonly<Record<Color, string>> | null;
 }
@@ -467,6 +469,7 @@ export function viewOf(
     rematchOffer: room.rematchOffer ?? null,
     rematchId: room.rematchId ?? null,
     tournamentId: room.tournamentId ?? null,
+    armageddon: room.armageddon === true,
     now,
   };
 }

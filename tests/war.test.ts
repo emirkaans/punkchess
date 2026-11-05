@@ -10,6 +10,7 @@ import {
   warWinner,
 } from '../src/online/tournament.ts';
 import type { PlayoffGame, SheetEntry, WarSetup } from '../src/online/tournament.ts';
+import { createRoom, joinRoom, viewOf } from '../src/online/room.ts';
 
 const setup = (n: number): Pick<WarSetup, 'players'> => ({
   players: [
@@ -110,5 +111,22 @@ describe('çete savaşı', () => {
     expect(clock.remaining).toEqual({ w: 300_000, b: 300_000 * ARMAGEDDON_BLACK_SHARE });
     expect(clock.running).toBeNull();
     expect(armageddonClock({ remaining: { w: Infinity, b: Infinity } }).remaining.b).toBe(Infinity);
+  });
+
+  it('Armageddon oyunu oyunculara bildirilir (oyun ekranı başta açıklar); diğer oyunlarda yok', () => {
+    const seat = (id: string) => ({ id, username: id });
+    const made = createRoom(
+      'G1',
+      { variantId: 'standard', timeControlId: '5+0', color: 'w', name: '' },
+      'tw',
+      () => 0,
+      seat('a'),
+    );
+    const room = joinRoom(made.room, '', 'tb', seat('b')).room;
+    expect(viewOf(room, 'w', { w: true, b: true }, 0).armageddon).toBe(false);
+    const arm = { ...room, armageddon: true, clock: armageddonClock(room.clock) };
+    const v = viewOf(arm, 'b', { w: true, b: true }, 0);
+    expect(v.armageddon).toBe(true);
+    expect(v.clock.remaining.b).toBe(240_000);
   });
 });

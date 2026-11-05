@@ -889,6 +889,10 @@ export const tr = {
   'war.playoffGame': 'Uzatma {n}',
   'war.armageddon': 'Armageddon',
   'war.armageddonDraw': 'Siyah kazanır',
+  'game.armageddon.title': 'Armageddon!',
+  'game.armageddon.body':
+    'Uzatmanın son maçı. Beyazın {w}, Siyahın {b} süresi var; berabere biterse Siyah kazanır, yani Beyaz kazanmak zorunda.',
+  'game.armageddon.ok': 'Anladım',
   'crown.war': 'SAVAŞIN KRALLARI',
   'crown.lost': 'TAÇ ONLARDA · RÖVANŞ SENDE',
   'crown.draw': 'TAÇ ORTADA KALDI',
@@ -2458,6 +2462,10 @@ export const en: Record<MessageKey, string> = {
   'war.playoffGame': 'Playoff {n}',
   'war.armageddon': 'Armageddon',
   'war.armageddonDraw': 'Black wins',
+  'game.armageddon.title': 'Armageddon!',
+  'game.armageddon.body':
+    "The playoff's last game. White has {w}, Black {b}; a draw is Black's win, so White must win.",
+  'game.armageddon.ok': 'Got it',
   'crown.war': 'KINGS OF THE WAR',
   'crown.lost': 'THE CROWN IS THEIRS · THE REMATCH IS YOURS',
   'crown.draw': 'THE CROWN STAYS IN THE MIDDLE',
