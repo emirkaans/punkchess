@@ -13045,3 +13045,182 @@ a:focus-visible {
 .account-menu.acc-card .account-lang:last-child {
   margin-bottom: 6px;
 }
+
+/* The crowning at the end of a tournament or a gang war (src/ui/Coronation.tsx, design C,
+   "Taç Töreni"): a spotlight, the winner's name rising, a crown dropping onto it, sparks. */
+.crown-show {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 120%, #1d1420, #050506 70%);
+  --c: var(--lime);
+}
+.crown-show.lose {
+  --c: #8a8590;
+}
+.crown-show.draw {
+  --c: var(--pink);
+}
+.crown-show canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.crown-spot {
+  position: absolute;
+  left: 50%;
+  top: -10%;
+  width: 70%;
+  height: 120%;
+  transform: translateX(-50%);
+  opacity: 0;
+  background: conic-gradient(from 160deg at 50% 0, #0000 0 10deg, #fff2 16deg 24deg, #0000 30deg);
+  filter: blur(6px);
+  pointer-events: none;
+  animation: crown-spot 1s ease-out 0.2s forwards;
+}
+@keyframes crown-spot {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) rotate(-25deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) rotate(0);
+  }
+}
+.crown-x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 26px;
+  background: #0a0a0bcc;
+}
+.crown-body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.crown-crown {
+  width: clamp(80px, 14vw, 140px);
+  opacity: 0;
+  transform: translateY(-60vh);
+  filter: drop-shadow(0 0 16px var(--lime));
+  animation: crown-drop 0.7s cubic-bezier(0.3, 1.4, 0.5, 1) 1.1s forwards;
+}
+.crown-show.lose .crown-crown {
+  filter: grayscale(1) brightness(0.6);
+}
+@keyframes crown-drop {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.crown-name {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font: 400 clamp(56px, 13vw, 150px) / 0.9 var(--display);
+  letter-spacing: 0.04em;
+  color: var(--fg);
+  text-shadow: 0 0 30px var(--c);
+  opacity: 0;
+  transform: scale(0.6);
+  animation: crown-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 0.7s forwards;
+}
+@keyframes crown-pop {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.crown-duo {
+  display: flex;
+  align-items: center;
+  gap: 5vw;
+}
+.crown-sub,
+.crown-score,
+.crown-btns {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: crown-rise 0.4s ease-out forwards;
+}
+.crown-sub {
+  font: 400 clamp(22px, 4vw, 36px) / 1.1 var(--display);
+  letter-spacing: 0.2em;
+  color: var(--c);
+  animation-delay: 1.7s;
+}
+.crown-score {
+  font-weight: 700;
+  animation-delay: 1.85s;
+}
+.crown-btns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+  animation-delay: 2.6s;
+}
+.crown-btns button {
+  font: 400 20px/1 var(--display);
+  letter-spacing: 0.05em;
+  padding: 12px 20px;
+}
+.crown-roster {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.crown-roster span {
+  font:
+    700 13px/1 'Space Mono',
+    monospace;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--panel);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: crown-rise 0.35s ease-out forwards;
+}
+@keyframes crown-rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Reduced motion: everything in place at once. */
+.crown-show.still *,
+.crown-show.still {
+  animation: none !important;
+}
+.crown-show.still .crown-spot,
+.crown-show.still .crown-crown,
+.crown-show.still .crown-name,
+.crown-show.still .crown-sub,
+.crown-show.still .crown-score,
+.crown-show.still .crown-btns,
+.crown-show.still .crown-roster span {
+  opacity: 1;
+  transform: none;
+}
+.crown-show.still .crown-spot {
+  transform: translateX(-50%);
+}

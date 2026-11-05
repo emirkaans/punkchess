@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { timeControl } from '../clock/clock.ts';
 import { getVariant, listVariants } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
@@ -13,6 +13,7 @@ import {
 import type { TournamentFormat, TournamentList, TournamentSummary, TournamentView } from '../online/tournament.ts';
 import { playoffWinner, warPairs, warScore, warWinner } from '../online/tournament.ts';
 import { useAccount } from './account.ts';
+import { Coronation } from './Coronation.tsx';
 import { useI18n } from './i18n.tsx';
 import { useTournament } from './online/tournamentConnection.ts';
 import { ProfileLink } from './ProfileLink.tsx';
@@ -361,6 +362,14 @@ function TournamentRoom({
   const now = useNow() + link.skew;
   const [copied, setCopied] = useState(false);
   const v: TournamentView | null = link.view;
+  // The crowning: once, when the tournament ends while the page is open (not when it is opened ended).
+  const [crowned, setCrowned] = useState(false);
+  const lastStatus = useRef<string | null>(null);
+  const status = v?.status ?? null;
+  useEffect(() => {
+    if (lastStatus.current && lastStatus.current !== 'finished' && status === 'finished') setCrowned(true);
+    lastStatus.current = status;
+  }, [status]);
 
   if (link.status === 'missing') {
     return (
@@ -566,6 +575,7 @@ function TournamentRoom({
         </ol>
       )}
       <Rules format={v.format} />
+      {crowned && <Coronation v={v} onClose={() => setCrowned(false)} onOpen={onOpen} />}
     </main>
   );
 }

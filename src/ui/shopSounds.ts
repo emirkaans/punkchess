@@ -153,6 +153,38 @@ function passingCar(ac: BaseAudioContext, out: AudioNode, t: number) {
   hum.stop(t + 1.45);
 }
 
+/**
+ * The crowning at the end of a tournament or a war (src/ui/Coronation.tsx): one distorted
+ * power chord as the crown lands, two bells over it.
+ */
+export function playFanfare(ac: BaseAudioContext, t: number): void {
+  const out = ac.createGain();
+  out.gain.value = 0.6;
+  out.connect(ac.destination);
+  const drive = ac.createWaveShaper();
+  const curve = new Float32Array(1024);
+  for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh(((i / curve.length) * 2 - 1) * 6);
+  drive.curve = curve;
+  const lp = ac.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 2600;
+  drive.connect(lp);
+  lp.connect(out);
+  const g = envelope(ac, drive, t, 0.35, 0.005, 1.4);
+  for (const hz of [82.4, 123.5, 164.8]) {
+    const o = ac.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.value = hz;
+    o.detune.value = (Math.random() - 0.5) * 12;
+    o.connect(g);
+    o.start(t);
+    o.stop(t + 1.5);
+  }
+  hiss(ac, out, 'highpass', 4000, 4000, 0.7, t, 0.04, 0.2);
+  bell(ac, out, 1568, t + 0.15, 1.2, 0.12);
+  bell(ac, out, 2093, t + 0.3, 1.2, 0.1);
+}
+
 /** Plays `shop`'s sound at `t` on `ac`. */
 export function playShopSound(ac: BaseAudioContext, shop: Shop, t: number): void {
   const out = ac.createGain();
