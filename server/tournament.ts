@@ -9,7 +9,9 @@
 // runs, the free players are paired every few seconds: joined, not paused,
 // not in a game, and with the tournament page open (a WebSocket). Swiss:
 // round by round, every joined player who is not paused is paired at once;
-// the next round starts a little after the last game of a round ends. Game
+// the next round starts a little after the last game of a round ends. A gang
+// war is Swiss-like: fixed boards each round, everyone meeting everyone of the
+// other gang, and a tie played off by the two gangs' best players. Game
 // rooms report their results (/result); a room that could not report is asked
 // for it later, and a game nobody starts in time is called off (no-show).
 
@@ -24,6 +26,7 @@ import type { GameInfo } from '../src/online/record.ts';
 import type { SeatTicket } from '../src/online/protocol.ts';
 import {
   PAIRING_MS,
+  armageddonClock,
   SWISS_ROUNDS,
   SWISS_ROUND_GAP_MS,
   TOURNAMENT_MAX_PLAYERS,
@@ -32,6 +35,8 @@ import {
   TOURNAMENT_TIME_CONTROLS,
   buchholz,
   newPlayer,
+  nextPlayoffGame,
+  playoffPlayers,
   onFire,
   pairings,
   resultFor,
@@ -43,7 +48,9 @@ import {
   swissScored,
   swissStandings,
   tournamentNameProblem,
+  warPairs,
   warScore,
+  warWinner,
 } from '../src/online/tournament.ts';
 import type {
   CreateTournament,
@@ -56,6 +63,8 @@ import type {
   TournamentState,
   TournamentSummary,
   TournamentView,
+  WarPlayoff,
+  WarSide,
 } from '../src/online/tournament.ts';
 import { ACCOUNT_ID, ACCOUNT_NAME } from './account-headers.ts';
 import { withAccountHeaders } from './account-headers.ts';
@@ -79,6 +88,8 @@ interface LiveGame {
   readonly at: number;
   /** Both sides have moved (it will not be a no-show). */
   readonly started?: boolean;
+  /** A war's playoff game (counts for the playoff, not the score). */
+  readonly playoff?: boolean;
 }
 
 /**
@@ -188,6 +199,7 @@ export class Tournament extends DurableObject<Env> {
       war: state.war,
       round: state.round ?? 0,
       nextRoundAt: state.nextRoundAt ?? null,
+      playoff: state.playoff ?? null,
       status: state.status,
       standings: this.ranked(state).map((p) => ({
         userId: p.userId,
@@ -302,9 +314,13 @@ export class Tournament extends DurableObject<Env> {
     const playing = Object.keys(this.games).length > 0;
     if (!playing) {
       const round = state.round ?? 0;
-      if (round >= (state.rounds ?? 0)) return this.finish();
       const due = round === 0 || (state.nextRoundAt ?? 0) <= Date.now();
-      if (due) {
+      if (round >= (state.rounds ?? 0)) {
+        // A tied war: the playoff's next game when it is due, until a side has won.
+        const tied = state.war && !warWinner(warScore(state.war, state.players), state.playoff);
+        if (!tied) return this.finish();
+        if (due && !(await this.startPlayoffGame())) return this.finish();
+      } else if (due) {
         await this.startRound();
         if (!this.state || this.state.status === 'finished') return;
       }
@@ -321,11 +337,11 @@ export class Tournament extends DurableObject<Env> {
     const state = this.state;
     if (!state) return;
     const active = Object.values(state.players).filter((p) => !p.paused);
-    // Fewer than two players left: nothing more to play.
-    if (active.length < 2) return this.finish();
-    // A gang war's boards are set when it is accepted.
+    // Fewer than two players left: nothing more to play (a war's boards are always played).
+    if (!state.war && active.length < 2) return this.finish();
+    // A gang war's boards follow from its players' order: everyone meets everyone in turn.
     const { pairs, bye } = state.war
-      ? { pairs: state.war.pairs.map(([w, b]): [string, string] => [w, b]), bye: null }
+      ? { pairs: warPairs(state.war, state.round ?? 0), bye: null }
       : swissPairings(active, state.players, Math.random);
     let players: Record<string, TournamentPlayer> = { ...state.players };
     if (bye) players[bye] = swissBye(players[bye]);
@@ -347,6 +363,7 @@ export class Tournament extends DurableObject<Env> {
     players: Record<string, TournamentPlayer>,
     w: string,
     b: string,
+    playoff: { armageddon: boolean } | null = null,
   ): Promise<Record<string, TournamentPlayer> | null> {
     const gameId = randomGameId();
     const tokens = { w: crypto.randomUUID(), b: crypto.randomUUID() };
@@ -359,12 +376,14 @@ export class Tournament extends DurableObject<Env> {
       seat(w),
     );
     const joined = joinRoom(created.room, '', tokens.b, seat(b));
-    const room: Room = { ...joined.room, tournamentId: state.id };
+    let room: Room = { ...joined.room, tournamentId: state.id };
+    // Armageddon: Black starts with less time (and a draw is Black's win, see result()).
+    if (playoff?.armageddon) room = { ...room, clock: armageddonClock(room.clock) };
     const res = await this.env.GAME.get(this.env.GAME.idFromName(gameId))
       .fetch(`https://room/adopt?id=${gameId}`, { method: 'POST', body: JSON.stringify(room) })
       .catch(() => null);
     if (!res?.ok) return null;
-    this.games[gameId] = { w, b, at: Date.now() };
+    this.games[gameId] = playoff ? { w, b, at: Date.now(), playoff: true } : { w, b, at: Date.now() };
     this.tickets[w] = { gameId, color: 'w', token: tokens.w };
     this.tickets[b] = { gameId, color: 'b', token: tokens.b };
     const met = (p: TournamentPlayer, other: string) => [...(p.opponents ?? []), other];
@@ -454,6 +473,7 @@ export class Tournament extends DurableObject<Env> {
     const g = this.games[end.gameId];
     if (!state || !g) return;
     delete this.games[end.gameId];
+    if (g.playoff) return this.playoffResult(state, g, end);
     // Swiss and gang wars score 1, ½, 0; a no-show loses the game.
     const swiss = formatOf(state) !== 'arena';
     const players = { ...state.players };
@@ -493,6 +513,59 @@ export class Tournament extends DurableObject<Env> {
     this.broadcast();
   }
 
+  /**
+   * A tied war, its rounds over: the playoff's next game between the two gangs' best players.
+   * Returns false when there is none to play (decided, or its room could not be made).
+   */
+  private async startPlayoffGame(): Promise<boolean> {
+    const state = this.state;
+    if (!state?.war) return false;
+    const playoff: WarPlayoff = state.playoff ?? { ...playoffPlayers(state.war, state.players), games: [] };
+    const next = nextPlayoffGame(playoff, Math.random);
+    if (!next) return false;
+    const id = (side: WarSide) => playoff[side];
+    const [w, b] = next.white === 'c' ? [id('c'), id('d')] : [id('d'), id('c')];
+    const players = await this.makeGame(state, { ...state.players }, w, b, { armageddon: next.armageddon });
+    if (!players) return false;
+    const gameId = players[w].game!;
+    await this.save({
+      ...state,
+      players,
+      nextRoundAt: null,
+      playoff: { ...playoff, games: [...playoff.games, { gameId, ...next, r: null }] },
+    });
+    this.broadcast();
+    return true;
+  }
+
+  /** A playoff game ended: it goes on the playoff (not the score); the next one, if any, soon. */
+  private async playoffResult(state: TournamentState, g: LiveGame, end: GameEnd) {
+    const playoff = state.playoff;
+    const players = { ...state.players };
+    for (const id of [g.w, g.b]) {
+      if (players[id]?.game === end.gameId) players[id] = { ...players[id], game: null };
+      if (this.tickets[id]?.gameId === end.gameId) delete this.tickets[id];
+    }
+    if (!playoff) return this.save({ ...state, players });
+    const cWhite = g.w === playoff.c;
+    // Not played: whoever kept it from starting loses it. Else the board's result.
+    let winner: Color | null = end.winner;
+    if (end.plies < ABORT_PLIES) winner = end.winner ?? (end.plies === 0 ? 'b' : 'w');
+    const game = playoff.games.find((x) => x.gameId === end.gameId);
+    const cResult: 'w' | 'd' | 'l' = winner === null ? 'd' : (winner === 'w') === cWhite ? 'w' : 'l';
+    const games = playoff.games.map((x) => (x.gameId === end.gameId ? { ...x, r: game ? cResult : x.r } : x));
+    await this.save({
+      ...state,
+      players,
+      playoff: { ...playoff, games },
+      nextRoundAt: Date.now() + SWISS_ROUND_GAP_MS,
+    });
+    // Decided: the war ends at once; else the next playoff game after the usual gap.
+    const decided = !!warWinner(warScore(state.war!, players), { games });
+    await this.ctx.storage.setAlarm(Date.now() + (decided ? 1000 : SWISS_ROUND_GAP_MS));
+    this.broadcast();
+  }
+
   private async finish() {
     const state = this.state;
     if (!state) return;
@@ -513,27 +586,35 @@ export class Tournament extends DurableObject<Env> {
     )
       .bind(
         list.length,
-        list[0] && list[0].score > 0 ? list[0].username : null,
+        state.war ? warWinnerTag(state) : list[0] && list[0].score > 0 ? list[0].username : null,
         JSON.stringify(list.slice(0, 50).map((p) => ({ username: p.username, score: p.score, games: p.sheet.length }))),
         endsAt,
         state.id,
       )
       .run()
       .catch((e: unknown) => console.error('saving the tournament standings failed', e));
-    // A gang war: its result goes to the gangs' record.
+    // A gang war: its result goes to the gangs' record (a tie won in the playoff is a win).
     if (state.war) {
       const score = warScore(state.war, players);
+      const side = warWinner(score, state.playoff);
       await this.env.DB?.prepare(
         `UPDATE gang_wars SET status = 'finished', finished_at = ?1, challenger_score = ?2, defender_score = ?3,
-           winner = CASE WHEN ?2 > ?3 THEN challenger WHEN ?3 > ?2 THEN defender ELSE NULL END
+           winner = CASE ?5 WHEN 'c' THEN challenger WHEN 'd' THEN defender ELSE NULL END
          WHERE id = ?4`,
       )
-        .bind(now, score.c, score.d, state.war.warId)
+        .bind(now, score.c, score.d, state.war.warId, side)
         .run()
         .catch((e: unknown) => console.error('saving the war result failed', e));
     }
     this.broadcast();
   }
+}
+
+/** The winning gang's tag, as the tournament list shows a war's winner (null: a tie undecided). */
+function warWinnerTag(state: TournamentState): string | null {
+  if (!state.war) return null;
+  const side = warWinner(warScore(state.war, state.players), state.playoff);
+  return side ? `[${state.war.tags[side]}]` : null;
 }
 
 /** How a tournament game ended, as its room reports it. */

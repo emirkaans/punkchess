@@ -18,7 +18,7 @@ import { dailyDay } from '../src/online/daily.ts';
 import { GANG_SIZE, GANG_WEEK_DAYS, WAR_ANSWER_MS, cleanTag, gangProblem, gangScore } from '../src/online/gang.ts';
 import type { GangDetail, GangList, GangMember, GangSummary, GangWar, GangWarStatus } from '../src/online/gang.ts';
 import { randomGameId } from '../src/online/record.ts';
-import { TOURNAMENT_TIME_CONTROLS, swissEndEstimate } from '../src/online/tournament.ts';
+import { TOURNAMENT_TIME_CONTROLS, swissEndEstimate, warPairs, warRounds } from '../src/online/tournament.ts';
 import type { TournamentMeta, WarSetup } from '../src/online/tournament.ts';
 import { currentUser, sameOrigin } from './auth.ts';
 import type { Env } from './game-room.ts';
@@ -303,7 +303,9 @@ export async function handleGangs(request: Request, env: Env, url: URL): Promise
 
 /**
  * An accepted war: the members of each gang, best of the week first, meet
- * board by board (the challengers White on boards 1 and 3), all at once.
+ * board by board, all at once, round after round until everyone has met
+ * everyone of the other gang (src/online/tournament.ts, warPairs); a tie is
+ * played off by the two gangs' best players.
  */
 async function startWar(env: Env, war: WarRow, acceptedBy: string, now: number): Promise<Response> {
   const db = env.DB;
@@ -327,16 +329,16 @@ async function startWar(env: Env, war: WarRow, acceptedBy: string, now: number):
       .slice(0, GANG_SIZE);
   const c = ranked(cRows);
   const d = ranked(dRows);
-  const pairs = c.map((p, i): [string, string] =>
-    i % 2 === 0 ? [p.user_id, d[i].user_id] : [d[i].user_id, p.user_id],
-  );
+  const players = [
+    ...c.map((p) => ({ id: p.user_id, username: p.username, side: 'c' as const })),
+    ...d.map((p) => ({ id: p.user_id, username: p.username, side: 'd' as const })),
+  ];
+  const rounds = warRounds({ players });
   const setup: WarSetup = {
     warId: war.id,
-    pairs,
-    players: [
-      ...c.map((p) => ({ id: p.user_id, username: p.username, side: 'c' as const })),
-      ...d.map((p) => ({ id: p.user_id, username: p.username, side: 'd' as const })),
-    ],
+    // The first round's boards (the later ones follow from the players' order).
+    pairs: warPairs({ players }, 0),
+    players,
     tags: { c: war.c_tag, d: war.d_tag },
   };
   const tc = timeControl(war.time_control);
@@ -348,10 +350,10 @@ async function startWar(env: Env, war: WarRow, acceptedBy: string, now: number):
     timeControlId: war.time_control,
     rated: true,
     startsAt: now,
-    endsAt: swissEndEstimate(now, 1, tc.initialMs ?? 0, tc.incrementMs),
+    endsAt: swissEndEstimate(now, rounds, tc.initialMs ?? 0, tc.incrementMs),
     createdBy: acceptedBy,
     format: 'war',
-    rounds: 1,
+    rounds,
     war: setup,
   };
   const res = await env.TOURNAMENT.get(env.TOURNAMENT.idFromName(id)).fetch('https://tournament/init', {

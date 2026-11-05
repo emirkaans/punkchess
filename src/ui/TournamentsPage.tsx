@@ -11,7 +11,7 @@ import {
   tournamentNameProblem,
 } from '../online/tournament.ts';
 import type { TournamentFormat, TournamentList, TournamentSummary, TournamentView } from '../online/tournament.ts';
-import { warScore } from '../online/tournament.ts';
+import { playoffWinner, warPairs, warScore, warWinner } from '../online/tournament.ts';
 import { useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
 import { useTournament } from './online/tournamentConnection.ts';
@@ -419,7 +419,7 @@ function TournamentRoom({
           <small>
             {v.status === 'created'
               ? t('tournament.startsInLabel')
-              : v.status === 'started' && swiss
+              : v.status === 'started' && (swiss || v.war)
                 ? t('tournament.roundLabel')
                 : v.status === 'started'
                   ? t('tournament.endsInLabel')
@@ -428,7 +428,7 @@ function TournamentRoom({
           <span>
             {v.status === 'created'
               ? clockText(v.startsAt - now)
-              : v.status === 'started' && swiss
+              : v.status === 'started' && (swiss || v.war)
                 ? `${v.round}/${v.rounds ?? '?'}`
                 : v.status === 'started'
                   ? clockText(v.endsAt - now)
@@ -496,6 +496,7 @@ function TournamentRoom({
           <span className={war.d > war.c ? 'lead' : ''}>[{v.war.tags.d}]</span>
         </div>
       )}
+      {v.war && war && <WarBoards v={v} />}
       {!v.war && podium.length > 0 && (
         <ol className="tz-podium" aria-label={t('tournament.podium')}>
           {podium.map((p, i) => (
@@ -514,56 +515,144 @@ function TournamentRoom({
         </ol>
       )}
 
-      <ol className="tz-standings">
-        {v.standings.length === 0 && <li className="tz-empty muted">{t('tournament.nobody')}</li>}
-        {v.standings.map((p, i) => (
-          <li
-            key={p.userId}
-            className={`tz-row${i === 0 && p.score > 0 ? ' lead' : ''}${p.userId === v.you ? ' mine' : ''}${p.paused ? ' paused' : ''}`}
-          >
-            <span className="tz-place">{i + 1}</span>
-            <span className="tz-player">
-              {sideTag(p.userId) && <span className="tz-side">[{sideTag(p.userId)}]</span>}
-              <ProfileLink username={p.username}>{p.username}</ProfileLink>
-              {p.fire && (
-                <span className="tz-fire" title={t('tournament.onFire')}>
-                  <Flame />
-                </span>
-              )}
-              {p.game && <span className="tournament-playing" title={t('tournament.playing')} />}
-              {p.paused && <span className="tz-paused">{t('tournament.paused')}</span>}
-            </span>
-            <span className="tz-sheet" aria-label={t('tournament.sheet')}>
-              {p.sheet.slice(-12).map((s, i) =>
-                s.r === 'b' ? (
-                  <span key={`bye-${i}`} className="tz-dot b" title={t('tournament.result.b')}>
-                    B
+      {!v.war && (
+        <ol className="tz-standings">
+          {v.standings.length === 0 && <li className="tz-empty muted">{t('tournament.nobody')}</li>}
+          {v.standings.map((p, i) => (
+            <li
+              key={p.userId}
+              className={`tz-row${i === 0 && p.score > 0 ? ' lead' : ''}${p.userId === v.you ? ' mine' : ''}${p.paused ? ' paused' : ''}`}
+            >
+              <span className="tz-place">{i + 1}</span>
+              <span className="tz-player">
+                {sideTag(p.userId) && <span className="tz-side">[{sideTag(p.userId)}]</span>}
+                <ProfileLink username={p.username}>{p.username}</ProfileLink>
+                {p.fire && (
+                  <span className="tz-fire" title={t('tournament.onFire')}>
+                    <Flame />
                   </span>
-                ) : (
-                  <a
-                    key={s.gameId}
-                    href={`/${s.gameId}`}
-                    className={`tz-dot ${s.r}${s.fire ? ' fire' : ''}`}
-                    title={t(`tournament.result.${s.r}`)}
-                  >
-                    {scoreText(s.pts)}
-                  </a>
-                ),
-              )}
-            </span>
-            <span className="tz-score">
-              {scoreText(p.score)}
-              {swiss && (
-                <small className="tz-bh" title={t('tournament.buchholz')}>
-                  BH {scoreText(p.buchholz)}
-                </small>
-              )}
-            </span>
-          </li>
-        ))}
-      </ol>
+                )}
+                {p.game && <span className="tournament-playing" title={t('tournament.playing')} />}
+                {p.paused && <span className="tz-paused">{t('tournament.paused')}</span>}
+              </span>
+              <span className="tz-sheet" aria-label={t('tournament.sheet')}>
+                {p.sheet.slice(-12).map((s, i) =>
+                  s.r === 'b' ? (
+                    <span key={`bye-${i}`} className="tz-dot b" title={t('tournament.result.b')}>
+                      B
+                    </span>
+                  ) : (
+                    <a
+                      key={s.gameId}
+                      href={`/${s.gameId}`}
+                      className={`tz-dot ${s.r}${s.fire ? ' fire' : ''}`}
+                      title={t(`tournament.result.${s.r}`)}
+                    >
+                      {scoreText(s.pts)}
+                    </a>
+                  ),
+                )}
+              </span>
+              <span className="tz-score">
+                {scoreText(p.score)}
+                {swiss && (
+                  <small className="tz-bh" title={t('tournament.buchholz')}>
+                    BH {scoreText(p.buchholz)}
+                  </small>
+                )}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
       <Rules format={v.format} />
     </main>
+  );
+}
+
+/**
+ * A gang war's story: who won (or that a playoff decides it), each round's boards with their
+ * results, and the playoff's games between the two gangs' best players.
+ */
+export function WarBoards({ v }: { v: TournamentView }) {
+  const { t } = useI18n();
+  const war = v.war!;
+  const byId = new Map(v.standings.map((p) => [p.userId, p]));
+  const name = (id: string) => byId.get(id)?.username ?? '?';
+  const tag = (id: string) => war.tags[war.players.find((p) => p.id === id)?.side ?? 'c'];
+  const score = warScore(war, Object.fromEntries(v.standings.map((p) => [p.userId, p])));
+  const winner = warWinner(score, v.playoff);
+  const rounds = Array.from({ length: Math.min(v.rounds ?? 1, Math.max(v.round, 1)) }, (_, r) => r);
+  // A board's result: the game in White's sheet for that round.
+  const board = (w: string, r: number) => byId.get(w)?.sheet[r] ?? null;
+  const resultText = (res: 'w' | 'd' | 'l' | 'b' | null | undefined) =>
+    res === 'w' ? '1 – 0' : res === 'l' ? '0 – 1' : res === 'd' ? '½ – ½' : '…';
+  const player = (id: string) => (
+    <span className="tz-war-player">
+      <span className="tz-side">[{tag(id)}]</span>
+      <ProfileLink username={name(id)}>{name(id)}</ProfileLink>
+    </span>
+  );
+  return (
+    <section className="tz-war-boards">
+      {v.status === 'finished' && (
+        <p className={`tz-war-result${winner ? ' won' : ''}`}>
+          {winner
+            ? t(v.playoff && playoffWinner(v.playoff) ? 'war.wonPlayoff' : 'war.won', { tag: war.tags[winner] })
+            : t('war.tied')}
+        </p>
+      )}
+      {rounds.map((r) => (
+        <div key={r} className="tz-war-round">
+          <h3>{t('war.round', { n: String(r + 1) })}</h3>
+          <ol>
+            {warPairs(war, r).map(([w, b], i) => {
+              const s = board(w, r);
+              return (
+                <li key={`${r}-${i}`}>
+                  <span className="tz-war-board">{t('war.board', { n: String(i + 1) })}</span>
+                  {player(w)}
+                  {s?.gameId ? (
+                    <a className="tz-war-score" href={`/${s.gameId}`}>
+                      {resultText(s.r)}
+                    </a>
+                  ) : (
+                    <span className="tz-war-score">{resultText(s?.r ?? null)}</span>
+                  )}
+                  {player(b)}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      ))}
+      {v.playoff && (
+        <div className="tz-war-round playoff">
+          <h3>{t('war.playoff')}</h3>
+          <p className="muted">{t('war.playoffNote')}</p>
+          <ol>
+            {v.playoff.games.map((g, i) => {
+              const [w, b] = g.white === 'c' ? [v.playoff!.c, v.playoff!.d] : [v.playoff!.d, v.playoff!.c];
+              // The result as White's: the challengers' result turned round when they had Black.
+              const r = g.r === null ? null : g.white === 'c' ? g.r : g.r === 'w' ? 'l' : g.r === 'l' ? 'w' : 'd';
+              return (
+                <li key={g.gameId}>
+                  <span className="tz-war-board">
+                    {g.armageddon ? t('war.armageddon') : t('war.playoffGame', { n: String(i + 1) })}
+                  </span>
+                  {player(w)}
+                  <a className="tz-war-score" href={`/${g.gameId}`}>
+                    {resultText(r)}
+                    {g.armageddon && r === 'd' && <small className="tz-war-note">{t('war.armageddonDraw')}</small>}
+                  </a>
+                  {player(b)}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      )}
+    </section>
   );
 }
 

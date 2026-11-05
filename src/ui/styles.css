@@ -7953,6 +7953,89 @@ a:focus-visible {
 .tz-war .lead {
   color: var(--pink);
 }
+/* A gang war's boards (src/ui/TournamentsPage.tsx, WarBoards): the winner, then each round's
+   boards, then the playoff. */
+.tz-war-boards {
+  display: grid;
+  gap: 14px;
+  margin: 14px 0;
+}
+.tz-war-result {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #1b1b1f;
+  font: 400 26px/1.2 var(--display);
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+.tz-war-result.won {
+  color: var(--lime);
+  border: 2px solid var(--lime);
+}
+.tz-war-round h3 {
+  margin: 0 0 6px;
+  font: 400 18px/1 var(--display);
+  letter-spacing: 0.04em;
+  color: var(--pink);
+}
+.tz-war-round.playoff h3 {
+  color: var(--lime);
+}
+.tz-war-round ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.tz-war-round li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.tz-war-board {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.tz-war-player {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tz-war-player:last-child {
+  justify-content: flex-end;
+}
+.tz-war-note {
+  display: block;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--lime);
+}
+.tz-war-score {
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .tz-war-round li {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+  .tz-war-board {
+    grid-column: 1 / -1;
+  }
+}
 .tz-format.war {
   background: var(--fg);
 }

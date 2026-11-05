@@ -29,7 +29,10 @@ export const EARLY_DRAW_PLIES = 20;
 export const PAIRING_MS = 3000;
 
 export type TournamentStatus = 'created' | 'started' | 'finished';
-/** 'war': a gang war (src/online/gang.ts), one round of fixed boards between two gangs; not listed. */
+/**
+ * 'war': a gang war (src/online/gang.ts), not listed: as many rounds as each gang has players,
+ * so every member meets every member of the other gang; a tie goes to a playoff (warPlayoff).
+ */
 export type TournamentFormat = 'arena' | 'swiss' | 'war';
 /** The formats staff can pick for a tournament (a war is made by gangs). */
 export const TOURNAMENT_FORMATS: readonly TournamentFormat[] = ['arena', 'swiss'];
@@ -96,6 +99,117 @@ export interface WarSetup {
   readonly tags: { readonly c: string; readonly d: string };
 }
 
+/** A side of a gang war: the challengers ('c') or the defenders ('d'). */
+export type WarSide = 'c' | 'd';
+
+/**
+ * A war's boards in `round` (0 first): the challengers in their order meet the defenders shifted
+ * by the round, so over as many rounds as there are players everyone meets everyone. Colours are
+ * shared out so each player has White in half their games: with four a side they alternate down
+ * the boards and swap every two rounds; with two a side each gang has White in turn. [white,
+ * black] user ids.
+ */
+export function warPairs(war: Pick<WarSetup, 'players'>, round: number): [string, string][] {
+  const c = war.players.filter((p) => p.side === 'c');
+  const d = war.players.filter((p) => p.side === 'd');
+  const n = Math.min(c.length, d.length);
+  return Array.from({ length: n }, (_, i): [string, string] => {
+    const cp = c[i].id;
+    const dp = d[(i + round) % n].id;
+    const challengerWhite = (n <= 2 ? round : (round >> 1) + i) % 2 === 0;
+    return challengerWhite ? [cp, dp] : [dp, cp];
+  });
+}
+
+/** A gang war's rounds: one per player of a gang. */
+export const warRounds = (war: Pick<WarSetup, 'players'>): number =>
+  Math.min(...(['c', 'd'] as const).map((s) => war.players.filter((p) => p.side === s).length));
+
+/** One game of a war's playoff: which side had White, and how it went for the challengers' player. */
+export interface PlayoffGame {
+  readonly gameId: string;
+  readonly white: WarSide;
+  /** Armageddon: Black has less time, and a draw is Black's win. */
+  readonly armageddon: boolean;
+  /** For the challengers' player: won, drawn, lost; null while it is played. */
+  readonly r: 'w' | 'd' | 'l' | null;
+}
+
+/** A tied war's playoff: each gang's best player of the war, and the games they played. */
+export interface WarPlayoff {
+  readonly c: string;
+  readonly d: string;
+  readonly games: readonly PlayoffGame[];
+}
+
+/** Black's time in an Armageddon game, as a share of White's. */
+export const ARMAGEDDON_BLACK_SHARE = 0.8;
+
+/** An Armageddon game's clock: Black's time cut to its share (an untimed clock stays untimed). */
+export function armageddonClock<C extends { readonly remaining: Readonly<Record<Color, number>> }>(clock: C): C {
+  const b = clock.remaining.b;
+  return {
+    ...clock,
+    remaining: { ...clock.remaining, b: Number.isFinite(b) ? Math.round(b * ARMAGEDDON_BLACK_SHARE) : b },
+  };
+}
+
+/**
+ * Who plays a tied war's playoff: on each side, the player with the most wins in the war, then
+ * the most points, then the higher board (the gang's weekly order).
+ */
+export function playoffPlayers(
+  war: Pick<WarSetup, 'players'>,
+  players: Readonly<Record<string, Pick<TournamentPlayer, 'score' | 'sheet'>>>,
+): { c: string; d: string } {
+  const best = (side: WarSide) => {
+    const list = war.players.filter((p) => p.side === side);
+    const wins = (id: string) => players[id]?.sheet.filter((s) => s.r === 'w').length ?? 0;
+    return list.reduce((a, b) =>
+      wins(b.id) > wins(a.id) ||
+      (wins(b.id) === wins(a.id) && (players[b.id]?.score ?? 0) > (players[a.id]?.score ?? 0))
+        ? b
+        : a,
+    ).id;
+  };
+  return { c: best('c'), d: best('d') };
+}
+
+/** Which side won a playoff, or null while it goes on. */
+export function playoffWinner(playoff: Pick<WarPlayoff, 'games'>): WarSide | null {
+  for (const g of playoff.games) {
+    if (g.r === 'w') return 'c';
+    if (g.r === 'l') return 'd';
+    // A drawn Armageddon is Black's.
+    if (g.r === 'd' && g.armageddon) return g.white === 'c' ? 'd' : 'c';
+  }
+  return null;
+}
+
+/**
+ * The playoff's next game, or null when it is decided (or a game is still going): the first
+ * with random colours; after a draw a second with the colours swapped; after two draws an
+ * Armageddon with random colours.
+ */
+export function nextPlayoffGame(
+  playoff: Pick<WarPlayoff, 'games'>,
+  random: () => number,
+): { white: WarSide; armageddon: boolean } | null {
+  const { games } = playoff;
+  if (playoffWinner(playoff) || games.some((g) => g.r === null)) return null;
+  const coin = (): WarSide => (random() < 0.5 ? 'c' : 'd');
+  if (games.length === 0) return { white: coin(), armageddon: false };
+  if (games.length === 1) return { white: games[0].white === 'c' ? 'd' : 'c', armageddon: false };
+  if (games.length === 2) return { white: coin(), armageddon: true };
+  return null;
+}
+
+/** A war's winner: the side with more points, else the playoff's; null while undecided. */
+export function warWinner(score: { c: number; d: number }, playoff: Pick<WarPlayoff, 'games'> | null | undefined) {
+  if (score.c !== score.d) return score.c > score.d ? 'c' : 'd';
+  return playoff ? playoffWinner(playoff) : null;
+}
+
 /** A war's score so far: each side's points over its finished boards. */
 export function warScore(war: WarSetup, players: Readonly<Record<string, Pick<TournamentPlayer, 'score'>>>) {
   const score = { c: 0, d: 0 };
@@ -109,6 +223,8 @@ export interface TournamentState extends TournamentMeta {
   /** Swiss: the round being played (0 before the first), and when the next one starts. */
   readonly round?: number;
   readonly nextRoundAt?: number | null;
+  /** A tied war's playoff, once its rounds are over. */
+  readonly playoff?: WarPlayoff | null;
 }
 
 /** A tournament as its page shows it. */
@@ -123,6 +239,8 @@ export interface TournamentView extends TournamentMeta {
   readonly format: TournamentFormat;
   readonly round: number;
   readonly nextRoundAt: number | null;
+  /** A tied war's playoff (null: none). */
+  readonly playoff: WarPlayoff | null;
   /** Games being played. */
   readonly games: number;
   /** The receiver's user id when they joined, else null. */

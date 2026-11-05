@@ -878,9 +878,20 @@ export const tr = {
   'tournament.warRules':
     'Dört masa aynı anda; her masada galibiyet 1, beraberlik ½ puan. 5 dakikada masasına gelmeyen o masayı kaybeder.',
   'gang.war.title': 'Çete savaşları',
+  'war.round': '{n}. tur',
+  'war.board': 'Masa {n}',
+  'war.won': '[{tag}] savaşı kazandı!',
+  'war.wonPlayoff': '[{tag}] savaşı uzatmada kazandı!',
+  'war.tied': 'Savaş berabere bitti.',
+  'war.playoff': 'Uzatma',
+  'war.playoffNote':
+    'Skor eşit: iki çetenin bu savaşta en çok kazanan oyuncuları karşılaşır. İlk maçta renkler rastgele, berabere biterse ikinci maçta renkler değişir; o da berabere biterse Armageddon: Beyazın süresi daha uzun, beraberlik Siyahın galibiyeti sayılır.',
+  'war.playoffGame': 'Uzatma {n}',
+  'war.armageddon': 'Armageddon',
+  'war.armageddonDraw': 'Siyah kazanır',
   'gang.war.record': 'Rekor: {won}G {lost}M {drawn}B',
   'gang.war.rule':
-    'Kurucular savaş ilan eder; kabul edilince iki çetenin {size} üyesi haftalık sıraya göre karşılıklı eşleşir ve {size} masa aynı anda başlar.',
+    'Kurucular savaş ilan eder; kabul edilince iki çetenin {size} üyesi {size} tur boyunca karşı çetenin her üyesiyle birer kez oynar, her turda {size} masa aynı anda başlar. Skor eşit biterse iki çetenin en çok kazananı uzatma oynar.',
   'gang.war.declare': '[{tag}] çetesine savaş ilan et',
   'gang.war.none': 'Henüz savaş yok.',
   'gang.war.accept': 'Kabul et',
@@ -2427,9 +2438,20 @@ export const en: Record<MessageKey, string> = {
   'tournament.warRules':
     'Four boards at once; on each a win is 1 point, a draw ½. A player who does not come to their board in 5 minutes loses it.',
   'gang.war.title': 'Gang wars',
+  'war.round': 'Round {n}',
+  'war.board': 'Board {n}',
+  'war.won': '[{tag}] won the war!',
+  'war.wonPlayoff': '[{tag}] won the war in the playoff!',
+  'war.tied': 'The war ended in a draw.',
+  'war.playoff': 'Playoff',
+  'war.playoffNote':
+    "Level score: each gang's player with the most wins in this war meets the other. The first game's colours are random; after a draw the second swaps them; after another draw, Armageddon: White has more time, and a draw counts as Black's win.",
+  'war.playoffGame': 'Playoff {n}',
+  'war.armageddon': 'Armageddon',
+  'war.armageddonDraw': 'Black wins',
   'gang.war.record': 'Record: {won}W {lost}L {drawn}D',
   'gang.war.rule':
-    'Founders declare wars; once one is accepted, the {size} members of each gang meet in their weekly order and all {size} boards start at once.',
+    "Founders declare wars; once one is accepted, over {size} rounds each of the {size} members of a gang plays every member of the other once, all {size} boards of a round at once. A level score is played off by the two gangs' top winners.",
   'gang.war.declare': 'Declare war on [{tag}]',
   'gang.war.none': 'No wars yet.',
   'gang.war.accept': 'Accept',
