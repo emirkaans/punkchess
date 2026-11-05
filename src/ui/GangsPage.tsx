@@ -28,6 +28,8 @@ function Rules() {
   return (
     <p className="muted">
       {t('gang.rules', {
+        size: String(GANG_SIZE),
+        others: String(GANG_SIZE - 1),
         days: String(GANG_WEEK_DAYS),
         win: String(GANG_POINTS.win),
         draw: String(GANG_POINTS.draw),
@@ -356,7 +358,7 @@ function GangWars({
           {t('gang.war.record', { won: String(won), lost: String(lost), drawn: String(drawn) })}
         </span>
       </div>
-      <p className="muted gang-wars-rule">{t('gang.war.rule')}</p>
+      <p className="muted gang-wars-rule">{t('gang.war.rule', { size: String(GANG_SIZE) })}</p>
       {canChallenge && (
         <div className="gang-war-form">
           <div className="gang-war-tcs" role="group" aria-label={t('newGame.time')}>
@@ -371,7 +373,7 @@ function GangWars({
           </button>
         </div>
       )}
-      {problem && <p className="error">{t(problem)}</p>}
+      {problem && <p className="error">{t(problem, { size: String(GANG_SIZE) })}</p>}
       {gang.wars.length === 0 && <p className="muted">{t('gang.war.none')}</p>}
       <ul className="gang-war-list">
         {gang.wars.map((w) => {

@@ -801,7 +801,7 @@ export const tr = {
   'rival.revenge': 'Rövanş iste',
   'gang.title': 'Çeteler',
   'gang.rules':
-    'Çete 4 kişidir. Kurarsın, linkini 3 arkadaşına atarsın; 4. kişi katılınca çete aktifleşir ve sıralamaya girer. Puan, üyelerin son {days} gününden: online galibiyet {win}, beraberlik {draw}, günün sabotajı {daily}.',
+    'Çete {size} kişidir. Kurarsın, linkini {others} arkadaşına atarsın; {size}. kişi katılınca çete aktifleşir ve sıralamaya girer. Puan, üyelerin son {days} gününden: online galibiyet {win}, beraberlik {draw}, günün sabotajı {daily}.',
   'gang.none': 'Henüz çete yok. İlkini sen kur.',
   'gang.members': '{n}/{size} üye',
   'gang.found': 'Çete kur',
@@ -880,7 +880,7 @@ export const tr = {
   'gang.war.title': 'Çete savaşları',
   'gang.war.record': 'Rekor: {won}G {lost}M {drawn}B',
   'gang.war.rule':
-    'Kurucular savaş ilan eder; kabul edilince iki çetenin dört üyesi haftalık sıraya göre karşılıklı eşleşir ve dört masa aynı anda başlar.',
+    'Kurucular savaş ilan eder; kabul edilince iki çetenin {size} üyesi haftalık sıraya göre karşılıklı eşleşir ve {size} masa aynı anda başlar.',
   'gang.war.declare': '[{tag}] çetesine savaş ilan et',
   'gang.war.none': 'Henüz savaş yok.',
   'gang.war.accept': 'Kabul et',
@@ -897,7 +897,7 @@ export const tr = {
   'gang.war.status.cancelled': 'Geri çekildi',
   'gang.war.status.expired': 'Süresi doldu',
   'gang.war.busy': 'Çetelerden birinin zaten açık bir savaşı var.',
-  'gang.war.notActive': 'Savaş için iki çete de tam (4 kişi) olmalı.',
+  'gang.war.notActive': 'Savaş için iki çete de tam ({size} kişi) olmalı.',
   'gang.war.notFounder': 'Bunu sadece çetenin kurucusu yapabilir.',
   'gang.war.over': 'Bu savaş artık açık değil.',
   'war.alert.live': 'çete savaşın başladı! Masana 5 dakika içinde gel, yoksa o masayı kaybedersin.',
@@ -2350,7 +2350,7 @@ export const en: Record<MessageKey, string> = {
   'rival.revenge': 'Ask for revenge',
   'gang.title': 'Gangs',
   'gang.rules':
-    "A gang is 4 players. Found one, send its link to 3 friends; when the 4th joins, the gang goes active and enters the ranking. Points come from the members' last {days} days: an online win {win}, a draw {draw}, a daily sabotage {daily}.",
+    "A gang is {size} players. Found one, send its link to {others} friends; once all {size} are in, the gang goes active and enters the ranking. Points come from the members' last {days} days: an online win {win}, a draw {draw}, a daily sabotage {daily}.",
   'gang.none': 'No gangs yet. Found the first one.',
   'gang.members': '{n}/{size} members',
   'gang.found': 'Found a gang',
@@ -2429,7 +2429,7 @@ export const en: Record<MessageKey, string> = {
   'gang.war.title': 'Gang wars',
   'gang.war.record': 'Record: {won}W {lost}L {drawn}D',
   'gang.war.rule':
-    'Founders declare wars; once one is accepted, the four members of each gang meet in their weekly order and all four boards start at once.',
+    'Founders declare wars; once one is accepted, the {size} members of each gang meet in their weekly order and all {size} boards start at once.',
   'gang.war.declare': 'Declare war on [{tag}]',
   'gang.war.none': 'No wars yet.',
   'gang.war.accept': 'Accept',
@@ -2446,7 +2446,7 @@ export const en: Record<MessageKey, string> = {
   'gang.war.status.cancelled': 'Withdrawn',
   'gang.war.status.expired': 'Expired',
   'gang.war.busy': 'One of the gangs has a war open already.',
-  'gang.war.notActive': 'Both gangs must be full (4 players) for a war.',
+  'gang.war.notActive': 'Both gangs must be full ({size} players) for a war.',
   'gang.war.notFounder': "Only the gang's founder can do this.",
   'gang.war.over': 'This war is not open any more.',
   'war.alert.live': 'your gang war has started! Come to your board within 5 minutes or lose it.',

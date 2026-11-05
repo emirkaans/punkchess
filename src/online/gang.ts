@@ -4,7 +4,8 @@
 import { offensiveName } from './badwords.ts';
 
 /** A gang is exactly this many players: open to join until full; only a full gang is active (ranked, scored). */
-export const GANG_SIZE = 4;
+// TEMPORARY (2026-11-05): 2 so the owner can test gang wars with four people; back to 4 after.
+export const GANG_SIZE = 2;
 /** The weekly score counts the last this many days. */
 export const GANG_WEEK_DAYS = 7;
 /** Points per online game won or drawn, and per daily puzzle solved, in the week. */
