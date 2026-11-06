@@ -12774,6 +12774,42 @@ a:focus-visible {
 .card-pickbar.pick-mid {
   justify-content: center;
 }
+/* While a card is picked, the space between the two players is the bar's alone: the variant, the
+   game state and the card log step aside, and the bar does not shrink. */
+.players-mid:has(.card-pickbar) > :not(.card-pickbar) {
+  display: none;
+}
+.players-mid > .card-pickbar {
+  flex: none;
+}
+/* Little room there (tall player cards beside a smaller board): the name and the buttons only,
+   on two rows. */
+@container (max-height: 130px) {
+  .card-pickbar.pick-mid {
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    padding: 6px 8px;
+  }
+  .card-pickbar.pick-mid .pickbar-text {
+    flex: 1 1 calc(100% - 40px);
+  }
+  .card-pickbar.pick-mid > button {
+    flex: 1 1 0;
+  }
+  .card-pickbar.pick-mid .rack-art {
+    width: 22px;
+    height: 22px;
+  }
+  .card-pickbar.pick-mid .pickbar-text span {
+    display: none;
+  }
+  .card-pickbar.pick-mid .pickbar-text strong {
+    font-size: 18px;
+  }
+  .card-pickbar.pick-mid > button {
+    min-height: 30px;
+  }
+}
 
 /* ---------- Punk Street (src/ui/StreetPage.tsx, design F) ---------- */
 .street-page {
