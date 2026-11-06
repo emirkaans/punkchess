@@ -13201,7 +13201,8 @@ a:focus-visible {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.acc-out:hover {
+/* As specific as the generic button:hover, or its pink text would vanish on the pink fill. */
+.acc-out:hover:not(:disabled) {
   background: var(--pink);
   color: var(--on-pink);
 }
