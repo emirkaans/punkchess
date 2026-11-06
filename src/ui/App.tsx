@@ -23,7 +23,9 @@ import { HomePage } from './HomePage.tsx';
 import { Modal } from './Modal.tsx';
 import { MoveList } from './MoveList.tsx';
 import { useStepKeys } from './stepKeys.ts';
-import { NewGameDialog } from './NewGameDialog.tsx';
+import { VariantPlayDialog } from './VariantPlayDialog.tsx';
+import type { Opponent } from './VariantPlayDialog.tsx';
+import { useLobby } from './online/lobbyConnection.ts';
 import { OnlinePage } from './online/OnlinePage.tsx';
 import { PlayerRow } from './PlayerRow.tsx';
 import { PromotionDialog } from './PromotionDialog.tsx';
@@ -1246,7 +1248,50 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         </Modal>
       )}
       {showRules && <RuleCardModal variant={variant} onClose={() => setShowRules(false)} />}
-      {newGame && <NewGameDialog initial={newGame} onStart={startGame} onCancel={() => setNewGame(null)} />}
+      {newGame && (
+        <PlayDialog
+          initial={newGame}
+          onStart={(patch) => startGame({ ...newGame, ...patch })}
+          onOpenGame={(id) => {
+            setNewGame(null);
+            setOnlineId(id);
+            setPage('online');
+          }}
+          onClose={() => setNewGame(null)}
+        />
+      )}
     </div>
+  );
+}
+
+/**
+ * The game setup dialog opened from anywhere but a variant card (a new game, the home page's
+ * opponents, the online page): the same dialog as the cards', on the saved variant and the
+ * opponent asked for, with its own lobby link for online games while it is open.
+ */
+function PlayDialog({
+  initial,
+  onStart,
+  onOpenGame,
+  onClose,
+}: {
+  initial: GameSettings;
+  onStart: (patch: Partial<GameSettings>) => void;
+  onOpenGame: (id: string) => void;
+  onClose: () => void;
+}) {
+  const lobby = useLobby((ticket) => onOpenGame(ticket.gameId));
+  const opponent: Opponent =
+    initial.mode === 'bot' || initial.mode === 'botvbot' || initial.mode === 'hotseat' ? initial.mode : 'online';
+  return (
+    <VariantPlayDialog
+      variant={getVariant(initial.variantId)}
+      lobby={lobby}
+      onOpenGame={onOpenGame}
+      initial={initial}
+      opponent={opponent}
+      onStart={onStart}
+      onClose={onClose}
+    />
   );
 }

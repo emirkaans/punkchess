@@ -11,7 +11,7 @@ import type { Lobby } from './online/LobbyPage.tsx';
 import { playerIdentity } from './online/lobbyConnection.ts';
 import type { GameSettings } from './settings.ts';
 
-type Opponent = 'online' | 'friend' | 'bot' | 'botvbot' | 'hotseat';
+export type Opponent = 'online' | 'friend' | 'bot' | 'botvbot' | 'hotseat';
 
 const GROUPS: readonly (readonly [MessageKey, readonly Opponent[]])[] = [
   ['setup.group.online', ['online', 'friend']],
@@ -73,9 +73,12 @@ export function VariantPlayDialog({
   lobby,
   onOpenGame,
   initial,
+  opponent: firstOpponent = 'online',
   onStart,
   onClose,
 }: {
+  /** The opponent picked when it opens (the home page's "play the computer" opens on it). */
+  opponent?: Opponent;
   /** The saved settings: games on this device start from them. */
   initial: GameSettings;
   variant: VariantDefinition;
@@ -88,7 +91,7 @@ export function VariantPlayDialog({
   const { t, vt } = useI18n();
   const account = useAccount();
   const scale = useDialogScale();
-  const [opponent, setOpponent] = useState<Opponent>('online');
+  const [opponent, setOpponent] = useState<Opponent>(firstOpponent);
   const [variantId, setVariantId] = useState(variant.id);
   // Online games and games on this device keep their own time and colour (the latter saved).
   const [onlineTime, setOnlineTime] = useState('5+0');
