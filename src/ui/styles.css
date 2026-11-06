@@ -12779,8 +12779,16 @@ a:focus-visible {
 .players-mid:has(.card-pickbar) > :not(.card-pickbar) {
   display: none;
 }
+/* Never cut off: where even the compact bar is taller than the space (tall player cards with a
+   character), it spills over the edges of the two players, above them. */
+.players-mid:has(.card-pickbar) {
+  overflow: visible;
+  position: relative;
+  z-index: 5;
+}
 .players-mid > .card-pickbar {
   flex: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
 }
 /* Little room there (tall player cards beside a smaller board): the name and the buttons only,
    on two rows. */
@@ -12790,15 +12798,15 @@ a:focus-visible {
     gap: 6px 8px;
     padding: 6px 8px;
   }
+  /* The name and both buttons on one row where the column is wide enough, else two rows. */
+  .card-pickbar.pick-mid .rack-art {
+    display: none;
+  }
   .card-pickbar.pick-mid .pickbar-text {
-    flex: 1 1 calc(100% - 40px);
+    flex: 1 0 auto;
   }
   .card-pickbar.pick-mid > button {
     flex: 1 1 0;
-  }
-  .card-pickbar.pick-mid .rack-art {
-    width: 22px;
-    height: 22px;
   }
   .card-pickbar.pick-mid .pickbar-text span {
     display: none;
