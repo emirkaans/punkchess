@@ -4664,13 +4664,6 @@ button.primary:hover:not(:disabled) {
     max-width: 90px;
   }
 }
-/* Account settings: at the foot of the player's own profile, out of the way. */
-.profile-foot {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
 .link-button {
   min-height: 36px;
   padding: 4px 0;
@@ -9710,20 +9703,6 @@ a:focus-visible {
     align-self: center;
   }
 }
-/* The character beside the name on a profile. */
-.profile-avatar {
-  flex: none;
-  width: 104px;
-  height: 104px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: radial-gradient(circle at 50% 40%, #2b2532, #141016 70%);
-  box-shadow: 0 0 0 2px var(--pink);
-}
-.profile-edit-character {
-  align-self: flex-start;
-  font-size: 12px;
-}
 /* A player card's character (src/ui/PlayerRow.tsx): round, filling the avatar box. */
 .avatar.has-character {
   overflow: hidden;
@@ -12450,34 +12429,181 @@ a:focus-visible {
   }
 }
 
-/* Profile on phones: the character and the jacket side by side, the name and the rest below at
-   full width (beside them the text was squeezed into a narrow column). */
-@media (max-width: 600px) {
-  .profile-head {
-    flex-wrap: wrap;
-    gap: 12px;
+/* Profile (design "Vitrin"): the character in full in a lit booth like the shops', the name,
+   jacket, rivals and ratings beside it; on phones the booth comes first, the rest under it. */
+.profile-page:has(.profile-vitrin) {
+  max-width: 1120px;
+}
+.profile-vitrin {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.profile-booth {
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at 50% 0%, #2a1630 0%, #121014 65%);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--pink);
+}
+.profile-figure {
+  display: block;
+  width: 220px;
+  aspect-ratio: 200 / 360;
+  margin: 26px auto 0;
+}
+.profile-figure svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.profile-booth-floor {
+  height: 18px;
+  margin: -10px 30px 8px;
+  background: radial-gradient(ellipse, #ff2e9333 0%, transparent 70%);
+}
+.profile-booth-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+.profile-booth-actions .profile-tool {
+  flex: 1 1 0;
+  justify-content: center;
+  padding: 0 8px;
+}
+.profile-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font: 500 14px/1.1 var(--ui);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.profile-tool svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.profile-tool:hover:not(:disabled) {
+  border-color: var(--pink);
+  color: var(--pink);
+}
+.profile-tool.pink {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--on-pink);
+}
+.profile-tool.pink:hover:not(:disabled) {
+  color: var(--on-pink);
+  filter: brightness(1.1);
+}
+.profile-tool.lime {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+.profile-tool.icon {
+  width: 44px;
+  padding: 0;
+  justify-content: center;
+}
+.profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.profile-name-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.profile-name-row .profile-name {
+  min-width: 0;
+}
+.profile-title > .gang-badge {
+  align-self: flex-start;
+}
+.profile-title p {
+  margin: 0;
+}
+.profile-pair {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+.profile-pair .rivals {
+  flex: 1;
+  grid-template-columns: 1fr;
+  align-content: start;
+}
+/* The gear's menu: the rarer account actions. */
+.profile-account {
+  position: relative;
+  flex: none;
+}
+.profile-account-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  min-width: 220px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-2, #141417);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 30px #0008;
+}
+.profile-account-title {
+  margin: 4px 8px 6px;
+  font: 500 11px/1 var(--ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.profile-account-menu button {
+  min-height: 42px;
+  padding: 8px;
+  background: none;
+  border: none;
+  color: var(--fg);
+  font-size: 14px;
+  text-align: left;
+}
+.profile-account-menu button:hover:not(:disabled) {
+  background: var(--bg);
+  color: var(--pink);
+}
+@media (max-width: 760px) {
+  .profile-vitrin {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
   }
-  .profile-avatar,
-  .jacket-thumb {
-    width: 96px;
-    height: 96px;
-  }
-  .profile-title {
-    flex: 1 1 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px 16px;
-  }
-  .profile-title > :not(.profile-edit-character) {
-    flex-basis: 100%;
-  }
-  .profile-title .gang-badge {
-    flex-basis: auto;
-    align-self: flex-start;
+  .profile-figure {
+    width: 180px;
   }
   .profile-name {
     font-size: 44px;
+  }
+}
+@media (max-width: 520px) {
+  .profile-pair .jacket-thumb {
+    width: 96px;
+    height: 96px;
   }
 }
 

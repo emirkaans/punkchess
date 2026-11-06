@@ -1,6 +1,7 @@
 import { DEFAULT_AVATAR } from '../avatar/avatar.ts';
-import { AvatarView } from './CharacterCreator.tsx';
-import { useEffect, useState } from 'react';
+import { figureSvg } from '../avatar/figure.ts';
+import { EMPTY_OUTFIT } from '../avatar/outfit.ts';
+import { useEffect, useRef, useState } from 'react';
 import { getVariant, listVariants } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import type { ProfileGame, ProfileRating, ProfileResponse, RatingPoint } from '../online/profile.ts';
@@ -179,102 +180,190 @@ export function ProfilePage({ username, onOpen }: Props) {
 
   return (
     <main className="profile-page">
-      <header className="profile-head">
-        <AvatarView avatar={profile.avatar ?? DEFAULT_AVATAR} outfit={profile.outfit} className="profile-avatar" />
-        <button
-          className="jacket-thumb"
-          onClick={() => setShowJacket(true)}
-          aria-label={t('jacket.open', { n: String(profile.patches.length) })}
-        >
-          <BattleJacket
-            username={profile.username}
-            jacket={profile.jacket}
-            patches={profile.patches.map((p) => p.id)}
+      <div className="profile-vitrin">
+        {/* The character in full, in a lit booth like the shops' (and coming in as it does there). */}
+        <aside className="profile-booth">
+          <span
+            className="profile-figure fig-in"
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{
+              __html: figureSvg(profile.avatar ?? DEFAULT_AVATAR, profile.outfit ?? EMPTY_OUTFIT),
+            }}
           />
-          <span className="jacket-thumb-count">
-            {profile.patches.length}/{PATCHES.length}
-          </span>
-        </button>
-        <div className="profile-title">
-          <h1 className="profile-name">{profile.username}</h1>
+          <span className="profile-booth-floor" aria-hidden="true" />
           {mine && (
-            <>
-              <button className="link-button profile-edit-character" onClick={() => onOpen('/character')}>
+            <div className="profile-booth-actions">
+              <button className="profile-tool pink" onClick={() => onOpen('/character')}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21v-4a6 6 0 0 1 12 0v4" />
+                  <path d="M19 3l2 2-6 6h-2V9z" />
+                </svg>
                 {t('character.edit')}
               </button>
-              <button className="link-button profile-edit-character" onClick={() => setRenaming(true)}>
-                {t('rename.open')}
-              </button>
-              <button className="link-button profile-edit-character" onClick={() => onOpen('/wardrobe')}>
+              <button className="profile-tool lime" onClick={() => onOpen('/wardrobe')}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 6a2 2 0 1 1 2-2M12 6v2L3 15h18l-9-7" />
+                  <path d="M5 15v5h14v-5" />
+                </svg>
                 {t('wardrobe.title')}
-              </button>
-            </>
-          )}
-          {renaming && (
-            <RenameDialog
-              onClose={() => setRenaming(false)}
-              onDone={(name) => {
-                setRenaming(false);
-                onOpen(`/@/${name}`);
-              }}
-            />
-          )}
-          {profile.gang && (
-            <a
-              className="gang-badge"
-              href={`/gang/${profile.gang.tag}`}
-              onClick={(e) => {
-                e.preventDefault();
-                onOpen(`/gang/${profile.gang!.tag}`);
-              }}
-            >
-              [{profile.gang.tag}] {profile.gang.name}
-            </a>
-          )}
-          <p className="muted profile-follows">
-            {mine ? (
-              <>
-                <button className="link-button" onClick={() => setFollowList('followers')}>
-                  {t('follow.followers', { n: String(profile.followers) })}
-                </button>{' '}
-                ·{' '}
-                <button className="link-button" onClick={() => setFollowList('following')}>
-                  {t('follow.following', { n: String(profile.following) })}
-                </button>
-              </>
-            ) : (
-              <>
-                {t('follow.followers', { n: String(profile.followers) })} ·{' '}
-                {t('follow.following', { n: String(profile.following) })}
-              </>
-            )}
-          </p>
-          {followList && (
-            <FollowListDialog
-              which={followList}
-              onClose={() => setFollowList(null)}
-              onOpen={(path) => {
-                setFollowList(null);
-                onOpen(path);
-              }}
-            />
-          )}
-          {account.user && !mine && (
-            <div className="profile-actions">
-              <button className="primary challenge-button" onClick={() => setChallenging(profile.username)}>
-                {t('challenge.button')}
-              </button>
-              <button className={`follow-button${profile.followed ? ' on' : ''}`} onClick={() => void toggleFollow()}>
-                {profile.followed ? t('follow.unfollow') : t('follow.follow')}
               </button>
             </div>
           )}
-          <p className="muted">
-            {t('profile.joined', { date: date(profile.createdAt) })} ·{' '}
-            {t('profile.games', { n: String(profile.games) })}
-          </p>
+        </aside>
+        <div className="profile-main">
+          <div className="profile-title">
+            <div className="profile-name-row">
+              <h1 className="profile-name">{profile.username}</h1>
+              {mine && <AccountMenu onRename={() => setRenaming(true)} onSettings={() => setShowAccount(true)} />}
+            </div>
+            {renaming && (
+              <RenameDialog
+                onClose={() => setRenaming(false)}
+                onDone={(name) => {
+                  setRenaming(false);
+                  onOpen(`/@/${name}`);
+                }}
+              />
+            )}
+            {profile.gang && (
+              <a
+                className="gang-badge"
+                href={`/gang/${profile.gang.tag}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpen(`/gang/${profile.gang!.tag}`);
+                }}
+              >
+                [{profile.gang.tag}] {profile.gang.name}
+              </a>
+            )}
+            <p className="muted profile-follows">
+              {mine ? (
+                <>
+                  <button className="link-button" onClick={() => setFollowList('followers')}>
+                    {t('follow.followers', { n: String(profile.followers) })}
+                  </button>{' '}
+                  ·{' '}
+                  <button className="link-button" onClick={() => setFollowList('following')}>
+                    {t('follow.following', { n: String(profile.following) })}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {t('follow.followers', { n: String(profile.followers) })} ·{' '}
+                  {t('follow.following', { n: String(profile.following) })}
+                </>
+              )}
+            </p>
+            {followList && (
+              <FollowListDialog
+                which={followList}
+                onClose={() => setFollowList(null)}
+                onOpen={(path) => {
+                  setFollowList(null);
+                  onOpen(path);
+                }}
+              />
+            )}
+            {account.user && !mine && (
+              <div className="profile-actions">
+                <button className="primary challenge-button" onClick={() => setChallenging(profile.username)}>
+                  {t('challenge.button')}
+                </button>
+                <button className={`follow-button${profile.followed ? ' on' : ''}`} onClick={() => void toggleFollow()}>
+                  {profile.followed ? t('follow.unfollow') : t('follow.follow')}
+                </button>
+              </div>
+            )}
+            <p className="muted">
+              {t('profile.joined', { date: date(profile.createdAt) })} ·{' '}
+              {t('profile.games', { n: String(profile.games) })}
+            </p>
+          </div>
+          <div className="profile-pair">
+            <button
+              className="jacket-thumb"
+              onClick={() => setShowJacket(true)}
+              aria-label={t('jacket.open', { n: String(profile.patches.length) })}
+            >
+              <BattleJacket
+                username={profile.username}
+                jacket={profile.jacket}
+                patches={profile.patches.map((p) => p.id)}
+              />
+              <span className="jacket-thumb-count">
+                {profile.patches.length}/{PATCHES.length}
+              </span>
+            </button>
+            {(profile.nemesis || profile.victim) && (
+              <section className="rivals" aria-label={t('rival.title')}>
+                {profile.nemesis && (
+                  <div className="rival nemesis">
+                    <span className="rival-kind">☠ {t('rival.nemesis')}</span>
+                    <ProfileLink username={profile.nemesis.username}>{profile.nemesis.username}</ProfileLink>
+                    <span className="rival-record">
+                      {t('rival.record', {
+                        w: String(profile.nemesis.wins),
+                        l: String(profile.nemesis.losses),
+                        d: String(profile.nemesis.draws),
+                      })}
+                    </span>
+                    {mine && (
+                      <button className="primary" onClick={() => setChallenging(profile.nemesis!.username)}>
+                        {t('rival.revenge')}
+                      </button>
+                    )}
+                  </div>
+                )}
+                {profile.victim && (
+                  <div className="rival victim">
+                    <span className="rival-kind">🎯 {t('rival.victim')}</span>
+                    <ProfileLink username={profile.victim.username}>{profile.victim.username}</ProfileLink>
+                    <span className="rival-record">
+                      {t('rival.record', {
+                        w: String(profile.victim.wins),
+                        l: String(profile.victim.losses),
+                        d: String(profile.victim.draws),
+                      })}
+                    </span>
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
+          <section className="rating-cards" aria-label={t('profile.ratings')}>
+            {[...allCategories(), 'puzzle']
+              .filter(
+                (c) => c === 'puzzle' || listVariants().some((v) => v.id === (variantOfCategory(c as never) ?? v.id)),
+              )
+              .map((c) => {
+                const r = byCategory.get(c);
+                return (
+                  <button
+                    key={c}
+                    className={`rating-card${r ? '' : ' empty'}${category === c ? ' on' : ''}`}
+                    onClick={() => {
+                      if (!r) return;
+                      setCategory(c);
+                      setTab('stats');
+                    }}
+                    disabled={!r}
+                    aria-pressed={category === c}
+                  >
+                    <span className="rating-cat">{categoryName(c)}</span>
+                    <span className="rating-num">
+                      {r ? r.rating : '—'}
+                      {r?.provisional ? '?' : ''}
+                    </span>
+                    <span className="rating-games">
+                      {t(c === 'puzzle' ? 'profile.puzzlesShort' : 'profile.gamesShort', { n: String(r?.games ?? 0) })}
+                    </span>
+                  </button>
+                );
+              })}
+          </section>
         </div>
-      </header>
+      </div>
 
       {showJacket && (
         <JacketWindow
@@ -300,72 +389,6 @@ export function ProfilePage({ username, onOpen }: Props) {
         </Modal>
       )}
       {showAccount && <AccountSettings username={profile.username} onClose={() => setShowAccount(false)} />}
-
-      {(profile.nemesis || profile.victim) && (
-        <section className="rivals" aria-label={t('rival.title')}>
-          {profile.nemesis && (
-            <div className="rival nemesis">
-              <span className="rival-kind">☠ {t('rival.nemesis')}</span>
-              <ProfileLink username={profile.nemesis.username}>{profile.nemesis.username}</ProfileLink>
-              <span className="rival-record">
-                {t('rival.record', {
-                  w: String(profile.nemesis.wins),
-                  l: String(profile.nemesis.losses),
-                  d: String(profile.nemesis.draws),
-                })}
-              </span>
-              {mine && (
-                <button className="primary" onClick={() => setChallenging(profile.nemesis!.username)}>
-                  {t('rival.revenge')}
-                </button>
-              )}
-            </div>
-          )}
-          {profile.victim && (
-            <div className="rival victim">
-              <span className="rival-kind">🎯 {t('rival.victim')}</span>
-              <ProfileLink username={profile.victim.username}>{profile.victim.username}</ProfileLink>
-              <span className="rival-record">
-                {t('rival.record', {
-                  w: String(profile.victim.wins),
-                  l: String(profile.victim.losses),
-                  d: String(profile.victim.draws),
-                })}
-              </span>
-            </div>
-          )}
-        </section>
-      )}
-
-      <section className="rating-cards" aria-label={t('profile.ratings')}>
-        {[...allCategories(), 'puzzle']
-          .filter((c) => c === 'puzzle' || listVariants().some((v) => v.id === (variantOfCategory(c as never) ?? v.id)))
-          .map((c) => {
-            const r = byCategory.get(c);
-            return (
-              <button
-                key={c}
-                className={`rating-card${r ? '' : ' empty'}${category === c ? ' on' : ''}`}
-                onClick={() => {
-                  if (!r) return;
-                  setCategory(c);
-                  setTab('stats');
-                }}
-                disabled={!r}
-                aria-pressed={category === c}
-              >
-                <span className="rating-cat">{categoryName(c)}</span>
-                <span className="rating-num">
-                  {r ? r.rating : '—'}
-                  {r?.provisional ? '?' : ''}
-                </span>
-                <span className="rating-games">
-                  {t(c === 'puzzle' ? 'profile.puzzlesShort' : 'profile.gamesShort', { n: String(r?.games ?? 0) })}
-                </span>
-              </button>
-            );
-          })}
-      </section>
 
       <section className="tag-card" aria-label={t(mine ? 'tag.title' : 'tag.theirs')}>
         <span className="tag-card-label">{t(mine ? 'tag.title' : 'tag.theirs')}</span>
@@ -494,14 +517,6 @@ export function ProfilePage({ username, onOpen }: Props) {
             onOpen={onOpen}
           />
         </section>
-      )}
-
-      {mine && (
-        <footer className="profile-foot">
-          <button className="link-button" onClick={() => setShowAccount(true)}>
-            {t('account.settings')}
-          </button>
-        </footer>
       )}
     </main>
   );
@@ -791,5 +806,59 @@ function TagPicker({
         </div>
       </div>
     </Modal>
+  );
+}
+
+/** The gear on one's own profile: the account's rarer actions (a new username, the account settings). */
+function AccountMenu({ onRename, onSettings }: { onRename: () => void; onSettings: () => void }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', away);
+    document.addEventListener('keydown', key);
+    return () => {
+      document.removeEventListener('pointerdown', away);
+      document.removeEventListener('keydown', key);
+    };
+  }, [open]);
+  const pick = (go: () => void) => () => {
+    setOpen(false);
+    go();
+  };
+  return (
+    <div className={`profile-account${open ? ' open' : ''}`} ref={ref}>
+      <button
+        className="profile-tool icon"
+        aria-label={t('profile.account')}
+        title={t('profile.account')}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1" />
+        </svg>
+      </button>
+      {open && (
+        <div className="profile-account-menu" role="menu">
+          <span className="profile-account-title">{t('profile.account')}</span>
+          <button role="menuitem" onClick={pick(onRename)}>
+            {t('rename.open')}
+          </button>
+          <button role="menuitem" onClick={pick(onSettings)}>
+            {t('account.settings')}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
