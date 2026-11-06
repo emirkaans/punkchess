@@ -18,6 +18,7 @@ import { SprayTag } from './SprayTag.tsx';
 import { useAccount } from './account.ts';
 import { keepInviter } from './invite.ts';
 import { EvalBar, GameViewer } from './GameViewer.tsx';
+import { useNarrow } from './useNarrow.ts';
 import { useWatchEval } from './analysis/watchEval.ts';
 import { HomePage } from './HomePage.tsx';
 import { Modal } from './Modal.tsx';
@@ -237,11 +238,13 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   const moveCount = session.timeline.states.length;
   useEffect(() => setNotice(null), [session.key, moveCount]);
 
+  const narrow = useNarrow();
   const { settings, players, timeline, setup } = session;
   const { variant, game, atEnd, outcome, turn, toMove, vsBot, watching, humanColor, timed } = view;
   // The evaluation bar: while watching bot against bot, and against the bot once the game is over
-  // (never during a game a person plays: it would tell them the best side).
-  const showEval = page === 'game' && (watching || (vsBot && !!view.finalOutcome));
+  // (never during a game a person plays: it would tell them the best side). Not after the game on
+  // a phone, where it would shrink the board: there the analysis button opens it.
+  const showEval = page === 'game' && (watching || (vsBot && !!view.finalOutcome && !narrow));
   const lowClock = timed && !outcome && remainingMs(session.clock, turn, Date.now()) < 10_000;
   const evalScore = useWatchEval(variant, game, showEval, lowClock);
   const now = () => Date.now();

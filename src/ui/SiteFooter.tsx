@@ -3,6 +3,7 @@ import { listVariants } from '../engine/index.ts';
 import { LOCALES } from '../i18n/index.ts';
 import type { Locale, MessageKey } from '../i18n/index.ts';
 import { useI18n } from './i18n.tsx';
+import { Crown } from './Punk.tsx';
 
 const MAIL = 'info@punkchess.com';
 
@@ -71,12 +72,10 @@ export function SiteFooter({ locale, onLocale, onNavigate, onVariant }: Props) {
       <div className="site-footer-grid">
         <div className="site-footer-brand">
           <a href="/" className="site-footer-logo" onClick={inApp(() => onNavigate('/'))} aria-label={t('menu.logo')}>
-            <svg viewBox="0 0 48 40" aria-hidden="true">
-              <path d="M4 32L2 8L14 20L24 4L34 20L46 8L44 32Z" />
-            </svg>
-            <span>
-              <span className="punk">punk</span> chess
-            </span>
+            {/* The same wordmark as the top bar's. */}
+            <Crown className="logo-crown" />
+            <span className="logo-punk">punk</span>
+            <span className="logo-chess">chess</span>
           </a>
           <p>{t('footer.blurb')}</p>
         </div>

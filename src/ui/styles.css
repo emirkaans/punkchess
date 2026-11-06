@@ -3982,21 +3982,8 @@ button.primary:hover:not(:disabled) {
 .site-footer-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font:
-    400 30px/1 'Permanent Marker',
-    cursive;
-}
-.site-footer-logo svg {
-  width: 36px;
-  height: 30px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 3.5;
-  stroke-linejoin: round;
-}
-.site-footer-logo .punk {
-  color: var(--pink);
+  gap: 8px;
+  width: fit-content;
 }
 .site-footer-brand p {
   margin: 0;
