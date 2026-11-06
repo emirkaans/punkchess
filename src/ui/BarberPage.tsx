@@ -8,6 +8,7 @@ import { refreshAccount, signInWithGoogle, useAccount } from './account.ts';
 import { AvatarView } from './CharacterCreator.tsx';
 import { CoinIcon } from './CoinToast.tsx';
 import { useI18n } from './i18n.tsx';
+import { onDeal, priceOf } from '../store/vitrin.ts';
 import { FittingCart, SHOP_ICONS, STREET_ICON, useShop } from './shop.tsx';
 
 /**
@@ -52,7 +53,8 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
     ) : (
       <span className="store-price">
         <CoinIcon />
-        {item.price}
+        {onDeal(item, Date.now()) && <s>{item.price}</s>}
+        {priceOf(item, Date.now())}
       </span>
     );
   // An item's own picture: the character with just that item.
@@ -150,7 +152,7 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
           aria-pressed={swatchOn(target, item.id)}
           onClick={() => tryPremium(item.id, target)}
         >
-          {!store?.owned.has(item.id) && <span className="barber-lock">{item.price}</span>}
+          {!store?.owned.has(item.id) && <span className="barber-lock">{priceOf(item, Date.now())}</span>}
         </button>
       ))}
     </div>

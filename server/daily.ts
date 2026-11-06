@@ -8,6 +8,7 @@
 
 import { COIN_RULES } from '../src/coins/rules.ts';
 import { grantCoins } from './coins.ts';
+import { recordQuestSafe } from './quests.ts';
 import { listVariants } from '../src/engine/index.ts';
 import { dailyDay, dailyNumber, dayHash, gridSolved, isDailyGrid, streakOf } from '../src/online/daily.ts';
 import type { DailyResponse, DailyResult, DailySaved } from '../src/online/daily.ts';
@@ -125,7 +126,12 @@ export async function handleDaily(request: Request, env: AuthEnv, url: URL): Pro
     const coins = gridSolved(body.grid)
       ? await grantCoins(env.DB, user.id, 'daily', day, COIN_RULES.daily.solved, Date.now())
       : 0;
-    return json({ streak: await streak(env.DB, user.id, day), newPatches, coins } satisfies DailySaved);
+    const quest = gridSolved(body.grid) ? await recordQuestSafe(env.DB, user.id, { k: 'daily' }, Date.now()) : 0;
+    return json({
+      streak: await streak(env.DB, user.id, day),
+      newPatches,
+      coins: coins + quest,
+    } satisfies DailySaved);
   }
 
   return json({ error: 'not-found' }, 404);

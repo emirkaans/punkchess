@@ -8,6 +8,7 @@ import type { MessageKey } from '../i18n/index.ts';
 import { signInWithGoogle, useAccount } from './account.ts';
 import { CoinIcon } from './CoinToast.tsx';
 import { useI18n } from './i18n.tsx';
+import { onDeal, onSale, priceOf } from '../store/vitrin.ts';
 import { FittingCart, SHOP_ICONS, STREET_ICON, useShop } from './shop.tsx';
 
 /** The parlour's fitting room: the head and the neck, close. */
@@ -44,6 +45,9 @@ export function StorePage({
   const { t } = useI18n();
   const account = useAccount();
   const avatar = account.user?.avatar ?? DEFAULT_AVATAR;
+  const shop = useShop();
+  const { store, ready, isTrying, shown, msg, name, button, tryOn, cart, total } = shop;
+  const now = Date.now();
   const tabs: readonly Tab[] = shoes
     ? SHOE_KINDS.map((k) => ({
         id: k,
@@ -57,7 +61,8 @@ export function StorePage({
         label: t(`store.slot.${s}` as MessageKey),
         short: t(`store.short.${s}` as MessageKey),
         icon: SHOP_ICONS[s],
-        items: STORE_ITEMS.filter((i) => i.slot === s),
+        // A window jacket only in its week (or once owned).
+        items: STORE_ITEMS.filter((i) => i.slot === s && (onSale(i, now) || store?.owned.has(i.id))),
       }));
   const [tabId, setTab] = useState(tabs[0].id);
   const tab = tabs.find((x) => x.id === tabId) ?? tabs[0];
@@ -66,8 +71,6 @@ export function StorePage({
   const switches = [
     { path: '/street', icon: STREET_ICON, full: `← ${t('street.back')}`, short: t('menu.streetShort') },
   ];
-  const shop = useShop();
-  const { store, ready, isTrying, shown, msg, name, button, tryOn, cart, total } = shop;
 
   if (!account.loading && !account.user) {
     return (
@@ -170,6 +173,9 @@ export function StorePage({
                   svg={figureSvg(avatar, { ...EMPTY_OUTFIT, [item.slot]: item.id }, itemView(item.slot, item.id))}
                   className="store-pic"
                 />
+                {(onDeal(item, now) || item.vitrin) && (
+                  <span className="vitrin-ribbon">{t(item.vitrin ? 'vitrin.only' : 'vitrin.off')}</span>
+                )}
                 <b>{name(item.id)}</b>
                 <div className="store-row">
                   {store?.owned.has(item.id) ? (
@@ -177,7 +183,8 @@ export function StorePage({
                   ) : (
                     <span className="store-price">
                       <CoinIcon />
-                      {item.price}
+                      {onDeal(item, now) && <s>{item.price}</s>}
+                      {priceOf(item, now)}
                     </span>
                   )}
                   {button(item)}

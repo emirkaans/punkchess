@@ -3,6 +3,8 @@
 // so a game never counts twice or half).
 
 import { grantGameCoins } from './coins.ts';
+import { recordQuestSafe } from './quests.ts';
+import { MIN_PLIES } from '../src/quests/rules.ts';
 import { recordOfRoom } from '../src/online/record.ts';
 import type { GameRecord } from '../src/online/record.ts';
 import { ABORT_PLIES, ratedRoom } from '../src/online/room.ts';
@@ -244,9 +246,39 @@ export async function settleGame(room: Room, db: D1Database | undefined, now: nu
 
   await db.batch(statements);
   // Punk coins for playing (and winning); after the game row, so a retry pays nothing twice.
-  const coins = await grantGameCoins(db, room.id, { w: w?.id, b: b?.id }, winner, room.moves.length, now).catch(
-    () => ({}),
-  );
+  const coins: Partial<Record<Color, number>> = await grantGameCoins(
+    db,
+    room.id,
+    { w: w?.id, b: b?.id },
+    winner,
+    room.moves.length,
+    now,
+  ).catch(() => ({}));
+  // The day's quests (their coins join the game's): who played, won, mated, played a card.
+  const first: Color = record.startFen.split(' ')[1] === 'b' ? 'b' : 'w';
+  for (const color of ['w', 'b'] as const) {
+    const account = color === 'w' ? w : b;
+    if (!account) continue;
+    const mine = before[color]?.rating;
+    const theirs = before[color === 'w' ? 'b' : 'w']?.rating;
+    const paid = await recordQuestSafe(
+      db,
+      account.id,
+      {
+        k: 'game',
+        finished: room.moves.length >= MIN_PLIES && record.termination !== 'aborted',
+        won: winner === color,
+        color,
+        variantId: room.variantId,
+        checkmate: winner === color && record.termination === 'checkmate',
+        tournament: !!room.tournamentId,
+        card: room.moves.some((m, i) => !!m.card && (i % 2 === 0 ? first : first === 'w' ? 'b' : 'w') === color),
+        beatHigher: mine !== undefined && theirs !== undefined && theirs > mine,
+      },
+      now,
+    );
+    if (paid > 0) coins[color] = (coins[color] ?? 0) + paid;
+  }
   return {
     ...room,
     recorded: true,

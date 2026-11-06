@@ -5,6 +5,7 @@ import { figureSvg } from '../avatar/figure.ts';
 import { EMPTY_OUTFIT } from '../avatar/outfit.ts';
 import { useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
+import { VitrinWindow } from './VitrinWindow.tsx';
 import { storefront } from './storefront.ts';
 import { streets } from './street.ts';
 import type { StreetShop } from './street.ts';
@@ -171,6 +172,7 @@ export function StreetPage({ onOpen }: { onOpen: (path: string) => void }) {
     return (
       <main className="street-page street-top">
         <h1 className="street-title">{t('menu.street')}</h1>
+        <VitrinWindow onOpen={onOpen} />
         <div className="street-map">
           <div className="street-road" aria-hidden="true" />
           {/* Strings of bulbs over the street, as in the alley on wide screens. */}
@@ -221,6 +223,7 @@ export function StreetPage({ onOpen }: { onOpen: (path: string) => void }) {
           </div>
           <span className="street-lights" dangerouslySetInnerHTML={{ __html: lights }} />
           <h1 className="street-title">{t('menu.street')}</h1>
+          <VitrinWindow onOpen={onOpen} />
           <span className="street-me" dangerouslySetInnerHTML={{ __html: me }} />
           <Pager page={page} pages={all.length} onPage={setPage} />
         </div>

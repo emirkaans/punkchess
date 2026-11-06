@@ -6,6 +6,7 @@ import { refreshAccount, useAccount } from './account.ts';
 import { refreshCoins } from './coins.ts';
 import { CoinIcon } from './CoinToast.tsx';
 import { useI18n } from './i18n.tsx';
+import { priceOf } from '../store/vitrin.ts';
 
 interface ShopState {
   readonly owned: ReadonlySet<string>;
@@ -95,7 +96,7 @@ export function useShop() {
         return setMsg({ text: t(r.data?.error === 'not-enough' ? 'store.notEnough' : 'store.error'), bad: true });
       }
       setStore(stateOf(r.data as unknown as StoreData));
-      setMsg({ text: t('store.bought', { item: name(item.id), n: String(item.price) }) });
+      setMsg({ text: t('store.bought', { item: name(item.id), n: String(priceOf(item, Date.now())) }) });
     }
     setTries(({ [slot]: _done, ...rest }) => rest);
     setLast(null);
@@ -119,7 +120,8 @@ export function useShop() {
   const button = (item: StoreItem, slot: OutfitSlot = item.slot) => {
     const owned = store?.owned.has(item.id) ?? false;
     const on = store?.outfit[slot] === item.id;
-    const short = !owned && (store?.balance ?? 0) < item.price;
+    const cost = priceOf(item, Date.now());
+    const short = !owned && (store?.balance ?? 0) < cost;
     return (
       <button
         className={owned ? (on ? 'store-buy worn' : 'store-buy wear') : 'store-buy'}
@@ -130,7 +132,7 @@ export function useShop() {
           void act(item, slot);
         }}
       >
-        {owned ? t(on ? 'store.takeOff' : 'store.wear') : t('store.buy', { n: String(item.price) })}
+        {owned ? t(on ? 'store.takeOff' : 'store.wear') : t('store.buy', { n: String(cost) })}
       </button>
     );
   };
@@ -150,7 +152,13 @@ export function useShop() {
   const cart = (Object.entries(tries) as [OutfitSlot, string][]).map(([slot, id]) => {
     const item = storeItem(id);
     const free = !item || (store?.owned.has(id) ?? false);
-    return { slot, id, item, price: free ? 0 : item!.price, natural: !item && naturalBeard(id) !== null };
+    return {
+      slot,
+      id,
+      item,
+      price: free ? 0 : priceOf(item!, Date.now()),
+      natural: !item && naturalBeard(id) !== null,
+    };
   });
   const total = cart.reduce((sum, c) => sum + c.price, 0);
 

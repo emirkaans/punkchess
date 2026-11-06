@@ -15,6 +15,7 @@ import { BoardResizer } from './BoardResizer.tsx';
 import { GameControls, GameTools } from './GameControls.tsx';
 import { GAME_OVER_MS, GameOverOverlay } from './GameOverOverlay.tsx';
 import { GameFinale } from './GameFinale.tsx';
+import { QuestToast } from './QuestsCard.tsx';
 import { endPose, poseAt, seedOf } from '../avatar/poses.ts';
 import { SprayTag, TAG_DONE_MS } from './SprayTag.tsx';
 import { useAccount } from './account.ts';
@@ -692,6 +693,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   return (
     <div className="app">
       <CoinToast />
+      <QuestToast />
       <Toolbar
         page={page}
         prefs={prefs}

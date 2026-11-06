@@ -6,6 +6,7 @@
 
 import { COIN_RULES } from '../src/coins/rules.ts';
 import { grantCoins } from './coins.ts';
+import { recordQuestSafe } from './quests.ts';
 import type { PatchNews, PuzzleData, PuzzleNext, PuzzleResult } from '../src/online/puzzle.ts';
 import { PUZZLE_THEMES } from '../src/online/puzzle.ts';
 import { DEFAULT_GLICKO, PROVISIONAL_RD, aged, update } from '../src/rating/glicko2.ts';
@@ -145,12 +146,14 @@ export async function handlePuzzles(request: Request, env: AuthEnv, url: URL): P
     ]);
     const newPatches = solved ? await awardPuzzlePatches(env.DB, user.id, dailyDay(now), now) : [];
     const coins = solved ? await grantCoins(env.DB, user.id, 'puzzle', m[1], COIN_RULES.puzzle.solved, now) : 0;
+    // A first try solved counts for the day's quests.
+    const quest = solved ? await recordQuestSafe(env.DB, user.id, { k: 'puzzle' }, now) : 0;
     return json({
       rating: Math.round(after.rating),
       provisional: after.rd > PROVISIONAL_RD,
       diff: Math.round(after.rating) - Math.round(before.rating),
       newPatches,
-      coins,
+      coins: coins + quest,
     } satisfies PuzzleResult & PatchNews);
   }
 

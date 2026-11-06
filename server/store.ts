@@ -8,6 +8,7 @@
 //   POST /api/me/outfit { outfit }   wears owned items (null: nothing in that slot)
 //   POST /api/me/kombin { index, outfit }   saves an outfit's clothes in the wardrobe (null: empties it)
 
+import { onSale, pricedNow } from '../src/store/vitrin.ts';
 import { dailyDay } from '../src/online/daily.ts';
 import {
   KOMBIN_COUNT,
@@ -106,7 +107,10 @@ async function buyMany(db: D1Database, userId: string, input: unknown[], now: nu
   for (const raw of input.slice(0, 24)) {
     const r = (raw && typeof raw === 'object' ? raw : {}) as { item?: unknown; wear?: unknown };
     if (typeof r.item !== 'string') continue;
-    const item = storeItem(r.item) ?? null;
+    const found = storeItem(r.item);
+    // This week's price (the window's quarter off); a window jacket only in its week.
+    if (found && !onSale(found, now)) continue;
+    const item = found ? pricedNow(found, now) : null;
     const slot = OUTFIT_SLOTS.find((s) => s === r.wear) ?? item?.slot;
     if (!slot) continue;
     if (item ? fitsSlot(slot, item) : slot === 'beardColor' && naturalBeard(r.item))
@@ -161,8 +165,10 @@ export async function handleStore(request: Request, env: AuthEnv, url: URL): Pro
     if (!user) return json({ error: 'signed-out' }, 401);
     const body = (await request.json().catch(() => ({}))) as { item?: unknown; wear?: unknown; items?: unknown };
     if (Array.isArray(body.items)) return buyMany(env.DB, user.id, body.items, now);
-    const item = typeof body.item === 'string' ? storeItem(body.item) : undefined;
-    if (!item) return json({ error: 'not-found' }, 404);
+    const found = typeof body.item === 'string' ? storeItem(body.item) : undefined;
+    // This week's price (the window's quarter off); a window jacket only in its week.
+    if (!found || !onSale(found, now)) return json({ error: 'not-found' }, 404);
+    const item = pricedNow(found, now);
     // Where it goes on once bought: its own slot, or (a hair colour) the beard.
     const wear = body.wear === 'beardColor' && fitsSlot('beardColor', item) ? 'beardColor' : item.slot;
     // Both statements run in one transaction: the charge only when the balance covers it and the

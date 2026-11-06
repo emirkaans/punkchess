@@ -8,6 +8,9 @@ import { useI18n } from './i18n.tsx';
 import { GearIcon } from './Punk.tsx';
 import { AvatarView } from './CharacterCreator.tsx';
 import { GenieDrop } from './genie.tsx';
+import { Modal } from './Modal.tsx';
+import { QuestsCard } from './QuestsCard.tsx';
+import { useQuests } from './quests.ts';
 
 /** The menu card's character: the whole head, its hair and the neck (the avatar box with room above). */
 const FACE_VIEW = '24 -4 152 204';
@@ -17,6 +20,10 @@ const ROW_ICONS = {
   shield: ['M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z'],
   globe: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', 'M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'],
   gear: ['M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', 'M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2'],
+  target: [
+    'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z',
+    'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2z',
+  ],
   sliders: ['M4 7h10M18 7h2M4 17h4M12 17h8', 'M16 5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM10 15a2 2 0 1 0 0 4 2 2 0 0 0 0-4z'],
 };
 
@@ -68,6 +75,9 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
   const [open, setOpen] = useState(false);
   // The menu itself, or its list of languages.
   const [view, setView] = useState<'main' | 'language'>('main');
+  // The day's quests, in a window of their own.
+  const [questsOpen, setQuestsOpen] = useState(false);
+  const quests = useQuests().data;
   const box = useRef<HTMLDivElement>(null);
 
   // Closes the menu on a click elsewhere.
@@ -188,6 +198,26 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
                   <span>{t('profile.mine')}</span>
                 </a>
               )}
+              {user && (
+                <button
+                  role="menuitem"
+                  className="account-row"
+                  onClick={() => {
+                    setOpen(false);
+                    setQuestsOpen(true);
+                  }}
+                >
+                  <RowIcon d={ROW_ICONS.target} />
+                  <span>{t('quests.menu')}</span>
+                  {quests && (
+                    <span className="acc-quests" aria-hidden="true">
+                      {quests.quests.map((q) => (
+                        <i key={q.id} className={q.progress >= q.target ? 'on' : ''} />
+                      ))}
+                    </span>
+                  )}
+                </button>
+              )}
               {user?.role && (
                 <a role="menuitem" className="account-row" href="/admin">
                   <RowIcon d={ROW_ICONS.shield} />
@@ -238,6 +268,11 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
           </>
         )}
       </GenieDrop>
+      {questsOpen && (
+        <Modal label={t('quests.title')} className="quests-modal" onClose={() => setQuestsOpen(false)}>
+          <QuestsCard />
+        </Modal>
+      )}
     </div>
   );
 }

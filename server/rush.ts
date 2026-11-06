@@ -7,6 +7,7 @@
 
 import { rushCoins } from '../src/coins/rules.ts';
 import { grantCoins } from './coins.ts';
+import { recordQuestSafe } from './quests.ts';
 import { listVariants } from '../src/engine/index.ts';
 import { dailyDay } from '../src/online/daily.ts';
 import { RUSH_COUNT, RUSH_START, RUSH_STEP } from '../src/online/puzzle.ts';
@@ -98,7 +99,8 @@ export async function handleRush(request: Request, env: AuthEnv, url: URL): Prom
       .first<{ best: number }>();
     const newPatches = await awardPuzzlePatches(env.DB, user.id, dailyDay(now), now);
     const coins = await grantCoins(env.DB, user.id, 'rush', String(now), rushCoins(score), now);
-    return json({ best: row?.best ?? score, newPatches, coins } satisfies RushSaved);
+    const quest = await recordQuestSafe(env.DB, user.id, { k: 'rush', score }, now);
+    return json({ best: row?.best ?? score, newPatches, coins: coins + quest } satisfies RushSaved);
   }
 
   return json({ error: 'not-found' }, 404);

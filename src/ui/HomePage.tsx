@@ -3,6 +3,7 @@ import { listVariants } from '../engine/index.ts';
 import type { LiveStats } from '../online/lobby.ts';
 import { dailyDay, dailyNumber, gridEmoji } from '../online/daily.ts';
 import { dailyResults, localStreak } from './dailyStore.ts';
+import { QuestsCard } from './QuestsCard.tsx';
 import type { PieceType, VariantDefinition } from '../engine/index.ts';
 import { useI18n, withEnglishWords } from './i18n.tsx';
 import type { MessageKey } from '../i18n/index.ts';
@@ -129,6 +130,7 @@ export function HomePage({
             </span>
             <Arrow />
           </button>
+          <QuestsCard className="home-quests" />
           {stats && (
             <p className="live-stats">
               <span className="live-dot" aria-hidden="true" />

@@ -5,6 +5,7 @@ import { useSyncExternalStore } from 'react';
 import type { CoinsResponse } from '../coins/rules.ts';
 import { loadPrefs } from './prefs.ts';
 import { playSound } from './sound.ts';
+import { refreshQuests } from './quests.ts';
 
 interface CoinState {
   /** The balance; null until asked (or signed out). */
@@ -40,6 +41,8 @@ export function noteCoins(amount: number | undefined | null): void {
   });
   if (loadPrefs().sound) playSound('coin');
   if (state.balance === null) void refreshCoins();
+  // Whatever paid may have counted for a quest too (and finished one: its toast).
+  void refreshQuests();
 }
 
 export function useCoins(): CoinState {

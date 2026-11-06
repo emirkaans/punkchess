@@ -242,8 +242,62 @@ const JACKETS: Readonly<Record<string, JacketSpec>> = {
   },
 };
 
+/**
+ * Jackets sold only in the week's window on Punk Street (src/store/vitrin.ts), one a week in
+ * turn: richer colours of the street's jackets.
+ */
+const VITRIN_JACKETS: Readonly<Record<string, JacketSpec>> = {
+  chrome: {
+    c: '#b9bdc6',
+    pattern: 'stripesV',
+    pc: ['#d9dce2'],
+    extra: `<path d="M84 118l30 40v74" fill="none" stroke="#5a5e66" stroke-width="2.5" stroke-dasharray="3 3"/>${studsAt(
+      [
+        [66, 134],
+        [74, 130],
+        [126, 130],
+        [134, 134],
+      ],
+    )}`,
+  },
+  neonleo: { c: '#ff2e93', pattern: 'leopard', pc: ['#141016'], extra: ZIP },
+  goldbomber: {
+    c: '#c9a227',
+    extra: `${ZIP}<path d="M70 124c8 10 52 10 60 0" fill="none" stroke="#6e5612" stroke-width="5"/><path d="M58 226h84" stroke="#6e5612" stroke-width="6"/>`,
+  },
+  toxicpuff: { c: '#141016', pattern: 'quilt', pc: ['#c6ff3d'], extra: ZIP },
+  sprayjkt: { c: '#18161b', pattern: 'splatter', pc: ['#ff2e93', '#c6ff3d'], extra: ZIP },
+  pinkzebra: { c: '#f1eee8', pattern: 'zebra', pc: ['#ff2e93'], extra: LAPELS('#ff2e93') },
+  nightplaid: { c: '#1b2340', pattern: 'plaid', pc: ['#3d6bff', '#0b0d18'], extra: BUTTONS('#c6ff3d') },
+  riotvest: {
+    c: '#2a2830',
+    arms: 'skin',
+    pattern: 'check',
+    pc: ['#ff2e93'],
+    extra: studsAt([
+      [70, 160],
+      [130, 160],
+      [70, 196],
+      [130, 196],
+    ]),
+  },
+};
+
+/** The window's jackets and their prices (punk coins). */
+export const VITRIN_ITEMS: readonly {
+  readonly id: string;
+  readonly slot: OutfitSlot;
+  readonly price: number;
+  readonly vitrin: true;
+}[] = Object.keys(VITRIN_JACKETS).map((id, i) => ({
+  id,
+  slot: 'jacket' as const,
+  price: [340, 300, 320, 280, 300, 290, 280, 260][i],
+  vitrin: true as const,
+}));
+
 function moreJacket(id: string, skin: string, g: BodyGeom): string | null {
-  const j = JACKETS[id];
+  const j = JACKETS[id] ?? VITRIN_JACKETS[id];
   if (!j) return null;
   const arms = j.arms === 'skin' ? skin : (j.arms ?? j.c);
   const hands = g.hands

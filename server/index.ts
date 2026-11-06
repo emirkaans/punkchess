@@ -15,6 +15,7 @@
 
 import { handleStore } from './store.ts';
 import { handleCoins } from './coins.ts';
+import { handleQuests } from './quests.ts';
 import { GAME_ID } from '../src/online/protocol.ts';
 import type { Env } from './game-room.ts';
 import type { GameInfo } from '../src/online/record.ts';
@@ -163,6 +164,8 @@ async function handle(request: Request, env: Env): Promise<Response> {
   if (auth) return auth;
   const coins = await handleCoins(request, env, url);
   if (coins) return coins;
+  const quests = await handleQuests(request, env, url);
+  if (quests) return quests;
   const rename = await handleRename(request, env, url);
   if (rename) return rename;
   const store = await handleStore(request, env, url);

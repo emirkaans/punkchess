@@ -4,12 +4,15 @@
 //
 //   GET  /api/me/coins   the balance, today's earnings, the latest entries
 
-import { DAILY_COIN_CAP, COIN_RULES, dailyMax } from '../src/coins/rules.ts';
+import { DAILY_COIN_CAP, COIN_RULES, OUTSIDE_CAP, dailyMax } from '../src/coins/rules.ts';
 import type { CoinReason, CoinsResponse } from '../src/coins/rules.ts';
 import { dailyDay } from '../src/online/daily.ts';
 import type { Color } from '../src/engine/index.ts';
 import type { AuthEnv } from './auth.ts';
 import { currentUser } from './auth.ts';
+
+/** The sources outside the overall ceiling, as an SQL list ('quest'). */
+const OUTSIDE_SQL = OUTSIDE_CAP.map((r) => `'${r}'`).join(', ');
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -33,12 +36,15 @@ export async function grantCoins(
   const day = dailyDay(now);
   const row = await db
     .prepare(
-      `SELECT coalesce(sum(amount), 0) AS total, coalesce(sum(CASE WHEN reason = ?3 THEN amount END), 0) AS mine
+      `SELECT coalesce(sum(CASE WHEN reason NOT IN (${OUTSIDE_SQL}) THEN amount END), 0) AS total,
+              coalesce(sum(CASE WHEN reason = ?3 THEN amount END), 0) AS mine
        FROM coin_ledger WHERE user_id = ?1 AND day = ?2 AND amount > 0`,
     )
     .bind(userId, day, reason)
     .first<{ total: number; mine: number }>();
-  const pay = Math.min(amount, dailyMax(reason) - (row?.mine ?? 0), DAILY_COIN_CAP - (row?.total ?? 0));
+  // Quest coins are outside the overall ceiling (and do not count towards it).
+  const overall = OUTSIDE_CAP.includes(reason) ? Infinity : DAILY_COIN_CAP - (row?.total ?? 0);
+  const pay = Math.min(amount, dailyMax(reason) - (row?.mine ?? 0), overall);
   if (pay <= 0) return 0;
   const res = await db
     .prepare(
@@ -58,7 +64,7 @@ export async function coinBalance(
 ): Promise<{ balance: number; today: number }> {
   const row = await db
     .prepare(
-      `SELECT coalesce(sum(amount), 0) AS balance, coalesce(sum(CASE WHEN day = ?2 AND amount > 0 THEN amount END), 0) AS today
+      `SELECT coalesce(sum(amount), 0) AS balance, coalesce(sum(CASE WHEN day = ?2 AND amount > 0 AND reason NOT IN (${OUTSIDE_SQL}) THEN amount END), 0) AS today
        FROM coin_ledger WHERE user_id = ?1`,
     )
     .bind(userId, dailyDay(now))

@@ -7,6 +7,7 @@
 import { MORE_BARBER_ITEMS } from './barber-more.ts';
 import {
   MORE_ITEMS,
+  VITRIN_ITEMS,
   SKIRT_ITEMS,
   drawMoreHat,
   drawMoreHeadAcc,
@@ -40,6 +41,8 @@ export interface StoreItem {
   readonly id: string;
   readonly slot: OutfitSlot;
   readonly price: number;
+  /** Sold only in the week it is in the window on Punk Street (src/store/vitrin.ts). */
+  readonly vitrin?: true;
 }
 
 /** What the player wears: an item id per slot, or null. */
@@ -135,6 +138,7 @@ export const STORE_ITEMS: readonly StoreItem[] = [
   ...SKIRT_ITEMS,
   ...SHOE_ITEMS,
   ...TATTOO_ITEMS,
+  ...VITRIN_ITEMS,
 ];
 
 export const storeItem = (id: string): StoreItem | undefined => STORE_ITEMS.find((i) => i.id === id);
