@@ -13776,10 +13776,11 @@ a:focus-visible {
   .players .player-row.has-stage {
     --stage-h: clamp(110px, calc((var(--board) - 40px) / 2 - 76px), 300px);
     --pr-card: 54px;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      'stage'
-      'info';
+      'stage stage'
+      'info clock';
+    align-items: center;
     gap: 0;
     padding: 0;
   }
@@ -13816,11 +13817,10 @@ a:focus-visible {
     padding: 8px 12px 10px;
     border-top: 1px solid var(--border);
   }
+  /* The clock beside the name, under the stage: never over the character. */
   .players .player-row.has-stage .clock {
-    position: absolute;
-    z-index: 2;
-    top: 8px;
-    right: 8px;
+    grid-area: clock;
+    margin-right: 10px;
     padding: 2px 10px;
   }
   .players .player-row.has-stage .clock-time {
@@ -13831,6 +13831,10 @@ a:focus-visible {
     z-index: 2;
     top: 4px;
     left: 8px;
+  }
+  /* With cards in the left corner the character stands a little right of them. */
+  .players .player-row.has-stage.has-rack .stage-figure {
+    left: 60%;
   }
 }
 
@@ -13895,8 +13899,9 @@ a:focus-visible {
   aspect-ratio: 200 / 360;
 }
 .finale-name {
-  font: 400 clamp(18px, calc(var(--board) / 26), 26px) / 1 var(--display);
-  letter-spacing: 0.05em;
+  /* As on the account button: usernames keep their capitals and small letters. */
+  font: 500 clamp(16px, calc(var(--board) / 30), 22px) / 1.1 var(--ui);
+  letter-spacing: 0.02em;
 }
 .finale-side.won .finale-name {
   color: var(--lime);
