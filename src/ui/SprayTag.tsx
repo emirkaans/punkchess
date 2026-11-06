@@ -8,6 +8,9 @@ const HOLD_MS = 2000;
 /** The fade at the end (the CSS transition takes as long). */
 const FADE_MS = 600;
 
+/** From the end of the game until a tag sprayed on the board is gone (the game's finale waits for it). */
+export const TAG_DONE_MS = GAME_OVER_MS + SPRAY_MS + 400 + HOLD_MS + FADE_MS;
+
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**

@@ -13,8 +13,10 @@ import { clickTarget, pickTargets } from './cardPick.ts';
 import type { CardPick } from './cardPick.ts';
 import { BoardResizer } from './BoardResizer.tsx';
 import { GameControls, GameTools } from './GameControls.tsx';
-import { GameOverOverlay } from './GameOverOverlay.tsx';
-import { SprayTag } from './SprayTag.tsx';
+import { GAME_OVER_MS, GameOverOverlay } from './GameOverOverlay.tsx';
+import { GameFinale } from './GameFinale.tsx';
+import { endPose, poseAt, seedOf } from '../avatar/poses.ts';
+import { SprayTag, TAG_DONE_MS } from './SprayTag.tsx';
 import { useAccount } from './account.ts';
 import { keepInviter } from './invite.ts';
 import { EvalBar, GameViewer } from './GameViewer.tsx';
@@ -251,6 +253,15 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   // Against the computer, a signed-in player plays under their username (and their spray tag goes with it).
   const playerName = (p: (typeof players)['w']) =>
     vsBot && p.kind === 'human' && account.user ? account.user.username : botName(p, t);
+  // The signed-in player's character against the bot, and its pose: thinking poses that change
+  // every few moves, then how they take the result.
+  const characterOf = (c: Color) => (vsBot && players[c].kind === 'human' ? (account.user?.avatar ?? null) : null);
+  const outfitOf = (c: Color) => (vsBot && players[c].kind === 'human' ? (account.user?.outfit ?? null) : null);
+  const poseSeed = seedOf(session.gameId);
+  const poseOf = (c: Color) =>
+    view.finalOutcome && atEnd
+      ? endPose(poseSeed, c, view.finalOutcome.winner)
+      : poseAt(poseSeed, c, game.moves.length);
   // Arrow keys step through a game on this device (not one against a bot, which cannot be browsed).
   useStepKeys(
     page === 'game' && !vsBot && !newGame
@@ -932,8 +943,9 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   active={!outcome && !setup && turn === top}
                   clock={timed ? session.clock : null}
                   place="top"
-                  character={vsBot && players[top].kind === 'human' ? account.user?.avatar : null}
-                  outfit={vsBot && players[top].kind === 'human' ? account.user?.outfit : null}
+                  character={characterOf(top)}
+                  outfit={outfitOf(top)}
+                  pose={poseOf(top)}
                   rack={rackOf(top)}
                   note={noteOf(top)}
                 />
@@ -963,8 +975,9 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                   active={!outcome && !setup && turn === bottom}
                   clock={timed ? session.clock : null}
                   place="bottom"
-                  character={vsBot && players[bottom].kind === 'human' ? account.user?.avatar : null}
-                  outfit={vsBot && players[bottom].kind === 'human' ? account.user?.outfit : null}
+                  character={characterOf(bottom)}
+                  outfit={outfitOf(bottom)}
+                  pose={poseOf(bottom)}
                   rack={rackOf(bottom)}
                   note={noteOf(bottom)}
                 />
@@ -1027,6 +1040,28 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                             ? t('outcome.winner', { color: t(`color.${view.finalOutcome.winner}`) })
                             : outcomeText(view.finalOutcome, t)
                         }
+                      />
+                    )}
+                    {/* Then the characters take the result over the whole board (after the tag, if one). */}
+                    {view.finalOutcome && atEnd && (characterOf('w') || characterOf('b')) && (
+                      <GameFinale
+                        key={session.gameId}
+                        winner={view.finalOutcome.winner}
+                        delayMs={
+                          view.finalOutcome.reason === 'checkmate' &&
+                          view.finalOutcome.winner &&
+                          players[view.finalOutcome.winner].kind === 'human' &&
+                          account.user
+                            ? TAG_DONE_MS
+                            : GAME_OVER_MS
+                        }
+                        sides={(['w', 'b'] as const).map((c) => ({
+                          color: c,
+                          name: playerName(players[c]),
+                          avatar: characterOf(c),
+                          outfit: outfitOf(c),
+                          pose: poseOf(c),
+                        }))}
                       />
                     )}
                     {/* Checkmating the computer: the signed-in player's spray tag goes on the board. */}

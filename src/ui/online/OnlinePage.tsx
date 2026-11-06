@@ -29,9 +29,11 @@ import type { Premove } from '../Board.tsx';
 import { BoardResizer } from '../BoardResizer.tsx';
 import { MoveList } from '../MoveList.tsx';
 import { useStepKeys } from '../stepKeys.ts';
-import { GameOverOverlay } from '../GameOverOverlay.tsx';
+import { GAME_OVER_MS, GameOverOverlay } from '../GameOverOverlay.tsx';
+import { GameFinale } from '../GameFinale.tsx';
+import { endPose, poseAt, seedOf } from '../../avatar/poses.ts';
 import { Modal } from '../Modal.tsx';
-import { SprayTag } from '../SprayTag.tsx';
+import { SprayTag, TAG_DONE_MS } from '../SprayTag.tsx';
 import { PlayerRow } from '../PlayerRow.tsx';
 import { PromotionDialog } from '../PromotionDialog.tsx';
 import { Splatter } from '../Punk.tsx';
@@ -554,6 +556,10 @@ function OnlineGame({
     if (isInCheck(variant, state.position)) statusText += t('status.check');
   }
 
+  // The characters' poses: thinking ones that change every few moves, then how they take the result.
+  const poseSeed = seedOf(view.id);
+  const poseOf = (c: Color) =>
+    view.outcome && atEnd ? endPose(poseSeed, c, view.outcome.winner) : poseAt(poseSeed, c, shown?.moves.length ?? 0);
   const nameOf = (c: Color) => {
     const p = view.players[c];
     if (!p) return t('online.emptySeat');
@@ -638,6 +644,7 @@ function OnlineGame({
                 place={i === 0 ? 'top' : 'bottom'}
                 character={view.players[c]?.avatar ?? null}
                 outfit={view.players[c]?.outfit ?? null}
+                pose={poseOf(c)}
                 rack={rackOf(c)}
                 note={noteOf(c)}
                 taunt={
@@ -701,6 +708,28 @@ function OnlineGame({
                       ? t('outcome.winner', { color: t(`color.${view.outcome.winner}`) })
                       : endText(view.outcome)
                   }
+                />
+              )}
+              {/* Then the characters take the result over the whole board (after the tag, if one). */}
+              {view.outcome && atEnd && (view.players.w?.avatar || view.players.b?.avatar) && (
+                <GameFinale
+                  key={view.id}
+                  winner={view.outcome.winner}
+                  delayMs={
+                    view.outcome.reason === 'checkmate' &&
+                    view.outcome.winner &&
+                    view.players[view.outcome.winner]?.username &&
+                    view.players[view.outcome.winner]?.tag
+                      ? TAG_DONE_MS
+                      : GAME_OVER_MS
+                  }
+                  sides={(['w', 'b'] as const).map((c) => ({
+                    color: c,
+                    name: view.players[c]?.name || t('online.anon'),
+                    avatar: view.players[c]?.avatar,
+                    outfit: view.players[c]?.outfit,
+                    pose: poseOf(c),
+                  }))}
                 />
               )}
               {/* A checkmate: the winner's spray tag goes on the board (signed-in players have one). */}

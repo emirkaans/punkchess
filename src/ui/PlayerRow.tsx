@@ -11,14 +11,17 @@ import type { Player } from './game/session.ts';
 import { useI18n } from './i18n.tsx';
 import { materialDiff } from './material.ts';
 import { PieceView } from './PieceView.tsx';
+import { PosedFigure } from './PosedFigure.tsx';
 import { Avatar } from './Punk.tsx';
 import type { Avatar as Character } from '../avatar/avatar.ts';
 
 /** The character from the head down to the chest (the card's and the strip's portrait). */
 const CHEST = '32 -4 136 194';
 
-function Portrait({ avatar, outfit }: { avatar: Character; outfit: Outfit | null }) {
-  const svg = useMemo(() => figureSvg(avatar, outfit ?? EMPTY_OUTFIT, CHEST), [avatar, outfit]);
+function Portrait({ avatar, outfit, pose }: { avatar: Character; outfit: Outfit | null; pose?: string | null }) {
+  const svg = useMemo(() => (pose ? '' : figureSvg(avatar, outfit ?? EMPTY_OUTFIT, CHEST)), [avatar, outfit, pose]);
+  // In a game the bust takes the character's pose too (the arms show from the head to the waist).
+  if (pose) return <PosedFigure avatar={avatar} outfit={outfit} pose={pose} view={CHEST} className="char-avatar" />;
   return <span className="char-avatar" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
@@ -44,6 +47,11 @@ interface Props {
   character?: Character | null;
   /** … and what they wear. */
   outfit?: Outfit | null;
+  /**
+   * The character's pose in this game (src/avatar/poses.ts): wide screens then show it in full
+   * in a panel on the card, narrow ones from the head to the waist.
+   */
+  pose?: string | null;
   /** This side's cards (Anarşi). */
   rack?: ReactNode;
   /**
@@ -66,6 +74,7 @@ export function PlayerRow({
   taunt,
   character,
   outfit = null,
+  pose = null,
   rack,
   note,
 }: Props) {
@@ -75,9 +84,21 @@ export function PlayerRow({
   const taken = diff.extra[color];
   const lead = diff.lead[color];
   return (
-    <div className={`player-row ${place}${active ? ' turn' : ''}${rack ? ' has-rack' : ''}`}>
+    <div
+      className={`player-row ${place}${active ? ' turn' : ''}${rack ? ' has-rack' : ''}${character && pose ? ' has-stage' : ''}`}
+    >
+      {character && pose && (
+        <div className="player-stage" aria-hidden="true">
+          <PosedFigure avatar={character} outfit={outfit} pose={pose} className="stage-figure" />
+          <span className="stage-floor" />
+        </div>
+      )}
       <span className={character ? 'avatar has-character' : 'avatar'}>
-        {character ? <Portrait avatar={character} outfit={outfit} /> : <Avatar bot={player.kind === 'bot'} />}
+        {character ? (
+          <Portrait avatar={character} outfit={outfit} pose={pose} />
+        ) : (
+          <Avatar bot={player.kind === 'bot'} />
+        )}
       </span>
       <div className="player-info">
         <div className="player-head">

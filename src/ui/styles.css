@@ -13598,3 +13598,309 @@ a:focus-visible {
     padding: 10px 0;
   }
 }
+
+/* ---------- The character in a game (src/ui/PosedFigure.tsx, src/avatar/poses.ts) ---------- */
+.posed {
+  position: relative;
+  display: block;
+}
+.pf-layer,
+.pf-frame {
+  position: absolute;
+  inset: 0;
+}
+.pf-layer {
+  transition: opacity 0.3s ease;
+}
+.pf-layer.old {
+  opacity: 0;
+}
+.pf-frame svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.posed .fig-body {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: fig-breathe 3.4s ease-in-out infinite;
+}
+@keyframes fig-breathe {
+  50% {
+    transform: scaleY(1.012);
+  }
+}
+.posed .fig-head {
+  transform-box: fill-box;
+  transform-origin: 50% 90%;
+  transition: transform 0.4s ease;
+}
+.posed.p-chin .fig-head {
+  transform: rotate(6deg);
+}
+.posed.p-scratch .fig-head {
+  transform: rotate(-5deg);
+}
+/* Two frames taking turns: a fist pumping, the air guitar, a dance. */
+.pf-f1 {
+  animation: pf-a 0.76s steps(1) infinite;
+}
+.pf-f2 {
+  animation: pf-b 0.76s steps(1) infinite;
+}
+@keyframes pf-a {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes pf-b {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.posed.p-win .fig-body {
+  animation: fig-jump 0.62s cubic-bezier(0.3, 0.7, 0.4, 1) infinite;
+}
+@keyframes fig-jump {
+  18% {
+    transform: translateY(2%) scaleY(0.95);
+  }
+  45% {
+    transform: translateY(-13%) scaleY(1.04);
+  }
+  75% {
+    transform: translateY(0) scaleY(0.98);
+  }
+}
+.posed.p-pump .fig-body {
+  animation: fig-hop 0.38s ease-in-out infinite;
+}
+@keyframes fig-hop {
+  50% {
+    transform: translateY(-4%);
+  }
+}
+.posed.p-guitar .fig-head {
+  animation: fig-bang 0.38s ease-in-out infinite;
+}
+@keyframes fig-bang {
+  50% {
+    transform: translateY(5px) rotate(14deg);
+  }
+}
+.posed.p-guitar .fig-body {
+  animation: fig-lean 1.52s ease-in-out infinite;
+}
+@keyframes fig-lean {
+  50% {
+    transform: rotate(-3deg);
+  }
+}
+.posed.p-dance .fig-body {
+  animation: fig-sway 0.76s ease-in-out infinite;
+}
+@keyframes fig-sway {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  25%,
+  75% {
+    transform: translateY(-3%);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+.posed.p-lose .fig-body,
+.posed.p-facepalm .fig-body,
+.posed.p-headhands .fig-body {
+  animation: fig-slump 1s ease-out forwards;
+}
+@keyframes fig-slump {
+  to {
+    transform: translateY(3%) scaleY(0.96);
+    filter: saturate(0.55) brightness(0.85);
+  }
+}
+.posed.p-lose .fig-head {
+  transform: translateY(10px) rotate(-12deg);
+}
+.posed.p-facepalm .fig-head {
+  transform: translateY(4px) rotate(-6deg);
+}
+.posed.p-headhands .fig-head {
+  transform: translateY(9px);
+}
+.posed.p-rage .fig-body {
+  animation: fig-shake 0.14s linear infinite;
+}
+@keyframes fig-shake {
+  25% {
+    transform: translateX(-1.6%);
+  }
+  75% {
+    transform: translateX(1.6%);
+  }
+}
+.posed.p-rage svg {
+  filter: drop-shadow(0 0 6px #ff2e9380);
+}
+@media (prefers-reduced-motion: reduce) {
+  .posed .fig-body,
+  .posed .fig-head,
+  .pf-f1,
+  .pf-f2 {
+    animation: none;
+  }
+  .pf-f2 {
+    opacity: 0;
+  }
+}
+/* The bust on the narrow strip: the posed figure from the head to the waist. */
+.avatar.has-character .posed.char-avatar {
+  width: 100%;
+  height: 100%;
+}
+
+/* Wide screens: a player with a character gets a portrait panel (design "Portre panelleri"):
+   the character in full on a lit stage, the clock and the cards in its top corners, the name and
+   the pieces taken in a ribbon under it. */
+.player-stage {
+  display: none;
+}
+@media (min-width: 1101px) {
+  .players .player-row.has-stage {
+    --stage-h: clamp(110px, calc((var(--board) - 40px) / 2 - 76px), 300px);
+    --pr-card: 54px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'stage'
+      'info';
+    gap: 0;
+    padding: 0;
+  }
+  .players .player-row.has-stage .avatar {
+    display: none;
+  }
+  .players .player-row.has-stage .player-stage {
+    grid-area: stage;
+    position: relative;
+    display: block;
+    height: var(--stage-h);
+    overflow: hidden;
+    border-radius: 5px 5px 0 0;
+    background: radial-gradient(ellipse at 50% 0%, #2a1630 0%, #121014 72%);
+  }
+  .stage-figure {
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    height: calc(100% - 16px);
+    aspect-ratio: 200 / 360;
+    transform: translateX(-50%);
+  }
+  .stage-floor {
+    position: absolute;
+    left: 14%;
+    right: 14%;
+    bottom: 2px;
+    height: 14px;
+    background: radial-gradient(ellipse, #ff2e9340 0%, transparent 70%);
+  }
+  .players .player-row.has-stage .player-info {
+    grid-area: info;
+    padding: 8px 12px 10px;
+    border-top: 1px solid var(--border);
+  }
+  .players .player-row.has-stage .clock {
+    position: absolute;
+    z-index: 2;
+    top: 8px;
+    right: 8px;
+    padding: 2px 10px;
+  }
+  .players .player-row.has-stage .clock-time {
+    font-size: clamp(22px, calc(var(--board) / 22), 30px);
+  }
+  .players .player-row.has-stage .player-rack {
+    position: absolute;
+    z-index: 2;
+    top: 4px;
+    left: 8px;
+  }
+}
+
+/* ---------- The end of the game (src/ui/GameFinale.tsx): over the whole board ---------- */
+.game-finale {
+  position: absolute;
+  inset: 0;
+  z-index: 16;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at 50% 90%, #3a1640f2, #0a0a0bf2 70%);
+  animation: finale-in 0.35s ease-out;
+}
+@keyframes finale-in {
+  from {
+    opacity: 0;
+  }
+}
+.finale-close {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  min-height: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: #141016;
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 20px;
+}
+.finale-title {
+  padding: 5% 56px 0;
+  text-align: center;
+  font: 400 clamp(26px, calc(var(--board) / 15), 46px) / 1.1 var(--marker);
+  color: var(--lime);
+}
+.finale-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6%;
+  padding: 0 4% 5%;
+}
+.finale-side {
+  height: 100%;
+  max-width: 42%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.finale-figure {
+  flex: 0 1 auto;
+  height: 82%;
+  aspect-ratio: 200 / 360;
+}
+.finale-name {
+  font: 400 clamp(18px, calc(var(--board) / 26), 26px) / 1 var(--display);
+  letter-spacing: 0.05em;
+}
+.finale-side.won .finale-name {
+  color: var(--lime);
+}
+.finale-side.lost .finale-name {
+  color: var(--muted);
+}
