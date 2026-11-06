@@ -71,6 +71,11 @@ export interface CardRules {
    * card move. An outcome with nothing to act on has one move without squares (the card fizzles).
    */
   readonly resolveChaos: (pos: Position, kind: string) => { readonly '+': Move[]; readonly '-': Move[] };
+  /**
+   * Is `move` a card whose targets were kept from the viewer it was sent to (e.g. an opponent's
+   * hidden mine, without its square)? It goes into the game as it is, though not in `moves`.
+   */
+  readonly hidden?: (pos: Position, move: Move) => boolean;
   /** Notation of a card move, without check marks. */
   readonly san: (move: Move) => string;
   /** Reads `san` (no check marks) back, or null if it is not a card move. */

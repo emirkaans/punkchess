@@ -422,7 +422,7 @@ function OnlineGame({
     variant.cards && view?.phase === 'playing' && you && state?.position.turn === you && !pending && atEnd && !promotion
       ? you
       : null;
-  const handMoves = useCardMoves(variant, variant.cards ? state : null, rackActive);
+  const handMoves = useCardMoves(variant, variant.cards ? state : null, rackActive, view?.chaos ?? null);
   // Narrow screens: the page below the controls opens from a ⋯ button instead of scrolling.
   const [more, setMore] = useState(false);
 

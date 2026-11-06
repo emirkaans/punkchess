@@ -87,13 +87,13 @@ export function pressClock(c: ClockState, mover: Color, now: number, creditMs = 
   };
 }
 
-/** Time the Zaman Hırsızı chaos card (Anarşi) hands out. */
-export const TIME_CARD_MS = 60_000;
-
-/** Gives `color` `ms` more time (a card that steals time). */
-export function addTime(c: ClockState, color: Color, ms: number): ClockState {
+/**
+ * Zaman Hırsızı (Anarşi's chaos card), right after the clock is pressed for its move: a hit halves
+ * the opponent's time left, a backfire the player's own.
+ */
+export function halveTime(c: ClockState, color: Color): ClockState {
   if (c.stopped || !isTimed(c)) return c;
-  return { ...c, remaining: { ...c.remaining, [color]: c.remaining[color] + ms } };
+  return { ...c, remaining: { ...c.remaining, [color]: Math.floor(c.remaining[color] / 2) } };
 }
 
 /** Freezes both clocks (game over). */

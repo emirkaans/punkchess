@@ -6,9 +6,8 @@
 import { parseOutfit } from '../avatar/outfit.ts';
 import { parseAvatar } from '../avatar/avatar.ts';
 import {
-  TIME_CARD_MS,
-  addTime,
   createClock,
+  halveTime,
   flagged,
   pressClock,
   remainingMs,
@@ -19,6 +18,8 @@ import {
 import type { ClockState } from '../clock/clock.ts';
 import {
   CHAOS,
+  TIME_CHAOS,
+  chaosPlayable,
   createGame,
   dealChaos,
   drawChaos,
@@ -184,7 +185,9 @@ export function createRoom(
 /** The game begins once all setup answers are in; with cards, each player is dealt a chaos card. */
 function start(room: Room, random: () => number = Math.random): Room {
   const v = getVariant(room.variantId);
-  const chaos = v.cards ? { w: dealChaos(v, random), b: dealChaos(v, random) } : null;
+  // No time card in a game without clocks: it would do nothing.
+  const without = timeControl(room.timeControlId).initialMs === null ? [TIME_CHAOS] : [];
+  const chaos = v.cards ? { w: dealChaos(v, random, without), b: dealChaos(v, random, without) } : null;
   return { ...room, phase: 'playing', startFen: setupStartPosition(v, room.answers), chaos };
 }
 
@@ -316,7 +319,7 @@ export function playMove(
   let legal = move.card ? sentCard(state, move) : moveOfWire(v, state, move);
   if (!legal || (legal.promotion !== undefined && legal.promotion !== move.promotion)) return fail('illegal');
   if (legal.card?.id === CHAOS) {
-    if (!room.chaos) return fail('illegal');
+    if (!room.chaos || !chaosPlayable(v, state.position, room.chaos[color])) return fail('illegal');
     legal = drawChaos(v, state.position, room.chaos[color], random);
   }
   const next = makeMove(v, state, legal);
@@ -325,7 +328,7 @@ export function playMove(
   const credit = Number.isFinite(lag) ? Math.max(0, Math.min(lag, LAG.perMove, bank)) : 0;
   let clock = pressClock(room.clock, color, now, credit);
   const card = legal.card;
-  if (card?.kind === 'time') clock = addTime(clock, card.outcome === '+' ? color : opposite(color), TIME_CARD_MS);
+  if (card?.kind === 'time') clock = halveTime(clock, card.outcome === '+' ? opposite(color) : color);
   const played: Room = {
     ...room,
     moves: [...room.moves, wire],
@@ -455,7 +458,7 @@ export function viewOf(
     rated: !!room.rated,
     you,
     startFen: room.startFen,
-    moves: room.moves,
+    moves: room.phase === 'over' ? room.moves : hideMines(room, you),
     answered: Object.keys(room.answers),
     // Only your own chaos card; spectators see none.
     chaos: you && room.chaos ? room.chaos[you] : null,
@@ -472,6 +475,27 @@ export function viewOf(
     armageddon: room.armageddon === true,
     now,
   };
+}
+
+/**
+ * The moves as `you` may see them during a game: the square of a mine the opponent laid (any
+ * mine, for a spectator) is left out for as long as the mine lies there. Once it goes off the
+ * square shows, and the replay here gets the explosion right.
+ */
+function hideMines(room: Room, you: Color | null): readonly WireMove[] {
+  if (!room.moves.some((m) => m.card?.id === 'mine')) return room.moves;
+  const state = gameOf(room);
+  const fx = (state?.position.extra as { fx?: readonly { k: string; c: Color; sq: readonly number[] }[] } | undefined)
+    ?.fx;
+  const live = (fx ?? []).filter((e) => e.k === 'mine' && e.c !== you);
+  if (!live.length || !room.startFen) return room.moves;
+  const first: Color = room.startFen.split(' ')[1] === 'b' ? 'b' : 'w';
+  return room.moves.map((m, i) => {
+    if (m.card?.id !== 'mine') return m;
+    const by: Color = i % 2 === 0 ? first : opposite(first);
+    const hidden = live.some((e) => e.c === by && e.sq[0] === m.card!.squares[0]);
+    return hidden ? { from: -1, to: -1, card: { id: 'mine', squares: [] } } : m;
+  });
 }
 
 /** Time left for `color` (for tests and logs). */

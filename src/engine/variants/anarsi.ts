@@ -16,7 +16,8 @@ import type {
   VariantExtra,
 } from '../types.ts';
 import { cardMove } from '../types.ts';
-import { codeType } from '../fast/board.ts';
+import { codeSide, codeType } from '../fast/board.ts';
+import type { FastBoard } from '../fast/board.ts';
 import type { FastHooks } from '../fast/hooks.ts';
 import {
   QUEEN,
@@ -85,6 +86,18 @@ const MINE_LASTS = 9999;
 export const CHAOS_FROM_MOVE = 6;
 
 /**
+ * How long the lasting tricks last, in plies from the one the card is played on. A "turn" is one
+ * move of each side: Kalkan 3 turns, Barikat 5, Sürgün's freeze 2 (the exiled side's moves).
+ * Ateşkes covers 5 moves of each side and ends with the opponent to move: they take first.
+ */
+const SHIELD_PLIES = 6;
+const WALL_PLIES = 10;
+const EXILE_FREEZE_PLIES = 4;
+const TRUCE_PLIES = 11;
+/** The same under the old rules (games recorded before them). */
+const OLD_PLIES = { shield: 4, wall: 6, truce: 4 } as const;
+
+/**
  * A lasting effect. `c`: the frozen / shielded / nitro pieces' colour, or who built the wall,
  * called the truce or laid the mine.
  */
@@ -97,6 +110,13 @@ export interface Effect {
 }
 
 export interface AnarsiExtra {
+  /**
+   * The rules of 2026-11 (FEN head ends ".2"): Kalkan goes with its piece, Barikat stands 5 turns
+   * and may go up a file, Sürgün's player picks the square and the piece stays frozen, Işınlanma
+   * takes pawns, Ateşkes lasts 5 moves and lets the checking piece be taken. Games recorded
+   * before keep the old rules, so they replay as they were played.
+   */
+  readonly r2: boolean;
   /** Each player's trick (picked before the game). */
   readonly trick: { readonly w: Trick | null; readonly b: Trick | null };
   /** Trick played. */
@@ -184,9 +204,24 @@ function revived(pos: Position, c: Color): 'b' | 'n' | null {
 }
 
 /**
- * Where Sürgün sends the minor piece on `sq`: its own starting square (a bishop the one of its
- * square colour, a knight the nearer one), if that is empty and not where it stands; else null.
+ * Where Sürgün can send the minor piece on `sq`: its own starting squares that are empty (a
+ * bishop only the one of its square colour), none if it stands on one already. The card's player
+ * picks among them.
  */
+function exileHomes(pos: Position, sq: number): number[] {
+  const p = pos.board[sq];
+  if (!p) return [];
+  const rank = homeRank(p.color);
+  const kind = kindOf(p.type);
+  const files = kind === 'b' ? [2, 5] : kind === 'n' ? [1, 6] : [];
+  const homes = files
+    .map((f) => rank * 8 + f)
+    .filter((h) => kind !== 'b' || (fileOf(h) + rankOf(h)) % 2 === (fileOf(sq) + rankOf(sq)) % 2);
+  if (homes.includes(sq)) return [];
+  return homes.filter((h) => !pos.board[h]);
+}
+
+/** The nearer empty starting square (games recorded before the player picked one). */
 function exileHome(pos: Position, sq: number): number | null {
   const p = pos.board[sq];
   if (!p) return null;
@@ -205,6 +240,12 @@ function exileHome(pos: Position, sq: number): number | null {
   if (homes.includes(sq)) return null;
   return homes.find((h) => !pos.board[h]) ?? null;
 }
+/** May `c`'s pawn stand on `sq` (Işınlanma): not its first rank, not within two steps of promoting. */
+function pawnMayStand(sq: number, c: Color): boolean {
+  const r = c === 'w' ? rankOf(sq) : 7 - rankOf(sq);
+  return r >= 1 && r <= 5;
+}
+
 /** Pieces the cards treat as ordinary pieces (not the king, not blockers). */
 const isPlain = (p: Piece | null): p is Piece => !!p && p.type !== 'k' && p.type !== 'x' && p.type !== 'o';
 
@@ -215,6 +256,7 @@ const play = (id: string, squares: readonly number[], kind?: string, outcome?: '
   cardMove(kind ? { id, squares, kind, outcome } : { id, squares });
 
 function trickMoves(pos: Position, trick: Trick): Move[] {
+  const r2 = extraOf(pos).r2;
   const me = pos.turn;
   const board = pos.board;
   const out: Move[] = [];
@@ -241,27 +283,43 @@ function trickMoves(pos: Position, trick: Trick): Move[] {
       each((p) => isPlain(p) && p.color === me);
       break;
     case 'swap':
+      // Two pieces of different kinds; a pawn may go, but not to its first rank or within two
+      // steps of promoting.
       for (let a = 0; a < 64; a++) {
         const pa = board[a];
-        if (!isPlain(pa) || pa.color !== me || pa.type === 'p') continue;
+        if (!isPlain(pa) || pa.color !== me || (!r2 && pa.type === 'p')) continue;
         for (let b = a + 1; b < 64; b++) {
           const pb = board[b];
-          if (isPlain(pb) && pb.color === me && pb.type !== 'p' && pb.type !== pa.type) out.push(play('swap', [a, b]));
+          if (!isPlain(pb) || pb.color !== me || pb.type === pa.type || (!r2 && pb.type === 'p')) continue;
+          if ((pa.type === 'p' && !pawnMayStand(b, me)) || (pb.type === 'p' && !pawnMayStand(a, me))) continue;
+          out.push(play('swap', [a, b]));
         }
       }
       break;
     case 'wall':
+      // Three empty squares in a row: along a rank or up a file.
       for (let sq = 0; sq < 64; sq++) {
         const f = fileOf(sq);
+        const r = rankOf(sq);
         if (f > 0 && f < 7 && !board[sq - 1] && !board[sq] && !board[sq + 1])
           out.push(play('wall', [sq - 1, sq, sq + 1]));
+        if (r2 && r > 0 && r < 7 && !board[sq - 8] && !board[sq] && !board[sq + 8])
+          out.push(play('wall', [sq - 8, sq, sq + 8]));
       }
       break;
     case 'revive':
       if (revived(pos, me)) each((p, sq) => !p && rankOf(sq) === homeRank(me));
       break;
     case 'exile':
-      each((p, sq) => !!p && p.color !== me && MINORS.has(p.type) && exileHome(pos, sq) !== null);
+      for (let sq = 0; sq < 64; sq++) {
+        const p = board[sq];
+        if (!p || p.color === me || !MINORS.has(p.type)) continue;
+        if (!r2) {
+          if (exileHome(pos, sq) !== null) out.push(play('exile', [sq]));
+          continue;
+        }
+        for (const home of exileHomes(pos, sq)) out.push(play('exile', [sq, home]));
+      }
       break;
     case 'truce':
       out.push(play('truce', []));
@@ -271,6 +329,21 @@ function trickMoves(pos: Position, trick: Trick): Move[] {
       break;
   }
   return out;
+}
+
+/**
+ * The opponent's mine as a viewer who may not know its square receives it (src/online/room.ts):
+ * Mayın without squares. It is the mine its player held, so it goes into the game as it is.
+ */
+function hiddenCard(pos: Position, move: Move): boolean {
+  const ex = extraOf(pos);
+  return (
+    move.card?.id === 'mine' &&
+    move.card.squares.length === 0 &&
+    ex.trick[pos.turn] === 'mine' &&
+    !ex.used[pos.turn] &&
+    !isInCheck(anarsi, pos)
+  );
 }
 
 function cardMoves(pos: Position): Move[] {
@@ -310,30 +383,32 @@ function applyCard(pos: Position, move: Move): Position {
       fx.push({ k: 'ice', c: them, exp: ply + 6, sq });
       break;
     case 'shield':
-      fx.push({ k: 'shield', c: me, exp: ply + 4, sq });
+      fx.push({ k: 'shield', c: me, exp: ply + (ex.r2 ? SHIELD_PLIES : OLD_PLIES.shield), sq });
       break;
     case 'swap':
       [board[sq[0]], board[sq[1]]] = [board[sq[1]], board[sq[0]]];
       break;
     case 'wall':
       for (const s of sq) board[s] = { type: 'o', color: me };
-      fx.push({ k: 'wall', c: me, exp: ply + 6, sq });
+      fx.push({ k: 'wall', c: me, exp: ply + (ex.r2 ? WALL_PLIES : OLD_PLIES.wall), sq });
       break;
     case 'revive':
       board[sq[0]] = { type: revived(pos, me)!, color: me };
       break;
     case 'exile': {
-      const home = exileHome(pos, sq[0])!;
+      // Back to the starting square the player picked, frozen for two of its side's moves.
+      const home = sq[1] ?? exileHome(pos, sq[0])!;
       const p = board[sq[0]]!;
       board[home] = { type: kindOf(p.type), color: p.color };
       board[sq[0]] = null;
+      if (sq.length > 1) fx.push({ k: 'ice', c: them, exp: ply + EXILE_FREEZE_PLIES, sq: [home] });
       break;
     }
     case 'demote':
       for (const s of sq) board[s] = { type: DEMOTED[board[s]!.type], color: board[s]!.color };
       break;
     case 'truce':
-      fx.push({ k: 'truce', c: me, exp: ply + 4, sq: [] });
+      fx.push({ k: 'truce', c: me, exp: ply + (ex.r2 ? TRUCE_PLIES : OLD_PLIES.truce), sq: [] });
       break;
     case 'mine':
       fx.push({ k: 'mine', c: me, exp: MINE_LASTS, sq });
@@ -355,9 +430,11 @@ function applyCard(pos: Position, move: Move): Position {
       break;
     // 'time' changes only the clocks; an unresolved chaos card (legality check) changes nothing.
   }
-  // A rook taken from its corner (Işınlanma) loses its castling right.
+  // A rook taken from its corner or changed there (Işınlanma, Deprem, Rütbe Düşürme) loses its
+  // castling right. Under the old rules any card on a corner did, a shield or ice too.
   const castling = { ...pos.castling };
-  for (const s of sq) {
+  const moves = !ex.r2 || what === 'swap' || what === 'quake' || what === 'demote';
+  for (const s of moves ? sq : []) {
     const right = CORNER_RIGHTS[s];
     if (right) castling[right] = false;
   }
@@ -488,7 +565,19 @@ function afterApply(prev: Position, next: Position, move: Move): Position {
   const ply = plyOf(next);
   let board: (Piece | null)[] | null = null;
   const keep: Effect[] = [];
+  let moved = false;
   for (const e of ex.fx) {
+    // Kalkan (new rules) goes with its piece; it drops when the piece takes or gives check itself.
+    const castled = rookOfCastling(prev, move);
+    const from = castled ? castled[0] : move.from;
+    if (ex.r2 && e.k === 'shield' && !move.card && e.c === prev.turn && e.sq[0] === from) {
+      const to = castled ? castled[1] : move.to;
+      const mover = prev.board[move.from];
+      const took = !!prev.board[move.to] || (mover?.type === 'p' && fileOf(move.from) !== fileOf(move.to));
+      if (!took && !checksFrom(next, to) && e.exp > ply) keep.push({ ...e, sq: [to] });
+      moved = true;
+      continue;
+    }
     if (e.k === 'mine' && !move.card && e.c !== prev.turn && e.sq[0] === move.to) {
       board ??= next.board.slice();
       if (board[move.to]?.type !== 'k') {
@@ -513,8 +602,27 @@ function afterApply(prev: Position, next: Position, move: Move): Position {
       }
     }
   }
-  if (keep.length === ex.fx.length) return next;
+  if (!moved && keep.length === ex.fx.length) return next;
   return { ...next, board: board ?? next.board, extra: asExtra({ ...ex, fx: keep }) };
+}
+
+/** A castling move's rook: from its corner to its square beside the king, or null for any other move. */
+function rookOfCastling(prev: Position, move: Move): [number, number] | null {
+  if (move.card || prev.board[move.from]?.type !== 'k' || Math.abs(fileOf(move.to) - fileOf(move.from)) !== 2)
+    return null;
+  const rank = rankOf(move.from) * 8;
+  return fileOf(move.to) > fileOf(move.from) ? [rank + 7, rank + 5] : [rank, rank + 3];
+}
+
+/**
+ * Does the piece on `sq` itself attack the enemy king (not a check it uncovers)? Its side's other
+ * pieces become plain blockers for the test, so only its own lines count.
+ */
+function checksFrom(pos: Position, sq: number): boolean {
+  const p = pos.board[sq];
+  if (!p) return false;
+  const board = pos.board.map((q, i) => (q && q.color === p.color && i !== sq ? { type: 'o', color: p.color } : q));
+  return isInCheck(anarsi, { ...pos, board }, opposite(p.color));
 }
 
 /** The position as `viewer` knows it: the opponent's mines are not there. */
@@ -530,11 +638,15 @@ function squareMarks(pos: Position): SquareMark[] {
   for (const e of extraOf(pos).fx) {
     // Moves left, counted like move numbers: one White and one Black half-move make a move, so
     // the count drops when the card's player has moved again (3, 3, 2, 2, 1 for a 3-move effect).
-    const left = String(Math.floor((e.exp - ply) / 2) + 1);
+    // Ateşkes (new rules) ends with the opponent to move, an odd number of plies: 5, 5, 4, 4, … 1, 1.
+    const gap = e.exp - ply;
+    const left = String(e.k === 'truce' && extraOf(pos).r2 ? Math.ceil(gap / 2) : Math.floor(gap / 2) + 1);
     if (e.k === 'ice') marks.push({ square: e.sq[0], kind: 'ice', label: left });
     if (e.k === 'shield') marks.push({ square: e.sq[0], kind: 'shield', label: left });
     if (e.k === 'wall') e.sq.forEach((s, i) => marks.push({ square: s, kind: 'wall', label: i === 0 ? left : '' }));
-    if (e.k === 'mine') marks.push({ square: e.sq[0], kind: 'mine', label: '', owner: e.c, icon: MINE_ICON });
+    // A mine whose square is kept from this viewer (sent without it) has nothing to show.
+    if (e.k === 'mine' && e.sq.length)
+      marks.push({ square: e.sq[0], kind: 'mine', label: '', owner: e.c, icon: MINE_ICON });
     // The truce shows on both kings, with its moves left.
     if (e.k === 'truce')
       pos.board.forEach((p, s) => p?.type === 'k' && marks.push({ square: s, kind: 'truce', label: left }));
@@ -543,22 +655,28 @@ function squareMarks(pos: Position): SquareMark[] {
 }
 
 // ---------------------------------------------------------------------------
-// FEN field 7: tricks, played flags, effects. "void.ice.0010" + ";ice.b.15.c4;wall.w.20.c5d5e5"
+// FEN field 7: tricks, played flags, the rules version, effects. "void.ice.0010.2" + ";ice.b.15.c4;wall.w.20.c5d5e5"
 
 const initialExtra = (): VariantExtra =>
-  asExtra({ trick: { w: null, b: null }, used: { w: false, b: false }, chaos: { w: false, b: false }, fx: [] });
+  asExtra({
+    r2: true,
+    trick: { w: null, b: null },
+    used: { w: false, b: false },
+    chaos: { w: false, b: false },
+    fx: [],
+  });
 
 function serializeExtra(extra: VariantExtra): string {
   const ex = extra as unknown as AnarsiExtra;
   const bit = (b: boolean) => (b ? '1' : '0');
-  const head = `${ex.trick.w ?? '-'}.${ex.trick.b ?? '-'}.${bit(ex.used.w)}${bit(ex.used.b)}${bit(ex.chaos.w)}${bit(ex.chaos.b)}`;
+  const head = `${ex.trick.w ?? '-'}.${ex.trick.b ?? '-'}.${bit(ex.used.w)}${bit(ex.used.b)}${bit(ex.chaos.w)}${bit(ex.chaos.b)}${ex.r2 ? '.2' : ''}`;
   return [head, ...ex.fx.map((e) => `${e.k}.${e.c}.${e.exp}.${e.sq.map(squareName).join('')}`)].join(';');
 }
 
 function parseExtra(field: string | undefined): VariantExtra {
   if (!field) return initialExtra();
   const [head, ...effects] = field.split(';');
-  const m = /^([a-z-]+)\.([a-z-]+)\.([01]{4})$/.exec(head);
+  const m = /^([a-z-]+)\.([a-z-]+)\.([01]{4})(\.2)?$/.exec(head);
   const trick = (s: string) => {
     if (s === '-') return null;
     if (!(TRICKS as readonly string[]).includes(s)) throw new Error(`Invalid Anarşi FEN field: ${field}`);
@@ -575,6 +693,7 @@ function parseExtra(field: string | undefined): VariantExtra {
   });
   const f = m[3];
   return asExtra({
+    r2: m[4] === '.2',
     trick: { w: trick(m[1]), b: trick(m[2]) },
     used: { w: f[0] === '1', b: f[1] === '1' },
     chaos: { w: f[2] === '1', b: f[3] === '1' },
@@ -627,12 +746,12 @@ const TRICK_DETAILS: Readonly<Record<Trick, string>> = {
   void: 'Boş bir kare oyun sonuna kadar silinir.',
   pawn: 'Rakibin iki piyonu tahtadan alınır.',
   ice: 'Rakibin bir taşı 3 tur oynayamaz.',
-  swap: 'Kendi iki taşının yeri değişir.',
-  shield: 'Taşın 2 tur yenemez.',
-  wall: '3 boş kare 3 tur kapanır.',
+  swap: 'Kendi iki taşının yeri değişir (piyon da olur).',
+  shield: 'Taşın 3 tur yenemez; kalkan onunla gider, yer ya da şah çekerse düşer.',
+  wall: 'Yan yana ya da alt alta 3 boş kare 5 tur kapanır.',
   revive: 'Yenmiş filin (yoksa atın) ilk sırandaki seçtiğin boş kareye döner.',
-  exile: 'Rakibin bir hafif taşı başladığı kareye geri döner.',
-  truce: '2 tur boyunca iki taraf da taş yiyemez (şah çekmek serbest).',
+  exile: 'Rakibin bir hafif taşı seçtiğin başlangıç karesine döner, 2 tur oynayamaz.',
+  truce: '5 hamle boyunca kimse taş yiyemez (şah çeken taş hariç); bitince ilk hamle rakibin.',
   mine: 'Boş bir kareye gizli mayın gömersin; oraya basan rakip taş patlar.',
 };
 
@@ -640,12 +759,12 @@ const TRICK_DETAILS_EN: Readonly<Record<Trick, string>> = {
   void: 'An empty square leaves the board for good.',
   pawn: 'Two opponent pawns leave the board.',
   ice: 'An opponent piece cannot move for 3 turns.',
-  swap: 'Two of your pieces swap places.',
-  shield: 'Your piece cannot be taken for 2 turns.',
-  wall: '3 empty squares close for 3 turns.',
+  swap: 'Two of your pieces swap places (a pawn too).',
+  shield: 'Your piece cannot be taken for 3 turns; the shield moves with it and drops if it takes or gives check.',
+  wall: '3 empty squares in a row or a column close for 5 turns.',
   revive: 'A bishop of yours that was taken (else a knight) returns to an empty square of your first rank.',
-  exile: 'An opponent minor piece goes back to its starting square.',
-  truce: 'For 2 turns neither side can take a piece (checks still count).',
+  exile: 'An opponent minor piece goes back to the starting square you pick and cannot move for 2 turns.',
+  truce: 'For 5 moves nobody can take a piece (but one giving check); then the opponent moves first.',
   mine: 'You bury a hidden mine on an empty square; an opponent piece stepping on it blows up.',
 };
 
@@ -664,7 +783,7 @@ const questionEn = (color: Color): SetupQuestionTexts => ({
 });
 
 function startPosition(answers: Readonly<Record<string, string>>): string {
-  const extra = parseExtra(`${answers.w}.${answers.b}.0000`);
+  const extra = parseExtra(`${answers.w}.${answers.b}.0000.2`);
   return `${STANDARD_START} ${serializeExtra(extra)}`;
 }
 
@@ -674,10 +793,26 @@ function startPosition(answers: Readonly<Record<string, string>>): string {
 // extra: [ice 1, ice 2, shield] as (1 + square + 64 * side, plies left), then the truce (1, plies left).
 // Mines are not there: the search does not know where they are.
 
+/** Does the piece on `sq` (a fast board) give check itself? Taken off, its king is no longer attacked. */
+function fastChecks(b: FastBoard, sq: number, victim: number): boolean {
+  const side = codeSide(victim);
+  for (let s = 0; s < 64; s++) {
+    const c = b.sq[s];
+    if (c === 0 || codeSide(c) === side || !b.types[codeType(c)].royal) continue;
+    if (!b.attacked(s, side)) return false;
+    b.sq[sq] = 0;
+    const still = b.attacked(s, side);
+    b.sq[sq] = victim;
+    return !still;
+  }
+  return false;
+}
+
 const FAST: FastHooks = {
-  extraSlots: 8,
+  extraSlots: 9,
   readExtra: (b, pos) => {
     const ply = plyOf(pos);
+    b.extra[8] = extraOf(pos).r2 ? 1 : 0;
     let ice = 0;
     for (const e of extraOf(pos).fx) {
       const code = 1 + e.sq[0] + 64 * (e.c === 'w' ? 0 : 1);
@@ -706,7 +841,8 @@ const FAST: FastHooks = {
     return b.extra[0] === code || b.extra[2] === code;
   },
   captureAllowed: (b, _from, victimSq, victim) =>
-    (b.extra[6] === 0 || b.types[codeType(victim)].royal) && (b.extra[4] === 0 || (b.extra[4] - 1) % 64 !== victimSq),
+    (b.extra[4] === 0 || (b.extra[4] - 1) % 64 !== victimSq) &&
+    (b.extra[6] === 0 || b.types[codeType(victim)].royal || (b.extra[8] === 1 && fastChecks(b, victimSq, victim))),
   hashExtra: (b) => b.extra[0] ^ (b.extra[2] << 7) ^ (b.extra[4] << 14) ^ (b.extra[6] << 21),
 };
 
@@ -736,17 +872,28 @@ export const anarsi: VariantDefinition = defineVariant({
   generateMoves: (pos, from, base) => {
     const p = pos.board[from];
     const ice = p && effectOn(pos, 'ice', from);
-    return ice && ice.c === p.color ? [] : base(pos, from);
+    if (ice && ice.c === p.color) return [];
+    const moves = base(pos, from);
+    // A frozen rook does not castle either (now that Buz on it leaves the castling right).
+    if (p?.type !== 'k' || !extraOf(pos).fx.some((e) => e.k === 'ice' && e.c === p.color)) return moves;
+    return moves.filter((m) => {
+      const rook = rookOfCastling(pos, m);
+      return !rook || effectOn(pos, 'ice', rook[0])?.c !== p.color;
+    });
   },
   captureAllowed: (pos, _from, victimSquare, _attacker, victim) => {
-    // Ateşkes: nothing is taken, but a king still counts as attacked (check stays check).
-    if (victim.type !== 'k' && extraOf(pos).fx.some((e) => e.k === 'truce')) return false;
+    // Ateşkes: nothing is taken, but a king still counts as attacked (check stays check). Under
+    // the new rules the piece giving check may be taken (else a check could not be answered).
+    const ex = extraOf(pos);
+    if (victim.type !== 'k' && ex.fx.some((e) => e.k === 'truce') && !(ex.r2 && checksFrom(pos, victimSquare)))
+      return false;
     const shield = effectOn(pos, 'shield', victimSquare);
     return !shield || shield.c !== victim.color;
   },
   cards: {
     chaosKinds: CHAOS_CARDS,
     moves: cardMoves,
+    hidden: hiddenCard,
     apply: applyCard,
     resolveChaos,
     san: cardSan,
@@ -762,11 +909,11 @@ export const anarsi: VariantDefinition = defineVariant({
     summary: 'Standart satranç, artı bir numara ve bir kaos kartı. Kart oynamak hamle yerine geçer.',
     bullets: [
       'Oyundan önce bir numara seçersin ve oyunda bir kez, hamle yerine oynarsın. Numara hep sana yarar.',
-      'Kara Delik boş bir kareyi oyun sonuna kadar siler; Barikat yan yana 3 boş kareyi 3 tur kapatır. Ateşkes 2 tur boyunca yemeyi yasaklar; Mayın, rakibin göremediği bir kareye gömülür ve oraya basan rakip taşı patlatır (şah ve kendi şahını açacak taş sadece temizler).',
-      'Piyon Avı rakibin iki piyonunu alır; Buz rakibin bir taşını 3 tur dondurur (donan taş yine saldırır ve korur); Sürgün rakibin bir hafif taşını başladığı kareye geri yollar.',
-      'Işınlanma kendi iki taşının yerini değiştirir (şah ve piyon olmaz); Kalkan taşını 2 tur yenmez yapar; Diriliş yenmiş filini (yoksa atını) ilk sırandaki seçtiğin boş kareye geri getirir.',
-      `Gizli kaos kartı (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı 60 saniye, Pusu bir hafif taş, Hain bir piyon, Nitro iki hamlelik vezir gücü, Rütbe Düşürme en değerli taşı bir rütbe indirir, Deprem iki taşın yerini değiştirir. İsabet sana, geri tepme rakibe yarar.`,
-      'Şah çekiliyken kart oynanmaz. Geri tepen kart şahını açmaz, rakibe tek hamlede mat fırsatı vermez.',
+      'Kara Delik boş bir kareyi oyun sonuna kadar siler; Barikat yan yana ya da alt alta 3 boş kareyi 5 tur kapatır. Ateşkes 5 hamle boyunca yemeyi yasaklar (şah çeken taş yine alınır, bitince ilk hamle rakibin); Mayın, rakibin göremediği bir kareye gömülür ve oraya basan rakip taşı patlatır (şah ve kendi şahını açacak taş sadece temizler).',
+      'Piyon Avı rakibin iki piyonunu alır; Buz rakibin bir taşını 3 tur dondurur (donan taş yine saldırır ve korur); Sürgün rakibin bir hafif taşını seçtiğin başlangıç karesine geri yollar ve 2 tur dondurur.',
+      'Işınlanma kendi iki taşının yerini değiştirir (şah olmaz; piyon ilk sırasına ya da terfiye iki adım yakına gidemez); Kalkan taşını 3 tur yenmez yapar, kalkan taşla gider ve taş yer ya da şah çekerse düşer; Diriliş yenmiş filini (yoksa atını) ilk sırandaki seçtiğin boş kareye geri getirir.',
+      `Gizli kaos kartı (${CHAOS_FROM_MOVE}. hamleden sonra): Zaman Hırsızı süreyi yarıya indirir, Pusu bir hafif taş, Hain bir piyon, Nitro iki hamlelik vezir gücü, Rütbe Düşürme en değerli taşı bir rütbe indirir, Deprem iki taşın yerini değiştirir. İsabet sana, geri tepme rakibe yarar.`,
+      'Şah çekiliyken kart oynanmaz. Geri tepen kart şahını açmaz, rakibe tek hamlede mat fırsatı vermez. Kaos kartı ancak hem isabeti hem geri tepmesi bir şey yapabilecekse oynanır; Zaman Hırsızı süresiz oyunlarda dağıtılmaz.',
     ],
     examples: [],
   },
@@ -785,11 +932,11 @@ export const anarsi: VariantDefinition = defineVariant({
         summary: 'Standard chess plus one trick and one chaos card. Playing a card takes your move.',
         bullets: [
           'Before the game you pick a trick and play it once, instead of a move. A trick always helps you.',
-          'Black Hole takes an empty square off the board for good; Barricade closes 3 empty squares in a row for 3 turns. Ceasefire forbids taking for 2 turns; Mine is buried where the opponent cannot see it and blows up the opponent piece that steps on it (a king, or a piece whose loss would expose its own king, only clears it).',
-          'Pawn Hunt takes two opponent pawns; Ice freezes an opponent piece for 3 turns (it still attacks and defends); Exile sends an opponent minor piece back to its starting square.',
-          'Teleport swaps two of your pieces (not the king, not pawns); Shield keeps your piece from being taken for 2 turns; Revival brings back a taken bishop (else a knight) to an empty square of your first rank.',
-          `Hidden chaos card (from move ${CHAOS_FROM_MOVE}): Time Thief 60 seconds, Ambush a minor piece, Traitor a pawn, Nitro two queen moves, Demotion takes the best piece one rank down, Earthquake swaps two pieces. A hit helps you, a backfire the opponent.`,
-          'No card while in check. A backfire never leaves your king open or hands the opponent a mate in one.',
+          'Black Hole takes an empty square off the board for good; Barricade closes 3 empty squares in a row or a column for 5 turns. Ceasefire forbids taking for 5 moves (a piece giving check can still be taken; then the opponent moves first); Mine is buried where the opponent cannot see it and blows up the opponent piece that steps on it (a king, or a piece whose loss would expose its own king, only clears it).',
+          'Pawn Hunt takes two opponent pawns; Ice freezes an opponent piece for 3 turns (it still attacks and defends); Exile sends an opponent minor piece back to the starting square you pick and freezes it for 2 turns.',
+          'Teleport swaps two of your pieces (not the king; a pawn not to its first rank or within two steps of promoting); Shield keeps your piece from being taken for 3 turns, moving with it, until it takes or gives check; Revival brings back a taken bishop (else a knight) to an empty square of your first rank.',
+          `Hidden chaos card (from move ${CHAOS_FROM_MOVE}): Time Thief halves the time left, Ambush a minor piece, Traitor a pawn, Nitro two queen moves, Demotion takes the best piece one rank down, Earthquake swaps two pieces. A hit helps you, a backfire the opponent.`,
+          'No card while in check. A backfire never leaves your king open or hands the opponent a mate in one. A chaos card can be played only when both its hit and its backfire would do something; Time Thief is not dealt in untimed games.',
         ],
         captions: [],
       },

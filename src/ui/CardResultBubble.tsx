@@ -33,7 +33,8 @@ export function useCardSentence(variant: VariantDefinition, r: CardResult): stri
   if (r.id === 'revive') params.piece = piece(c0?.after);
   if (r.id === 'demote') params.piece2 = piece(c0?.after);
   if (r.id === 'quake') params.piece2 = piece(c1?.before);
-  if (r.id === 'time') params.side = side(r.outcome === '-' ? opposite(r.color) : r.color);
+  // Zaman Hırsızı: whose time was halved (the opponent's on a hit, the player's own on a backfire).
+  if (r.id === 'time') params.side = side(r.outcome === '-' ? r.color : opposite(r.color));
   if (r.blast) {
     params.piece = piece(c0?.before);
     params.side = side(c0?.before?.color);

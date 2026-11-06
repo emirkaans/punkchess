@@ -568,7 +568,12 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
     if (cardPick) setCardPick(null);
   }
   // The side to move's playable cards (its rack lights them up); a pick plays from these.
-  const handMoves = useCardMoves(variant, variant.cards ? game : null, cardColor);
+  const handMoves = useCardMoves(
+    variant,
+    variant.cards ? game : null,
+    cardColor,
+    cardColor && session.chaos ? session.chaos[cardColor] : null,
+  );
   const cardMoves = cardPick ? handMoves : [];
   // Each side's chaos card where it is known here (a bot's stays hidden from the person playing it).
   const knownChaos = session.chaos

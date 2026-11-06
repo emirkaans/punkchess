@@ -4,10 +4,13 @@
 import { describe, expect, it } from 'vitest';
 import { parseSquare } from '../src/engine/board.ts';
 import { reconnectMs } from '../src/online/protocol.ts';
-import { timeControl } from '../src/clock/clock.ts';
+import { TIME_CONTROLS, pressClock, timeControl } from '../src/clock/clock.ts';
+import { createGame, getVariant, makeMove } from '../src/engine/index.ts';
+import { moveOfWire } from '../src/online/protocol.ts';
 
 /** 5+0, the time control of newGame(): 30 seconds to come back. */
 const RECONNECT_MS = 30_000;
+const UNTIMED = TIME_CONTROLS.find((tc) => tc.initialMs === null)!.id;
 import type { WireMove } from '../src/online/protocol.ts';
 import {
   RoomError,
@@ -353,10 +356,44 @@ describe('kartlı varyant (Anarşi)', () => {
     const played = room.moves.at(-1)!.card!;
     expect(played).toMatchObject({ id: 'chaos', kind: 'ambush', outcome: '+' });
     expect(gameOf(room)!.moves.at(-1)!.san).toMatch(/^PU\+@/);
-    // Zaman Hırsızı: geri teperse rakibin saatine 60 saniye.
+    // Zaman Hırsızı: geri teperse kendi kalan süresi yarıya iner.
     const before = room.clock.remaining.w;
+    const pressed = pressClock(room.clock, 'b', 6000);
     room = playMove(room, 'b', card('chaos'), moves.length + 1, 6000, 0, () => 0.9);
     expect(room.moves.at(-1)!.card).toMatchObject({ kind: 'time', outcome: '-' });
-    expect(room.clock.remaining.w).toBe(before + 60_000);
+    expect(room.clock.remaining.w).toBe(before);
+    expect(room.clock.remaining.b).toBe(Math.floor(pressed.remaining.b / 2));
+  });
+
+  it('süresiz oyunda Zaman Hırsızı dağıtılmaz', () => {
+    for (let i = 0; i < 40; i++) {
+      const r = () => (i + 0.5) / 40;
+      const created = createRoom('Anar0000', { variantId: 'anarsi', timeControlId: UNTIMED, color: 'w' }, 'tw', r);
+      let room = joinRoom(created.room, 'B', 'tb').room;
+      room = answerSetup(room, 'w', { w: 'void' });
+      room = answerSetup(room, 'b', { b: 'pawn' });
+      expect(room.chaos?.w).not.toBe('time');
+      expect(room.chaos?.b).not.toBe('time');
+    }
+  });
+
+  it('rakibin mayınının karesi oyun boyunca gizli; patlayınca görünür', () => {
+    const created = createRoom('Mine1234', { variantId: 'anarsi', timeControlId: '5+0', color: 'w' }, 'tw', () => 0.1);
+    let room = joinRoom(created.room, 'B', 'tb').room;
+    room = answerSetup(room, 'w', { w: 'mine' });
+    room = answerSetup(room, 'b', { b: 'pawn' });
+    room = playMove(room, 'w', card('mine', 'e5'), 0, 1000);
+    const theirs = viewOf(room, 'b', both, 1000).moves[0];
+    expect(theirs.card).toEqual({ id: 'mine', squares: [] });
+    expect(viewOf(room, null, both, 1000).moves[0].card!.squares).toEqual([]);
+    expect(viewOf(room, 'w', both, 1000).moves[0].card!.squares).toEqual([parseSquare('e5')]);
+    // Black replays the hidden move as its browser does, and plays on.
+    const v = getVariant('anarsi');
+    const start = createGame(v, room.startFen!);
+    expect(makeMove(v, start, moveOfWire(v, start, theirs)!).moves.length).toBe(1);
+    room = playMove(room, 'b', mv('e7', 'e5'), 1, 2000);
+    // The pawn stepped on it: gone, and the square shows.
+    expect(gameOf(room)!.position.board[parseSquare('e5')]).toBeNull();
+    expect(viewOf(room, 'b', both, 2000).moves[0].card!.squares).toEqual([parseSquare('e5')]);
   });
 });

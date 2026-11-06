@@ -3,7 +3,7 @@
 // position after it, against the move the full search chose. A chaos card counts as the
 // average of its hit and its backfire.
 
-import { CHAOS, applyMove, isInCheck, legalMoves } from '../engine/index.ts';
+import { CHAOS, applyMove, chaosPlayable, isInCheck, legalMoves } from '../engine/index.ts';
 import type { GameState, Move, Position, VariantDefinition } from '../engine/index.ts';
 import { createRng, randomSeed } from './rng.ts';
 import { chooseMove, search } from './search.ts';
@@ -51,7 +51,9 @@ export function chooseWithCards(
   const pos = v.withoutSecrets?.(state.position, state.position.turn) ?? state.position;
   if (pos !== state.position) state = { ...state, position: pos };
   const legal = legalMoves(v, pos);
-  const cards = legal.filter((m) => m.card && (m.card.id !== CHAOS || (chaos && v.cards)));
+  const cards = legal.filter(
+    (m) => m.card && (m.card.id !== CHAOS || (chaos && v.cards && chaosPlayable(v, pos, chaos))),
+  );
   const pieceMoves = legal.some((m) => !m.card);
   if (!cards.length) return chooseMove(v, state, level, opts);
   const rng = createRng(opts.seed ?? randomSeed());

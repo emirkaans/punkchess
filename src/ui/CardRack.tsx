@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { CHAOS, legalMoves } from '../engine/index.ts';
+import { CHAOS, chaosPlayable, legalMoves } from '../engine/index.ts';
 import type { Color, GameState, Move, VariantDefinition } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import { cardArt } from './cardArt.ts';
@@ -7,6 +7,7 @@ import { lastCardResult } from './cardResult.ts';
 import type { Viewer } from './cardResult.ts';
 import { CardResultBubble } from './CardResultBubble.tsx';
 import { playedChaos } from './cardsInPlay.ts';
+import { secondPickKind } from './cardPick.ts';
 import type { CardPick } from './cardPick.ts';
 import { useI18n } from './i18n.tsx';
 
@@ -14,9 +15,26 @@ import { useI18n } from './i18n.tsx';
 // bar to confirm or cancel a pick, and the last card results beside the players.
 
 /** The card moves of the side that may play one now (none for everyone else). */
-export function useCardMoves(variant: VariantDefinition, game: GameState | null, active: Color | null): Move[] {
+/**
+ * The cards `active` may play now. Its chaos card (`chaos`, where known here) only when it could
+ * both hit and backfire: else it waits, greyed out.
+ */
+export function useCardMoves(
+  variant: VariantDefinition,
+  game: GameState | null,
+  active: Color | null,
+  chaos: string | null = null,
+): Move[] {
   const pos = game?.position;
-  return useMemo(() => (active && pos ? legalMoves(variant, pos).filter((m) => m.card) : []), [variant, pos, active]);
+  return useMemo(
+    () =>
+      active && pos
+        ? legalMoves(variant, pos).filter(
+            (m) => m.card && (m.card.id !== CHAOS || !chaos || chaosPlayable(variant, pos, chaos)),
+          )
+        : [],
+    [variant, pos, active, chaos],
+  );
 }
 
 interface RackProps {
@@ -113,7 +131,15 @@ export function CardPickBar({ cardMoves, pick, onPick, onChaos, className = '' }
     ? t('card.chaosConfirm')
     : untargeted
       ? t('card.trickConfirm')
-      : t(pick.picked.length ? 'card.pickSecond' : 'card.pickTarget');
+      : pick.picked.length
+        ? t(
+            secondPickKind(pick.id) === 'home'
+              ? 'card.pickHome'
+              : secondPickKind(pick.id) === 'end'
+                ? 'card.pickEnd'
+                : 'card.pickSecond',
+          )
+        : t('card.pickTarget');
   return (
     <div className={`card-pickbar ${chaos ? 'chaos' : 'trick'} ${className}`} role="status">
       {!chaos && <span className="rack-art" dangerouslySetInnerHTML={{ __html: cardArt(pick.id) ?? '' }} />}

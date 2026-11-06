@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseSquare as sq, squareName } from '../src/engine/board.ts';
 import { FastBoard, moveFrom, moveTo } from '../src/engine/fast/board.ts';
-import { createGame, drawChaos, makeMove, playSan, setupStartPosition } from '../src/engine/game.ts';
+import { chaosPlayable, createGame, drawChaos, makeMove, playSan, setupStartPosition } from '../src/engine/game.ts';
 import { isInCheck, legalMoves, legalMovesFrom } from '../src/engine/legality.ts';
 import { moveToSan, parseFen, toFen } from '../src/engine/notation.ts';
 import { cardMove } from '../src/engine/types.ts';
@@ -20,7 +20,7 @@ const targets = (state: GameState, from: string) =>
 describe('Anarşi: kurulum ve FEN', () => {
   it('seçilen numaralar başlangıç konumuna yazılır, FEN gidiş-dönüş', () => {
     const start = setupStartPosition(v, { w: 'wall', b: 'pawn' });
-    expect(start.endsWith(' wall.pawn.0000')).toBe(true);
+    expect(start.endsWith(' wall.pawn.0000.2')).toBe(true);
     const g = createGame(v, start);
     expect(toFen(v, g.position)).toBe(start);
     // İlk hamlede kaos kartı yok; numara var.
@@ -404,5 +404,120 @@ describe('Anarşi: Ateşkes ve Mayın', () => {
     g = playSan(v, g, 'Nb1');
     expect(lastCardResult(v, g, 'b')).toMatchObject({ id: 'mine', blast: true, color: 'b' });
     expect([...secretMoves(v, g, 'b')]).toEqual([]);
+  });
+});
+
+describe('Anarşi: 2026-11 kuralları (FEN başı ".2")', () => {
+  const sqs = (m: Move) => m.card!.squares.map(squareName).join('-');
+  const ids = (g: GameState, id: string) =>
+    cards(g)
+      .filter((m) => m.card!.id === id)
+      .map(sqs);
+  const extra = (g: GameState) =>
+    g.position.extra as unknown as { fx: { k: string; c: string; exp: number; sq: number[] }[] };
+
+  it('Sürgün: dönüş karesini oyuncu seçer, taş 2 tur donuk kalır; eski kayıtlar eski kuralla', () => {
+    let g = createGame(v, fen('4k3/7p/2n5/8/8/8/7P/4K3', 'w', 'exile.-.0000.2'));
+    expect(ids(g, 'exile').sort()).toEqual(['c6-b8', 'c6-g8']);
+    g = playSan(v, g, 'SG@c6-g8');
+    expect(g.position.board[sq('g8')]).toEqual({ type: 'n', color: 'b' });
+    expect(targets(g, 'g8')).toEqual([]);
+    g = playSan(v, g, 'Kd8', 'Kd1');
+    expect(targets(g, 'g8')).toEqual([]);
+    g = playSan(v, g, 'Kc8', 'Kc1');
+    expect(targets(g, 'g8').length).toBeGreaterThan(0);
+    // Before the new rules: one square, the nearer home, nothing frozen.
+    const old = createGame(v, fen('4k3/7p/2n5/8/8/8/7P/4K3', 'w', 'exile.-.0000'));
+    expect(ids(old, 'exile')).toEqual(['c6']);
+    const sent = playSan(v, old, 'SG@c6');
+    expect(sent.position.board[sq('b8')]).toEqual({ type: 'n', color: 'b' });
+    expect(targets(sent, 'b8').length).toBeGreaterThan(0);
+  });
+
+  it('Kalkan: 3 tur, taşla gider; yiyince ya da kendisi şah çekince düşer, açarak şahta kalır', () => {
+    let g = createGame(v, fen('4k3/p7/8/8/4R3/8/4Q3/K7', 'w', 'shield.-.0000.2'));
+    g = playSan(v, g, 'KL@e4');
+    expect(extra(g).fx[0]).toMatchObject({ k: 'shield', exp: 18 + 6 });
+    // Ra4 uncovers the queen's check: the shield goes along to a4.
+    g = playSan(v, g, 'Kf8', 'Ra4');
+    expect(extra(g).fx.find((e) => e.k === 'shield')?.sq).toEqual([sq('a4')]);
+    g = playSan(v, g, 'Kg8', 'Rxa7');
+    expect(extra(g).fx.some((e) => e.k === 'shield')).toBe(false);
+
+    let c = createGame(v, fen('4k3/8/8/8/3R4/8/8/K7', 'w', 'shield.-.0000.2'));
+    c = playSan(v, c, 'KL@d4', 'Kf7', 'Rd7+');
+    expect(extra(c).fx.some((e) => e.k === 'shield')).toBe(false);
+  });
+
+  it('Barikat: 5 tur, alt alta da kurulur; eski kuralda yalnız yan yana', () => {
+    const g = createGame(v, fen('4k3/7p/8/8/8/8/7P/K7', 'w', 'wall.-.0000.2'));
+    expect(ids(g, 'wall')).toContain('e3-e4-e5');
+    expect(ids(g, 'wall')).toContain('d4-e4-f4');
+    const after = playSan(v, g, 'BR@e3-e4-e5');
+    expect(extra(after).fx[0]).toMatchObject({ k: 'wall', exp: 18 + 10 });
+    const old = createGame(v, fen('4k3/7p/8/8/8/8/7P/K7', 'w', 'wall.-.0000'));
+    expect(ids(old, 'wall')).not.toContain('e3-e4-e5');
+  });
+
+  it('Işınlanma: piyon da gider, ama ilk sırasına ve terfiye iki adım yakına değil', () => {
+    const g = createGame(v, fen('4k3/1N6/8/8/3P4/2N5/8/1R2K3', 'w', 'swap.-.0000.2'));
+    const m = ids(g, 'swap');
+    expect(m).toContain('c3-d4');
+    expect(m).not.toContain('b1-d4');
+    expect(m).not.toContain('d4-b7');
+    const old = createGame(v, fen('4k3/1N6/8/8/3P4/2N5/8/1R2K3', 'w', 'swap.-.0000'));
+    expect(ids(old, 'swap')).not.toContain('c3-d4');
+  });
+
+  it('Ateşkes: 5 hamle; şah çeken taş alınır, öteki alınmaz', () => {
+    const g = playSan(v, createGame(v, fen('4k3/7p/8/8/8/8/7P/K7', 'w', 'truce.-.0000.2')), 'AK');
+    expect(extra(g).fx[0]).toMatchObject({ k: 'truce', exp: 18 + 11 });
+    const t = createGame(v, fen('4k3/p7/8/8/8/8/R2q4/4K3', 'w', 'truce.-.1000.2;truce.w.40.'));
+    expect(targets(t, 'a2')).toContain('d2');
+    expect(targets(t, 'a2')).not.toContain('a7');
+    expect(targets(t, 'e1')).toContain('d2');
+    // The bot's board agrees.
+    const fast = new FastBoard(v).load(t.position).legalMoves();
+    expect(fast.map((m) => squareName(moveFrom(m)) + squareName(moveTo(m)))).toContain('a2d2');
+    const old = createGame(v, fen('4k3/p7/8/8/8/8/R2q4/4K3', 'w', 'truce.-.1000;truce.w.40.'));
+    expect(targets(old, 'a2')).not.toContain('d2');
+  });
+
+  it('Ateşkes sayacı 5, 5, 4, 4, … 1, 1 iner; kalkan rok yapan kaleyle gider', () => {
+    let g = createGame(v, fen('4k3/7p/8/8/8/8/7P/K7', 'w', 'truce.-.0000.2'));
+    g = playSan(v, g, 'AK');
+    const labels: string[] = [];
+    const steps = ['Kd8', 'Kb1', 'Kc8', 'Kc1', 'Kb8', 'Kd1', 'Ka8', 'Ke1', 'Kb8', 'Kf1'];
+    for (const s of steps) {
+      labels.push(v.squareMarks!(g.position).find((m) => m.kind === 'truce')!.label);
+      g = playSan(v, g, s);
+    }
+    expect(labels).toEqual(['5', '5', '4', '4', '3', '3', '2', '2', '1', '1']);
+    expect(v.squareMarks!(g.position).some((m) => m.kind === 'truce')).toBe(false);
+
+    let c = createGame(v, fen('4k3/7p/8/8/8/8/7P/4K2R', 'w', 'shield.-.0000.2', 10).replace(' - - ', ' K - '));
+    c = playSan(v, c, 'KL@h1', 'Kd8', 'O-O');
+    expect(extra(c).fx.find((e) => e.k === 'shield')?.sq).toEqual([sq('f1')]);
+
+    // Buz on the corner rook keeps the castling right, but a frozen rook does not castle.
+    let i = createGame(v, fen('4k3/7p/8/8/8/8/7P/4K2R', 'b', '-.ice.0000.2', 10).replace(' - - ', ' K - '));
+    i = playSan(v, i, 'BZ@h1');
+    expect(i.position.castling.wK).toBe(true);
+    expect(targets(i, 'e1')).not.toContain('g1');
+  });
+
+  it('gizli mayın (karesiz gelen) oyuna olduğu gibi girer', () => {
+    const g = createGame(v, fen('4k3/7p/8/8/8/8/7P/K7', 'w', 'mine.-.0000.2'));
+    const next = makeMove(v, g, cardMove({ id: 'mine', squares: [] }));
+    expect(extra(next).fx[0]).toMatchObject({ k: 'mine', sq: [] });
+    expect(() => makeMove(v, next, cardMove({ id: 'mine', squares: [] }))).toThrow();
+  });
+
+  it('kaos kartı, geri tepmede vuracak bir şey yoksa oynanamaz', () => {
+    const none = parseFen(v, fen('4k3/8/2n5/8/8/8/8/4K3', 'w', 'void.-.0000.2'));
+    expect(chaosPlayable(v, none, 'ambush')).toBe(false);
+    expect(chaosPlayable(v, none, 'time')).toBe(true);
+    const both = parseFen(v, fen('4k3/8/2n5/8/8/2N5/8/4K3', 'w', 'void.-.0000.2'));
+    expect(chaosPlayable(v, both, 'ambush')).toBe(true);
   });
 });

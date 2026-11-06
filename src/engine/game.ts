@@ -103,10 +103,26 @@ export function playable(v: VariantDefinition, pos: Position, move: Move, random
   return move.card?.id === CHAOS && !move.card.kind ? drawChaos(v, pos, dealChaos(v, random), random) : move;
 }
 
-/** Deals a chaos card: one of the variant's kinds, at random. */
-export function dealChaos(v: VariantDefinition, random: () => number): string {
-  const kinds = v.cards!.chaosKinds;
+/** Deals a chaos card: one of the variant's kinds (less `without`, e.g. a time card in an untimed game), at random. */
+export function dealChaos(v: VariantDefinition, random: () => number, without: readonly string[] = []): string {
+  const all = v.cards!.chaosKinds;
+  const kinds = all.filter((k) => !without.includes(k));
+  if (!kinds.length) return all[0];
   return kinds[Math.min(kinds.length - 1, Math.floor(random() * kinds.length))];
+}
+
+/** The chaos card that changes the clocks (Anarşi's Zaman Hırsızı): not dealt in an untimed game. */
+export const TIME_CHAOS = 'time';
+
+/**
+ * May the side to move play its chaos card `kind` now? Only when both its hit and its backfire
+ * would act on something: a card that cannot backfire would be a free roll. A card acting on the
+ * clocks always can.
+ */
+export function chaosPlayable(v: VariantDefinition, pos: Position, kind: string): boolean {
+  if (!v.cards || kind === TIME_CHAOS) return true;
+  const ways = v.cards.resolveChaos(pos, kind);
+  return ways['+'].some((m) => m.card!.squares.length > 0) && ways['-'].some((m) => m.card!.squares.length > 0);
 }
 
 /** Is `move` one of the ways the chaos card it names can turn out in `pos`? */
@@ -120,7 +136,7 @@ function isChaosResolution(v: VariantDefinition, pos: Position, move: Move): boo
 export function makeMove(v: VariantDefinition, state: GameState, move: Move): GameState {
   if (state.result) throw new Error('Game is over');
   const legal = legalMoves(v, state.position);
-  let real = legal.find((m) => sameMove(m, move));
+  let real = legal.find((m) => sameMove(m, move)) ?? (v.cards?.hidden?.(state.position, move) ? move : undefined);
   if (!real) throw new Error('Illegal move');
   // A chaos card is played resolved (its card and outcome drawn by whoever runs the game).
   if (real.card?.id === CHAOS) {

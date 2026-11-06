@@ -6,6 +6,8 @@ export { isInCheck, isLegal, legalMoves, legalMovesFrom, perft, royalSquares } f
 export {
   CHAOS,
   createGame,
+  TIME_CHAOS,
+  chaosPlayable,
   dealChaos,
   drawChaos,
   playable,

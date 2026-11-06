@@ -2,8 +2,8 @@
 // time comes in with the actions that need it), so they can be unit-tested.
 
 import { createRng } from '../../ai/rng.ts';
-import { TIME_CARD_MS, addTime, flagged, isTimed, pressClock, stopClock, timeoutWinner } from '../../clock/clock.ts';
-import { CHAOS, drawChaos, getVariant, legalMoves, makeMove, opposite } from '../../engine/index.ts';
+import { flagged, halveTime, isTimed, pressClock, stopClock, timeoutWinner } from '../../clock/clock.ts';
+import { CHAOS, chaosPlayable, drawChaos, getVariant, legalMoves, makeMove, opposite } from '../../engine/index.ts';
 import type { Move } from '../../engine/index.ts';
 import { endSession, timelineFor } from './session.ts';
 import type { GameSession, Outcome, Premove, Run } from './session.ts';
@@ -43,6 +43,8 @@ function playMove(s: GameSession, move: Move, now: number): GameSession {
   const v = getVariant(s.settings.variantId);
   const pos = states[cursor].position;
   const mover = pos.turn;
+  // A chaos card that could not backfire is not played (the rack offers it only when it can).
+  if (move.card?.id === CHAOS && !move.card.kind && s.chaos && !chaosPlayable(v, pos, s.chaos[mover])) return s;
   const real =
     move.card?.id === CHAOS && !move.card.kind && s.chaos
       ? drawChaos(v, pos, s.chaos[mover], createRng((s.seed ^ Math.imul(cursor + 1, 0x9e3779b1)) >>> 0).next)
@@ -50,7 +52,7 @@ function playMove(s: GameSession, move: Move, now: number): GameSession {
   const next = makeMove(v, states[cursor], real);
   let clock = pressClock(s.clock, mover, now);
   const card = real.card;
-  if (card?.kind === 'time') clock = addTime(clock, card.outcome === '+' ? mover : opposite(mover), TIME_CARD_MS);
+  if (card?.kind === 'time') clock = halveTime(clock, card.outcome === '+' ? opposite(mover) : mover);
   if (next.result) clock = stopClock(clock, now);
   return {
     ...s,

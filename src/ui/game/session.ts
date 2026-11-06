@@ -5,7 +5,16 @@
 import { createClock, isTimed, stopClock, timeControl } from '../../clock/clock.ts';
 import type { ClockState } from '../../clock/clock.ts';
 import { randomGameId } from '../../online/record.ts';
-import { createGame, dealChaos, getVariant, opposite, playSan, setupStartPosition, toFen } from '../../engine/index.ts';
+import {
+  TIME_CHAOS,
+  createGame,
+  dealChaos,
+  getVariant,
+  opposite,
+  playSan,
+  setupStartPosition,
+  toFen,
+} from '../../engine/index.ts';
 import type { Color, GameEndReason, GameState, SetupQuestion, Square, VariantDefinition } from '../../engine/index.ts';
 import type { MessageKey, Translate } from '../../i18n/index.ts';
 import type { ResultCode } from '../../storage/games.ts';
@@ -118,7 +127,13 @@ export function newSession(
     clockAt: [clock],
     premove: null,
     run: 'play',
-    chaos: v.cards ? { w: dealChaos(v, random), b: dealChaos(v, random) } : null,
+    // No time card in a game without clocks: it would do nothing.
+    chaos: v.cards
+      ? {
+          w: dealChaos(v, random, isTimed(clock) ? [] : [TIME_CHAOS]),
+          b: dealChaos(v, random, isTimed(clock) ? [] : [TIME_CHAOS]),
+        }
+      : null,
   };
 }
 
