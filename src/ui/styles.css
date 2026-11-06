@@ -11121,41 +11121,29 @@ a:focus-visible {
   font-size: 12px;
 }
 
-/* Starting a game (src/ui/VariantPlayDialog.tsx, design "Önce Rakip"): the opponents in two
-   titled groups, then the options for that opponent, centred, and a padded footer. The dialog
-   keeps one size; the options share its height (the space goes between them), and get smaller
-   when there are more of them. Phones: the whole screen. */
-.modal.game-setup {
-  width: min(820px, 100%);
-  height: min(640px, calc(100dvh - 32px));
+/* Starting a game (src/ui/VariantPlayDialog.tsx, design "İki Sütun"): the opponents in a column
+   on the left, only that opponent's options on the right, all centred, a normal button at the
+   foot. One size whoever the opponent (it never jumps). Phones: stacked, the opponents a row. */
+.modal.play-setup {
+  display: grid;
+  grid-template-columns: 205px minmax(0, 1fr);
+  width: min(580px, 100%);
+  height: 360px;
   padding: 0;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
-}
-.setup-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 18px 2px;
-}
-.setup-head h2 {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  font: 400 26px/1 var(--marker);
-  color: var(--pink);
+  border-top: 3px solid var(--pink);
+  border-radius: 12px;
+  position: relative;
 }
 .setup-close {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   min-height: 0;
   padding: 0;
   border-radius: 50%;
   color: var(--muted);
 }
-.setup-label {
+.ps-label {
   font:
     700 10px/1.3 'Space Mono',
     monospace;
@@ -11163,213 +11151,249 @@ a:focus-visible {
   text-transform: uppercase;
   color: var(--muted);
 }
-.setup-opponents {
-  display: grid;
-  grid-template-columns: 2fr 3fr;
-  gap: 14px;
-  padding: 6px 18px 12px;
-  border-bottom: 1px solid var(--border);
-}
-.setup-opp-group {
+.ps-side {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  min-width: 0;
+  gap: 2px;
+  padding: 16px 8px;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
 }
-.setup-opp-row {
-  display: grid;
-  gap: 6px;
+.ps-side h2 {
+  margin: 0 10px 6px;
+  font: 400 24px/1 var(--marker);
+  color: var(--pink);
 }
-.setup-opp-group.n2 .setup-opp-row {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.ps-opp-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-.setup-opp-group.n3 .setup-opp-row {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.ps-opp-group .ps-label {
+  margin: 6px 9px 2px;
 }
-.setup-opp-row button {
+.ps-opp,
+.ps-opp:hover:not(:disabled) {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 8px;
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel-2);
-  font: 400 18px/1 var(--display);
-  letter-spacing: 0.04em;
-  white-space: nowrap;
+  gap: 10px;
+  min-height: 0;
+  padding: 6px 9px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: none;
+  color: var(--fg);
+  text-align: left;
 }
-.setup-opp-row svg {
+.ps-opp:hover:not(:disabled) {
+  background: var(--panel-2);
+}
+.ps-opp[aria-pressed='true'] {
+  border-color: var(--pink);
+  background: var(--panel-2);
+  color: var(--pink);
+}
+.ps-opp svg {
   width: 22px;
   height: 22px;
   flex: none;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.setup-opp-row button[aria-pressed='true'],
-.setup-opp-row button[aria-pressed='true']:hover:not(:disabled) {
-  border-color: var(--pink);
-  background: #2a1424;
-  color: var(--fg);
+.ps-opp > span {
+  min-width: 0;
 }
-.setup-opp-row button[aria-pressed='true'] svg {
-  color: var(--pink);
+.ps-opp b {
+  display: block;
+  font: 400 17px/1 var(--display);
+  letter-spacing: 0.05em;
 }
-.setup-main {
-  flex: 1;
-  min-height: 0;
+.ps-opp small {
+  display: block;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ps-main {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: space-evenly;
   gap: 10px;
-  padding: 16px 24px;
+  min-width: 0;
+  padding: 16px 18px 14px;
   overflow-y: auto;
 }
-.setup-group {
+.ps-main > .setup-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.ps-group {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  width: 100%;
+  text-align: center;
 }
-.setup-variants {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  width: min(600px, 100%);
-}
-.setup-variants button {
+.ps-variants {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 6px;
-  min-height: 0;
-  padding: 10px 4px 9px;
-  border-radius: 10px;
-  background: var(--panel-2);
 }
-.setup-variants svg {
-  width: 38px;
-  height: 38px;
+.ps-variants button,
+.ps-variants button:hover:not(:disabled) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 86px;
+  min-height: 0;
+  padding: 7px 2px 6px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--fg);
+}
+.ps-variants button:hover:not(:disabled) {
+  border-color: var(--border);
+}
+.ps-variants svg {
+  width: 24px;
+  height: 24px;
   fill: none;
   stroke: var(--pink);
   stroke-width: 2.6;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.setup-variants .lime svg {
+.ps-variants b {
+  font: 400 14px/1 var(--marker);
+}
+.ps-variants button[aria-pressed='true'] {
+  border-color: var(--lime);
+  background: #1c2210;
+}
+.ps-variants button[aria-pressed='true'] svg {
   stroke: var(--lime);
 }
-.setup-variants b {
-  font: 400 22px/1 var(--marker);
-  white-space: nowrap;
-}
-.setup-variants button[aria-pressed='true'],
-.setup-variants button[aria-pressed='true']:hover:not(:disabled) {
-  border-color: var(--pink);
-  background: #2a1424;
-  box-shadow: 0 0 0 1px var(--pink);
-  color: var(--fg);
-}
-.setup-variants .lime[aria-pressed='true'],
-.setup-variants .lime[aria-pressed='true']:hover:not(:disabled) {
-  border-color: var(--lime);
-  background: #1d2410;
-  box-shadow: 0 0 0 1px var(--lime);
-}
-.setup-chips {
+.ps-times,
+.ps-levels,
+.ps-colors {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
 }
-.setup-chips button {
-  min-height: 40px;
-  padding: 0 15px;
-  border-radius: 999px;
-  font: 400 19px/1 var(--display);
+.ps-times button,
+.ps-times button:hover:not(:disabled) {
+  min-height: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--panel-2);
+  color: var(--fg);
+  font: 400 15px/1 var(--display);
   letter-spacing: 0.04em;
 }
-.setup-chips button[aria-pressed='true'],
-.setup-chips button[aria-pressed='true']:hover:not(:disabled) {
-  background: var(--pink);
+.ps-times button:hover:not(:disabled) {
   border-color: var(--pink);
+}
+.ps-times button[aria-pressed='true'] {
+  border-color: var(--pink);
+  background: var(--pink);
   color: var(--on-pink);
 }
-.setup-levels {
-  display: flex;
-  gap: 6px;
-  width: 300px;
-  max-width: 100%;
-}
-.setup-levels button {
-  flex: 1;
-  min-height: 42px;
+.ps-levels button,
+.ps-levels button:hover:not(:disabled) {
+  width: 30px;
+  height: 34px;
+  min-height: 0;
   padding: 0;
   border-radius: 8px;
-  font: 400 22px/1 var(--display);
+  background: var(--panel-2);
+  color: var(--fg);
+  font: 400 18px/1 var(--display);
 }
-.setup-levels button[aria-pressed='true'],
-.setup-levels button[aria-pressed='true']:hover:not(:disabled) {
-  background: var(--lime);
+.ps-levels button[aria-pressed='true'] {
   border-color: var(--lime);
+  background: var(--lime);
   color: #0a0a0b;
 }
-.setup-note {
-  margin: 0;
-  font-size: 12px;
-  color: var(--muted);
-}
-/* The computer has the most options: a little smaller. Two people the fewest: bigger. */
-.setup-main.dense .setup-variants svg {
-  width: 28px;
-  height: 28px;
-}
-.setup-main.dense .setup-variants b {
-  font-size: 19px;
-}
-.setup-main.dense .setup-variants button {
-  padding: 7px 4px 6px;
-  gap: 3px;
-}
-.setup-main.dense .setup-chips button {
-  min-height: 34px;
-}
-.setup-main.dense .setup-levels button {
-  min-height: 38px;
-}
-.setup-main.roomy .setup-variants {
-  width: min(660px, 100%);
-  gap: 10px;
-}
-.setup-main.roomy .setup-variants button {
-  padding: 14px 6px 12px;
-  gap: 8px;
-}
-.setup-main.roomy .setup-variants svg {
-  width: 46px;
-  height: 46px;
-}
-.setup-main.roomy .setup-variants b {
-  font-size: 26px;
-}
-.setup-main.roomy .setup-chips button {
-  min-height: 46px;
-  padding: 0 18px;
-  font-size: 21px;
-}
-.setup-foot {
+.ps-colorrow {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 28px;
+}
+.ps-colors {
+  gap: 10px;
+}
+.ps-colorrow .setup-toggle {
+  min-height: 36px;
+}
+.ps-swatch,
+.ps-swatch:hover:not(:disabled) {
+  width: 36px;
+  height: 36px;
+  min-height: 0;
+  padding: 0;
+  border: 2px solid #3a3a42;
+  border-radius: 50%;
+}
+.ps-swatch.w {
+  background: #f1eee8;
+}
+.ps-swatch.b {
+  background: #141016;
+}
+.ps-swatch.random {
+  background: linear-gradient(90deg, #f1eee8 50%, #141016 50%);
+}
+.ps-swatch[aria-pressed='true'] {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px #ff2e9366;
+}
+.ps-pair {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
   gap: 18px;
-  padding: 14px 24px 20px;
-  border-top: 1px solid var(--border);
+}
+.ps-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.ps-main .error {
+  margin: 0;
+  text-align: center;
+}
+.ps-foot {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+}
+.ps-go,
+.ps-go:hover:not(:disabled) {
+  min-height: 0;
+  padding: 9px 34px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--pink);
+  color: var(--on-pink);
+  font: 400 22px/1 var(--marker);
+  text-transform: uppercase;
+}
+.ps-go:hover:not(:disabled) {
+  filter: brightness(1.08);
 }
 .setup-toggle {
   display: inline-flex;
@@ -11409,105 +11433,53 @@ a:focus-visible {
   transform: translateX(18px);
   background: #0a0a0b;
 }
-.setup-go,
-.setup-go:hover:not(:disabled) {
-  min-width: 300px;
-  min-height: 58px;
-  padding: 6px 28px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--pink);
-  color: var(--on-pink);
-  font: 400 26px/1.1 var(--marker);
-  text-transform: uppercase;
-}
-.setup-go:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-.setup-go small {
-  display: block;
-  font:
-    700 10px/1.4 'Space Mono',
-    monospace;
-  letter-spacing: 0.04em;
-  text-transform: none;
-  opacity: 0.8;
-}
 .setup-waiting {
   display: flex;
   align-items: center;
   gap: 12px;
   color: var(--muted);
 }
-@media (max-width: 760px) {
-  .modal-backdrop.screen:has(.game-setup) {
-    padding: 0;
-  }
-  /* The whole screen, whatever the backdrop's padding. */
-  .modal.game-setup {
-    position: fixed;
-    inset: 0;
-    width: auto;
+@media (max-width: 620px) {
+  .modal.play-setup {
+    grid-template-columns: minmax(0, 1fr);
     height: auto;
-    border-radius: 0;
-    border-left: 0;
-    border-right: 0;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
   }
-  .setup-opponents {
-    grid-template-columns: 1fr;
+  .ps-side {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 6px;
-    padding: 4px 12px 10px;
+    padding: 14px 52px 10px 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
   }
-  .setup-opp-row button {
-    min-height: 40px;
-    gap: 5px;
-    padding: 0 4px;
-    font-size: 15px;
+  .ps-side h2 {
+    flex: 1 0 100%;
+    margin: 0 0 4px;
   }
-  .setup-opp-row svg {
+  .ps-opp-group {
+    display: contents;
+  }
+  .ps-opp-group .ps-label,
+  .ps-opp small {
+    display: none;
+  }
+  .ps-opp,
+  .ps-opp:hover:not(:disabled) {
+    gap: 6px;
+    padding: 6px 10px;
+    border-color: var(--border);
+  }
+  .ps-opp svg {
     width: 18px;
     height: 18px;
   }
-  .setup-main {
-    padding: 10px 12px;
-  }
-  .setup-variants {
-    gap: 5px;
-  }
-  .setup-variants button {
-    padding: 7px 2px 6px;
-  }
-  .setup-variants svg,
-  .setup-main.roomy .setup-variants svg {
-    width: 28px;
-    height: 28px;
-  }
-  .setup-variants b,
-  .setup-main.roomy .setup-variants b {
-    font-size: 14px;
-  }
-  .setup-main.dense .setup-variants svg {
-    width: 22px;
-    height: 22px;
-  }
-  .setup-main.dense .setup-variants b {
-    font-size: 13px;
-  }
-  .setup-chips button,
-  .setup-main.roomy .setup-chips button {
-    min-height: 38px;
-    padding: 0 12px;
-    font-size: 17px;
-  }
-  .setup-foot {
-    flex-direction: column;
-    gap: 10px;
-    padding: 10px 16px 16px;
-  }
-  .setup-go,
-  .setup-go:hover:not(:disabled) {
-    min-width: 0;
-    width: 100%;
+  /* The close button at the dialog's corner, over the opponents. */
+  .ps-main {
+    position: static;
+    overflow: visible;
   }
 }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TIME_CONTROLS } from '../clock/clock.ts';
-import { getVariant, listVariants } from '../engine/index.ts';
+import { listVariants } from '../engine/index.ts';
 import type { Color, VariantDefinition } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import { useAccount } from './account.ts';
@@ -38,10 +38,11 @@ const GO: Readonly<Record<Opponent, MessageKey>> = {
 };
 
 /**
- * Starting a game (a variant card on the home page), design "Önce Rakip": who you play first —
- * online (a random opponent or a friend) or on this device (the computer, bot against bot, two
- * people) — then only the options that opponent needs: the variant, the time, your colour, the
- * computer's level, rated or not. The dialog keeps one size; the options share its height.
+ * Starting a game (a variant card on the home page), design "İki Sütun": who you play on the
+ * left — online (a random opponent or a friend) or on this device (the computer, bot against bot,
+ * two people) — and on the right only the options that opponent needs: the variant (its emblem),
+ * the time, your colour (the colour itself), the computer's level, rated or not. One size
+ * whoever the opponent; phones stack it.
  */
 export function VariantPlayDialog({
   variant,
@@ -113,9 +114,9 @@ export function VariantPlayDialog({
   const timeLabel = (id: string) =>
     id === 'none' ? t('time.none') : (TIME_CONTROLS.find((tc) => tc.id === id)?.label ?? id);
   const levels = (value: number, set: (n: number) => void, label: string) => (
-    <div className="setup-group">
-      <span className="setup-label">{label}</span>
-      <div className="setup-levels">
+    <div className="ps-group">
+      <span className="ps-label">{label}</span>
+      <div className="ps-levels">
         {[1, 2, 3, 4, 5].map((n) => (
           <button key={n} type="button" aria-pressed={value === n} onClick={() => set(n)}>
             {n}
@@ -124,66 +125,90 @@ export function VariantPlayDialog({
       </div>
     </div>
   );
-  const chips = <T extends string>(items: readonly T[], value: T, set: (v: T) => void, label: (v: T) => string) => (
-    <div className="setup-chips">
-      {items.map((v) => (
-        <button key={v} type="button" aria-pressed={value === v} onClick={() => set(v)}>
-          {label(v)}
-        </button>
-      ))}
+  // Your colour as the colour itself: white, half and half (random), black.
+  const colors = (
+    <div className="ps-group">
+      <span className="ps-label">{t('online.color')}</span>
+      <div className="ps-colorrow">
+        <div className="ps-colors">
+          {(['w', 'random', 'b'] as const).map((c) => (
+            <button
+              key={c}
+              type="button"
+              className={`ps-swatch ${c}`}
+              aria-pressed={color === c}
+              aria-label={colorLabel(c)}
+              title={colorLabel(c)}
+              onClick={() => setColor(c)}
+            />
+          ))}
+        </div>
+        {online && account.user && (
+          <button type="button" className="setup-toggle" aria-pressed={rated} onClick={() => setRated(!rated)}>
+            <i aria-hidden="true" />
+            {t(rated ? 'lobby.rated' : 'lobby.casual')}
+          </button>
+        )}
+      </div>
     </div>
   );
-  const summary = [
-    vt(getVariant(variantId)).name,
-    opponent === 'bot'
-      ? t('setup.levelShort', { n: String(botLevel) })
-      : opponent === 'botvbot'
-        ? `${whiteLevel} vs ${blackLevel}`
-        : timeLabel(timeControlId),
-    online ? t(isRated ? 'lobby.rated' : 'lobby.casual') : '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
-  // How much room the options get: the computer has the most of them, two people the fewest.
-  const density = opponent === 'bot' ? 'dense' : opponent === 'hotseat' ? 'roomy' : 'airy';
+  const time = (
+    <div className="ps-group">
+      <span className="ps-label">{t('newGame.time')}</span>
+      <div className="ps-times">
+        {TIME_CONTROLS.map((tc) => (
+          <button
+            key={tc.id}
+            type="button"
+            aria-pressed={timeControlId === tc.id}
+            onClick={() => setTimeControlId(tc.id)}
+          >
+            {timeLabel(tc.id)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <Modal label={t('setup.title')} onClose={onClose} className="game-setup">
-      <div className="setup-head">
+    <Modal label={t('setup.title')} onClose={onClose} className="play-setup">
+      {/* Design "İki Sütun": who you play on the left, only that opponent's options on the right,
+          everything centred; one size whoever the opponent. */}
+      <aside className="ps-side">
         <h2>{t('setup.title')}</h2>
+        {GROUPS.map(([label, list]) => (
+          <div key={label} className="ps-opp-group">
+            <span className="ps-label">{t(label)}</span>
+            {list.map((o) => (
+              <button
+                key={o}
+                type="button"
+                className="ps-opp"
+                aria-label={t(`setup.opp.${o}` as MessageKey)}
+                aria-pressed={opponent === o}
+                onClick={() => setOpponent(o)}
+              >
+                <svg viewBox="0 0 30 30" aria-hidden="true">
+                  <path d={OPPONENT_ICONS[o]} />
+                </svg>
+                <span>
+                  <b>{t(`setup.opp.${o}` as MessageKey)}</b>
+                  <small>{t(`setup.desc.${o}` as MessageKey)}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </aside>
+      <div className="ps-main">
         <button type="button" className="setup-close" onClick={onClose} aria-label={t('war.alert.close')}>
           ✕
         </button>
-      </div>
-      <div className="setup-opponents">
-        {GROUPS.map(([label, list]) => (
-          <div key={label} className={`setup-opp-group n${list.length}`}>
-            <span className="setup-label">{t(label)}</span>
-            <div className="setup-opp-row">
-              {list.map((o) => (
-                <button key={o} type="button" aria-pressed={opponent === o} onClick={() => setOpponent(o)}>
-                  <svg viewBox="0 0 30 30" aria-hidden="true">
-                    <path d={OPPONENT_ICONS[o]} />
-                  </svg>
-                  {t(`setup.opp.${o}` as MessageKey)}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className={`setup-main ${density}`}>
-        <div className="setup-group">
-          <span className="setup-label">{t('newGame.variant')}</span>
-          <div className="setup-variants">
-            {listVariants().map((v, i) => (
-              <button
-                key={v.id}
-                type="button"
-                className={i % 2 ? 'lime' : ''}
-                aria-pressed={variantId === v.id}
-                onClick={() => setVariantId(v.id)}
-              >
+        <div className="ps-group">
+          <span className="ps-label">{t('newGame.variant')}</span>
+          <div className="ps-variants">
+            {listVariants().map((v) => (
+              <button key={v.id} type="button" aria-pressed={variantId === v.id} onClick={() => setVariantId(v.id)}>
                 {v.emblem && (
                   <svg viewBox="0 0 48 48" aria-hidden="true" dangerouslySetInnerHTML={{ __html: v.emblem }} />
                 )}
@@ -192,55 +217,40 @@ export function VariantPlayDialog({
             ))}
           </div>
         </div>
-        {opponent === 'bot' && levels(botLevel, setBotLevel, t('setup.botLevel'))}
         {opponent === 'botvbot' && levels(whiteLevel, setWhiteLevel, t('setup.whiteBot'))}
         {opponent === 'botvbot' && levels(blackLevel, setBlackLevel, t('setup.blackBot'))}
-        {opponent !== 'botvbot' && (
-          <div className="setup-group">
-            <span className="setup-label">{t('newGame.time')}</span>
-            {chips(
-              TIME_CONTROLS.map((tc) => tc.id),
-              timeControlId,
-              setTimeControlId,
-              timeLabel,
-            )}
-          </div>
-        )}
-        {(online || opponent === 'bot') && (
-          <div className="setup-group">
-            <span className="setup-label">{t('online.color')}</span>
-            {chips(['w', 'random', 'b'] as const, color, setColor, colorLabel)}
-          </div>
-        )}
-        {opponent === 'hotseat' && <p className="setup-note">{t('setup.hotseatNote')}</p>}
-        {error && <p className="error">{t(error)}</p>}
-        {lobby.error && opponent === 'online' && <p className="error">{t(`lobby.error.${lobby.error}`)}</p>}
-      </div>
-      <div className="setup-foot">
-        {online && account.user && (
-          <button type="button" className="setup-toggle" aria-pressed={rated} onClick={() => setRated(!rated)}>
-            <i aria-hidden="true" />
-            {t(rated ? 'lobby.rated' : 'lobby.casual')}
-          </button>
-        )}
-        {opponent === 'online' && waiting ? (
-          <div className="setup-waiting">
-            <span>{t('lobby.searching')}</span>
-            <button type="button" onClick={lobby.cancel}>
-              {t('lobby.cancel')}
-            </button>
+        {opponent !== 'botvbot' && time}
+        {opponent === 'bot' ? (
+          // The computer's level and your colour share a row (the dialog keeps its height).
+          <div className="ps-pair">
+            {levels(botLevel, setBotLevel, t('setup.botLevel'))}
+            {colors}
           </div>
         ) : (
-          <button
-            type="button"
-            className="setup-go"
-            disabled={busy || (opponent === 'online' && lobby.status !== 'open')}
-            onClick={() => void go()}
-          >
-            {busy ? t('online.creating') : t(GO[opponent])}
-            <small>{summary}</small>
-          </button>
+          online && colors
         )}
+        {opponent === 'hotseat' && <p className="ps-note">{t('setup.hotseatNote')}</p>}
+        {error && <p className="error">{t(error)}</p>}
+        {lobby.error && opponent === 'online' && <p className="error">{t(`lobby.error.${lobby.error}`)}</p>}
+        <div className="ps-foot">
+          {opponent === 'online' && waiting ? (
+            <div className="setup-waiting">
+              <span>{t('lobby.searching')}</span>
+              <button type="button" onClick={lobby.cancel}>
+                {t('lobby.cancel')}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="ps-go"
+              disabled={busy || (opponent === 'online' && lobby.status !== 'open')}
+              onClick={() => void go()}
+            >
+              {busy ? t('online.creating') : t(GO[opponent])}
+            </button>
+          )}
+        </div>
       </div>
     </Modal>
   );

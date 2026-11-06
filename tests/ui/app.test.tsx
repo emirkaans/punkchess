@@ -89,7 +89,7 @@ function startGame(settings: Record<string, unknown>) {
   fireEvent.click(
     screen.getByRole('button', { name: { bot: 'Bilgisayar', botvbot: 'Bot vs Bot', hotseat: 'İki kişi' }[mode] }),
   );
-  fireEvent.click(document.querySelector('.setup-go') as HTMLElement);
+  fireEvent.click(document.querySelector('.ps-go') as HTMLElement);
 }
 
 const board = () => document.querySelector('.board-area .board') as HTMLElement;
@@ -534,7 +534,7 @@ describe('uygulama: dil', () => {
     // The Jester card opens its dialog; "Two players" there starts the game.
     fireEvent.click(document.querySelectorAll('.variant-card')[listVariants().findIndex((v) => v.id === 'jester')]);
     fireEvent.click(screen.getByRole('button', { name: 'Two players' }));
-    fireEvent.click(document.querySelector('.setup-go') as HTMLElement);
+    fireEvent.click(document.querySelector('.ps-go') as HTMLElement);
     expect(screen.getByRole('dialog', { name: 'White: which piece becomes the Jester?' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Right knight \(g1\)/ })).toBeTruthy();
   });
