@@ -11386,13 +11386,20 @@ a:focus-visible {
 }
 .ps-go,
 .ps-go:hover:not(:disabled) {
+  /* The button keeps its size (174×40); the label is smaller and bolder, with room around it. */
+  min-width: 174px;
+  height: 40px;
   min-height: 0;
-  padding: 9px 34px;
+  padding: 0 16px;
   border: 0;
   border-radius: 10px;
   background: var(--pink);
   color: var(--on-pink);
-  font: 400 22px/1 var(--marker);
+  font:
+    700 15px/1 'Oswald',
+    'Arial Narrow',
+    sans-serif;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .ps-go:hover:not(:disabled) {
