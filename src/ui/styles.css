@@ -12437,8 +12437,16 @@ a:focus-visible {
 .profile-vitrin {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
-  gap: 28px;
+  grid-template-rows: auto 1fr;
+  column-gap: 28px;
   align-items: start;
+}
+.profile-booth {
+  grid-area: 1 / 1;
+}
+.profile-main {
+  grid-column: 2;
+  grid-row: 1 / span 2;
 }
 .profile-booth {
   display: flex;
@@ -12464,10 +12472,13 @@ a:focus-visible {
   background: radial-gradient(ellipse, #ff2e9333 0%, transparent 70%);
 }
 .profile-booth-actions {
+  grid-area: 2 / 1;
   display: flex;
   gap: 8px;
   padding: 12px;
-  border-top: 1px solid var(--border);
+  background: #121014;
+  border: 1px solid var(--border);
+  border-top: none;
 }
 .profile-booth-actions .profile-tool {
   flex: 1 1 0;
@@ -12588,22 +12599,88 @@ a:focus-visible {
   background: var(--bg);
   color: var(--pink);
 }
+/* Phones: a narrow, tall booth on the left, the name, gang, follows and jacket beside it; the
+   buttons, rivals and ratings under both at full width. */
 @media (max-width: 760px) {
   .profile-vitrin {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
+    grid-template-columns: 132px minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      'booth title'
+      'booth jacket'
+      'act act'
+      'rivals rivals'
+      'ratings ratings';
+    gap: 14px;
+  }
+  .profile-main,
+  .profile-pair {
+    display: contents;
+  }
+  .profile-booth {
+    grid-area: booth;
+    align-self: stretch;
+    justify-content: flex-end;
+    border-top-width: 3px;
   }
   .profile-figure {
-    width: 180px;
+    width: 116px;
+    margin-top: 10px;
+  }
+  .profile-booth-floor {
+    height: 10px;
+    margin: -6px 14px 6px;
+  }
+  .profile-title {
+    grid-area: title;
+    gap: 7px;
   }
   .profile-name {
-    font-size: 44px;
+    font-size: 34px;
   }
-}
-@media (max-width: 520px) {
+  .profile-name-row .profile-tool.icon {
+    width: 36px;
+    min-height: 36px;
+  }
+  .profile-title .gang-badge {
+    font-size: 13px;
+  }
+  .profile-title p {
+    font-size: 12px;
+    line-height: 1.5;
+  }
   .profile-pair .jacket-thumb {
-    width: 96px;
-    height: 96px;
+    grid-area: jacket;
+    width: 100%;
+    max-width: 116px;
+    height: auto;
+    aspect-ratio: 1;
+    align-self: end;
+  }
+  .profile-booth-actions,
+  .profile-vitrin .profile-actions {
+    grid-area: act;
+  }
+  .profile-booth-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0;
+    background: none;
+    border: none;
+  }
+  .profile-booth-actions .profile-tool {
+    font-size: 13px;
+  }
+  .profile-vitrin .profile-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .profile-pair .rivals {
+    grid-area: rivals;
+  }
+  .profile-vitrin .rating-cards {
+    grid-area: ratings;
   }
 }
 

@@ -191,25 +191,25 @@ export function ProfilePage({ username, onOpen }: Props) {
             }}
           />
           <span className="profile-booth-floor" aria-hidden="true" />
-          {mine && (
-            <div className="profile-booth-actions">
-              <button className="profile-tool pink" onClick={() => onOpen('/character')}>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21v-4a6 6 0 0 1 12 0v4" />
-                  <path d="M19 3l2 2-6 6h-2V9z" />
-                </svg>
-                {t('character.edit')}
-              </button>
-              <button className="profile-tool lime" onClick={() => onOpen('/wardrobe')}>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 6a2 2 0 1 1 2-2M12 6v2L3 15h18l-9-7" />
-                  <path d="M5 15v5h14v-5" />
-                </svg>
-                {t('wardrobe.title')}
-              </button>
-            </div>
-          )}
         </aside>
+        {mine && (
+          <div className="profile-booth-actions">
+            <button className="profile-tool pink" onClick={() => onOpen('/character')}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21v-4a6 6 0 0 1 12 0v4" />
+                <path d="M19 3l2 2-6 6h-2V9z" />
+              </svg>
+              {t('character.edit')}
+            </button>
+            <button className="profile-tool lime" onClick={() => onOpen('/wardrobe')}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 6a2 2 0 1 1 2-2M12 6v2L3 15h18l-9-7" />
+                <path d="M5 15v5h14v-5" />
+              </svg>
+              {t('wardrobe.title')}
+            </button>
+          </div>
+        )}
         <div className="profile-main">
           <div className="profile-title">
             <div className="profile-name-row">
@@ -265,21 +265,21 @@ export function ProfilePage({ username, onOpen }: Props) {
                 }}
               />
             )}
-            {account.user && !mine && (
-              <div className="profile-actions">
-                <button className="primary challenge-button" onClick={() => setChallenging(profile.username)}>
-                  {t('challenge.button')}
-                </button>
-                <button className={`follow-button${profile.followed ? ' on' : ''}`} onClick={() => void toggleFollow()}>
-                  {profile.followed ? t('follow.unfollow') : t('follow.follow')}
-                </button>
-              </div>
-            )}
             <p className="muted">
               {t('profile.joined', { date: date(profile.createdAt) })} ·{' '}
               {t('profile.games', { n: String(profile.games) })}
             </p>
           </div>
+          {account.user && !mine && (
+            <div className="profile-actions">
+              <button className="primary challenge-button" onClick={() => setChallenging(profile.username)}>
+                {t('challenge.button')}
+              </button>
+              <button className={`follow-button${profile.followed ? ' on' : ''}`} onClick={() => void toggleFollow()}>
+                {profile.followed ? t('follow.unfollow') : t('follow.follow')}
+              </button>
+            </div>
+          )}
           <div className="profile-pair">
             <button
               className="jacket-thumb"
