@@ -3069,10 +3069,55 @@ button.primary:hover:not(:disabled) {
 
 /* Rule cards */
 .modal.rule-card {
-  width: min(600px, 100%);
+  width: min(680px, 100%);
+  max-height: calc(100svh - 32px);
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+.rule-card h2 {
+  margin: 0;
+}
+.rule-card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rule-card .rules {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.5;
+}
+.rule-card .rules li + li {
+  margin-top: 6px;
+}
+.rule-card .modal-actions {
+  margin: 0;
+}
+/* Short screens: smaller type, so the whole card fits more often without scrolling. */
+@media (max-height: 820px) {
+  .modal.rule-card {
+    gap: 8px;
+    padding: 12px 16px;
+  }
+  .rule-card .summary {
+    font-size: 0.95rem;
+  }
+  .rule-card .rules {
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+  .rule-card .rules li + li {
+    margin-top: 4px;
+  }
+}
+/* Every dialog on a blurred page fits the screen: what does not fit scrolls inside it. */
+.modal-backdrop.screen > .modal:not(.play-setup):not(.viewer-modal) {
+  max-height: calc(100svh - 32px);
+  overflow-y: auto;
 }
 .rule-card .summary {
   font-weight: 400;
@@ -5986,6 +6031,9 @@ button.primary:hover:not(:disabled) {
   .modal.new-game {
     max-height: calc(100svh - 16px);
     padding: 14px 14px 12px;
+  }
+  .modal-backdrop.screen > .modal:not(.play-setup):not(.viewer-modal) {
+    max-height: calc(100svh - 16px);
   }
   .choice-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

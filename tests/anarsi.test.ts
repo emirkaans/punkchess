@@ -506,6 +506,18 @@ describe('Anarşi: 2026-11 kuralları (FEN başı ".2")', () => {
     expect(targets(i, 'e1')).not.toContain('g1');
   });
 
+  it('Mayın: rok yapan kale mayının üstüne gelirse patlar (eski kuralda patlamazdı)', () => {
+    const castle = (head: string) => {
+      let g = createGame(v, fen('4k3/7p/8/8/8/8/7P/4K2R', 'b', head, 10).replace(' - - ', ' K - '));
+      g = playSan(v, g, 'MY@f1', 'O-O');
+      return g.position.board;
+    };
+    const now = castle('-.mine.0000.2');
+    expect(now[sq('f1')]).toBeNull();
+    expect(now[sq('g1')]).toEqual({ type: 'k', color: 'w' });
+    expect(castle('-.mine.0000')[sq('f1')]).toEqual({ type: 'r', color: 'w' });
+  });
+
   it('gizli mayın (karesiz gelen) oyuna olduğu gibi girer', () => {
     const g = createGame(v, fen('4k3/7p/8/8/8/8/7P/K7', 'w', 'mine.-.0000.2'));
     const next = makeMove(v, g, cardMove({ id: 'mine', squares: [] }));

@@ -50,51 +50,54 @@ export function RuleCardModal({ variant, onClose }: Props) {
         aria-label={t('rules.title', { title: rules.title })}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* The text scrolls when the screen is short; the title and the OK button stay in view. */}
         <h2>{rules.title}</h2>
-        <p className="summary">{rules.summary}</p>
-        <ul className="rules">
-          {rules.bullets.map((b) => (
-            <li key={b}>{b}</li>
-          ))}
-        </ul>
+        <div className="rule-card-body">
+          <p className="summary">{rules.summary}</p>
+          <ul className="rules">
+            {rules.bullets.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
 
-        {example && (
-          <figure className="example">
-            {trying ? (
-              <TryDiagram key={index} variant={variant} example={example} size={260} />
-            ) : (
-              <Diagram variant={variant} example={example} size={260} />
-            )}
-            <figcaption>
-              <span className="muted">{t('rules.example', { i: index + 1, n: examples.length })}</span>{' '}
-              {example.caption}
-            </figcaption>
-            <div className="example-controls">
-              <button type="button" onClick={() => go(-1)} aria-label={t('rules.previous')}>
-                ◀
-              </button>
-              {!trying && (
-                <button type="button" onClick={() => setPlaying((p) => !p)}>
-                  {playing ? t('rules.stop') : t('rules.play')}
-                </button>
+          {example && (
+            <figure className="example">
+              {trying ? (
+                <TryDiagram key={index} variant={variant} example={example} size={260} />
+              ) : (
+                <Diagram variant={variant} example={example} size={260} />
               )}
-              <button
-                type="button"
-                className={trying ? 'on' : ''}
-                aria-pressed={trying}
-                onClick={() => {
-                  setPlaying(false);
-                  setTrying((x) => !x);
-                }}
-              >
-                {trying ? t('rules.tryStop') : t('rules.try')}
-              </button>
-              <button type="button" onClick={() => go(1)} aria-label={t('rules.next')}>
-                ▶
-              </button>
-            </div>
-          </figure>
-        )}
+              <figcaption>
+                <span className="muted">{t('rules.example', { i: index + 1, n: examples.length })}</span>{' '}
+                {example.caption}
+              </figcaption>
+              <div className="example-controls">
+                <button type="button" onClick={() => go(-1)} aria-label={t('rules.previous')}>
+                  ◀
+                </button>
+                {!trying && (
+                  <button type="button" onClick={() => setPlaying((p) => !p)}>
+                    {playing ? t('rules.stop') : t('rules.play')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={trying ? 'on' : ''}
+                  aria-pressed={trying}
+                  onClick={() => {
+                    setPlaying(false);
+                    setTrying((x) => !x);
+                  }}
+                >
+                  {trying ? t('rules.tryStop') : t('rules.try')}
+                </button>
+                <button type="button" onClick={() => go(1)} aria-label={t('rules.next')}>
+                  ▶
+                </button>
+              </div>
+            </figure>
+          )}
+        </div>
 
         <label className="dont-show">
           <input

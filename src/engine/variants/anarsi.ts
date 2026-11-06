@@ -578,12 +578,15 @@ function afterApply(prev: Position, next: Position, move: Move): Position {
       moved = true;
       continue;
     }
-    if (e.k === 'mine' && !move.card && e.c !== prev.turn && e.sq[0] === move.to) {
+    // The square a piece of the mover lands on: the move's own, or (new rules) a castling rook's.
+    const stepped = e.sq[0] === move.to || (ex.r2 && castled !== null && e.sq[0] === castled[1]);
+    if (e.k === 'mine' && !move.card && e.c !== prev.turn && stepped) {
+      const at = e.sq[0];
       board ??= next.board.slice();
-      if (board[move.to]?.type !== 'k') {
-        const piece = board[move.to];
-        board[move.to] = null;
-        if (isInCheck(anarsi, { ...next, board }, prev.turn)) board[move.to] = piece;
+      if (board[at]?.type !== 'k') {
+        const piece = board[at];
+        board[at] = null;
+        if (isInCheck(anarsi, { ...next, board }, prev.turn)) board[at] = piece;
       }
       continue;
     }
