@@ -1,0 +1,26 @@
+Copyright (c) 2026 emirkaans (https://github.com/emirkaans). All rights reserved.
+
+This repository holds the source code, artwork, sounds, texts and other material of punkchess
+(https://punkchess.com). Unless a file or folder states otherwise, all of it is the property of the
+copyright holder.
+
+No licence is granted. You may view this repository on GitHub and fork it there, as GitHub's Terms
+of Service allow, but you may not copy, modify, distribute, sublicense, sell, host or run this
+software or any part of it, nor build another product or service from it, without prior written
+permission from the copyright holder.
+
+Third-party material
+--------------------
+Some files in this repository are the work of others and remain under their own licences, which
+this notice does not change:
+
+- public/stockfish/: the Stockfish chess engine, under the GNU General Public License v3
+  (see public/stockfish/Copying.txt).
+- public/fonts/: fonts under the SIL Open Font License 1.1 (see the LICENSE-*.txt and OFL.txt
+  files in that folder).
+- The puzzles and any other material credited on the site's licences page
+  (src/legal/licenses.en.html) are under the terms given there.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+
+For permission requests, contact the copyright holder through https://github.com/emirkaans.
