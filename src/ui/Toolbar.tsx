@@ -62,6 +62,7 @@ const ICONS = {
   puzzle: 'M4 8h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4H4z',
   board: 'M4 4h16v16H4zM4 12h16M12 4v16',
   crown: 'M3 18h18M4 16l-1-9 5 4 4-7 4 7 5-4-1 9z',
+  tv: 'M3 7h18v12H3zM8 3l4 4 4-4',
   gang: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 11a3 3 0 1 0 0-6M3 20c0-4 3-6 6-6s6 2 6 6M15 14c3 0 6 2 6 6',
 };
 
@@ -168,7 +169,15 @@ export function Toolbar({
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   // Phones list the groups in the ☰ menu (no dropdowns, no motion).
   const phoneMenu = typeof matchMedia === 'function' && matchMedia('(max-width: 760px)').matches;
-  const groups: readonly MenuGroup[] = [
+  const watch: MenuEntry = {
+    label: 'menu.tv',
+    desc: 'menu.desc.tv',
+    icon: ICONS.tv,
+    on: page === 'tv',
+    go: onTv,
+    href: '/tv',
+  };
+  const allGroups: readonly MenuGroup[] = [
     {
       id: 'play',
       label: 'menu.play',
@@ -210,7 +219,7 @@ export function Toolbar({
     {
       id: 'tv',
       label: 'menu.tv',
-      entries: [{ label: 'menu.tv', desc: 'menu.tv', icon: '', on: page === 'tv', go: onTv, href: '/tv' }],
+      entries: [watch],
     },
     {
       id: 'social',
@@ -284,6 +293,13 @@ export function Toolbar({
       ],
     },
   ];
+
+  // Phones: watching sits with the community pages, one more row with an icon like the others.
+  const groups = phoneMenu
+    ? allGroups
+        .filter((g) => g.id !== 'tv')
+        .map((g) => (g.id === 'social' ? { ...g, entries: [...g.entries, watch] } : g))
+    : allGroups;
 
   // On the home page the bar is see-through at the top, over the hero image; once the page scrolls it turns solid.
   const [overHero, setOverHero] = useState(page === 'home');

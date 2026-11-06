@@ -1068,15 +1068,32 @@ button.primary:hover:not(:disabled) {
   text-transform: uppercase;
   color: var(--muted);
 }
+/* Three to a row, then two: a short last row is centred. */
 @media (max-width: 900px) {
   .variant-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .variant-grid > .variant-card {
+    grid-column: span 2;
+  }
+  .variant-grid > .variant-card:nth-last-child(2):nth-child(3n + 1) {
+    grid-column: 2 / span 2;
+  }
+  .variant-grid > .variant-card:last-child:nth-child(3n + 1) {
+    grid-column: 3 / span 2;
   }
 }
 @media (max-width: 560px) {
   .variant-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
+  }
+  .variant-grid > .variant-card,
+  .variant-grid > .variant-card:nth-last-child(2):nth-child(3n + 1) {
+    grid-column: span 2;
+  }
+  .variant-grid > .variant-card:last-child:nth-child(odd) {
+    grid-column: 2 / span 2;
   }
   .variant-card {
     height: 150px;
@@ -3445,7 +3462,7 @@ button.primary:hover:not(:disabled) {
   gap: 10px;
 }
 .analysis-side.editing .palette {
-  grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+  grid-template-columns: repeat(var(--cols, 7), minmax(0, 46px));
   gap: 4px;
   padding: 6px;
 }
@@ -3541,7 +3558,8 @@ button.primary:hover:not(:disabled) {
 }
 .palette {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  grid-template-columns: repeat(var(--cols, 7), minmax(0, 52px));
+  justify-content: center;
   gap: 6px;
   padding: 10px;
   background: var(--panel);
@@ -3567,6 +3585,10 @@ button.primary:hover:not(:disabled) {
   border-color: var(--pink);
   background: rgba(255, 46, 147, 0.2);
   color: var(--pink);
+}
+.analysis-row.castling {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .analysis-hint {
   font-size: 12px;
@@ -5206,8 +5228,18 @@ button.primary:hover:not(:disabled) {
 }
 .quick-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 10px;
+}
+/* Three to a row; a last row of one or two is centred. */
+.quick-tile {
+  grid-column: span 2;
+}
+.quick-tile:nth-last-child(2):nth-child(3n + 1) {
+  grid-column: 2 / span 2;
+}
+.quick-tile:last-child:nth-child(3n + 1) {
+  grid-column: 3 / span 2;
 }
 .quick-tile {
   min-height: clamp(72px, 13vh, 112px);
@@ -6009,6 +6041,13 @@ button.primary:hover:not(:disabled) {
   }
   .online-lobby:has(.lobby-card) {
     gap: 10px;
+  }
+  /* Phones: the card grows with its content and the page scrolls, nothing scrolls inside. */
+  .online-lobby:has(.lobby-card) {
+    height: auto;
+  }
+  .lobby-card .lobby-scroll {
+    overflow: visible;
   }
 }
 
@@ -12176,6 +12215,11 @@ a:focus-visible {
     padding-bottom: 0;
     justify-content: flex-start;
   }
+  /* A tall screen (the address bar hidden, say): the board is already full width, so the height
+     left over is shared above and below instead of all lying under the controls. */
+  .layout.game-fit:has(.more-toggle):not(.more-open) {
+    justify-content: center;
+  }
   .layout.game-fit:has(.more-toggle) .board-wrap,
   .layout.game-fit:has(.more-toggle) .board-wrap.sized {
     --board: min(100vw, calc(100dvh - 258px));
@@ -13248,4 +13292,26 @@ a:focus-visible {
   font: 400 40px/1 var(--display);
   letter-spacing: 0.04em;
   color: var(--lime);
+}
+
+/* Touch screens: text links in lists get a finger-sized hit area (about 40px tall) without
+   moving anything: the space that separated them becomes padding on the links. */
+@media (pointer: coarse) {
+  .site-footer-col {
+    gap: 0;
+  }
+  .site-footer-col a,
+  .site-footer-bottom a {
+    display: inline-block;
+    padding: 10px 0;
+  }
+  .leader-list a,
+  .gang-list a {
+    display: block;
+    padding: 10px 0;
+  }
+  .gang-link {
+    display: inline-block;
+    padding: 10px 0;
+  }
 }

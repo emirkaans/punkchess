@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
+import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import { formatScore } from '../ai/analysis.ts';
 import {
   createGame,
@@ -352,7 +352,13 @@ export function AnalysisPage({
                 </select>
               </label>
 
-              <div className="palette" role="group" aria-label={t('analysisPage.pieces')}>
+              {/* Two rows: the move tool and the white pieces, then the eraser and the black pieces. */}
+              <div
+                className="palette"
+                role="group"
+                aria-label={t('analysisPage.pieces')}
+                style={{ '--cols': pieceTypes.length + 1 } as CSSProperties}
+              >
                 {toolButton(
                   'move',
                   tool.kind === 'move',
@@ -362,21 +368,25 @@ export function AnalysisPage({
                     <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
                   </svg>,
                 )}
-                {toolButton(
-                  'erase',
-                  tool.kind === 'erase',
-                  t('analysisPage.toolErase'),
-                  () => {
-                    setTool({ kind: 'erase' });
-                    setPickFrom(null);
-                  },
-                  <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M20 20H9L4 15a2 2 0 0 1 0-3l8-8a2 2 0 0 1 3 0l5 5a2 2 0 0 1 0 3l-8 8" />
-                    <path d="M8 9l7 7" />
-                  </svg>,
-                )}
-                {(['w', 'b'] as Color[]).flatMap((color) =>
-                  pieceTypes.map((type) => {
+                {(['w', 'b'] as Color[]).flatMap((color) => [
+                  ...(color === 'b'
+                    ? [
+                        toolButton(
+                          'erase',
+                          tool.kind === 'erase',
+                          t('analysisPage.toolErase'),
+                          () => {
+                            setTool({ kind: 'erase' });
+                            setPickFrom(null);
+                          },
+                          <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M20 20H9L4 15a2 2 0 0 1 0-3l8-8a2 2 0 0 1 3 0l5 5a2 2 0 0 1 0 3l-8 8" />
+                            <path d="M8 9l7 7" />
+                          </svg>,
+                        ),
+                      ]
+                    : []),
+                  ...pieceTypes.map((type) => {
                     const active = tool.kind === 'piece' && samePiece(tool.piece, { type, color });
                     return toolButton(
                       `${color}${type}`,
@@ -389,7 +399,7 @@ export function AnalysisPage({
                       <PieceView variant={variant} piece={{ type, color }} />,
                     );
                   }),
-                )}
+                ])}
               </div>
               <p className="muted analysis-hint">{t('analysisPage.hint')}</p>
 
@@ -408,7 +418,7 @@ export function AnalysisPage({
                 ))}
               </fieldset>
 
-              <fieldset className="analysis-row">
+              <fieldset className="analysis-row castling">
                 <legend>{t('analysisPage.castling')}</legend>
                 {(['wK', 'wQ', 'bK', 'bQ'] as CastleRight[]).map((right) => (
                   <label key={right} className={`chip${editPos.castling[right] ? ' on' : ''}`}>
