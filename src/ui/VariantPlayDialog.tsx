@@ -41,14 +41,14 @@ const GO: Readonly<Record<Opponent, MessageKey>> = {
 const BASE = { w: 580, h: 360 };
 
 /**
- * How much the dialog is scaled up on a large screen: its proportions kept, about 42% of the
- * window's width (and never more than 62% of its height), from its own size up to 1.6 times it.
+ * How much the dialog is scaled up on a large screen: its proportions kept, about 60% of the
+ * window's width (and never more than 75% of its height), from its own size up to twice it.
  * Phones and small windows: its own size (it stacks there).
  */
 export function dialogScale(width: number, height: number): number {
   if (width <= 620) return 1;
-  const fit = Math.min((width * 0.42) / BASE.w, ((height - 48) * 0.62) / BASE.h);
-  return Math.round(Math.min(1.6, Math.max(1, fit)) * 100) / 100;
+  const fit = Math.min((width * 0.6) / BASE.w, ((height - 48) * 0.75) / BASE.h);
+  return Math.round(Math.min(2, Math.max(1, fit)) * 100) / 100;
 }
 
 function useDialogScale(): number {

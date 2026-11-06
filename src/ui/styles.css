@@ -11453,18 +11453,22 @@ a:focus-visible {
     max-height: calc(100dvh - 24px);
     overflow-y: auto;
   }
+  /* The opponents as chips, centred under the centred title (the close button at the corner). */
   .ps-side {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 14px 52px 10px 14px;
+    padding: 14px 14px 12px;
     border-right: 0;
     border-bottom: 1px solid var(--border);
   }
   .ps-side h2 {
     flex: 1 0 100%;
-    margin: 0 0 4px;
+    margin: 0 0 6px;
+    padding: 0 40px;
+    text-align: center;
   }
   .ps-opp-group {
     display: contents;
