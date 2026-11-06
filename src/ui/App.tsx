@@ -165,6 +165,8 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
   }, []);
   /** Settings the new game dialog opens with (null: closed). */
   const [newGame, setNewGame] = useState<GameSettings | null>(null);
+  // The opponent the dialog opens on when it is not the saved mode (inviting a friend).
+  const [newOpponent, setNewOpponent] = useState<Opponent | null>(null);
   const [showRules, setShowRules] = useState(false);
   const [showCardGuide, setShowCardGuide] = useState(false);
   // Narrow screens: the page below the controls opens from a ⋯ button instead of scrolling.
@@ -287,6 +289,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
     setFlipped(next.players.w.kind === 'bot' && next.players.b.kind === 'human');
     setPromotion(null);
     setNewGame(null);
+    setNewOpponent(null);
     setPage('game');
     setTab('moves');
     window.scrollTo(0, 0);
@@ -892,6 +895,10 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
             onOpenGame={setOnlineId}
             onLobby={() => setOnlineId(null)}
             onPlayOffline={(mode) => openNewGame({ mode })}
+            onInviteFriend={() => {
+              setNewOpponent('friend');
+              openNewGame();
+            }}
             // Only a game still going on (a finished one is not "in progress").
             onResumeGame={session.key > 1 && !view.finalOutcome ? () => setPage('game') : null}
             prefs={prefs}
@@ -1251,13 +1258,18 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
       {newGame && (
         <PlayDialog
           initial={newGame}
+          opponent={newOpponent}
           onStart={(patch) => startGame({ ...newGame, ...patch })}
           onOpenGame={(id) => {
             setNewGame(null);
+            setNewOpponent(null);
             setOnlineId(id);
             setPage('online');
           }}
-          onClose={() => setNewGame(null)}
+          onClose={() => {
+            setNewGame(null);
+            setNewOpponent(null);
+          }}
         />
       )}
     </div>
@@ -1271,18 +1283,22 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
  */
 function PlayDialog({
   initial,
+  opponent: asked,
   onStart,
   onOpenGame,
   onClose,
 }: {
   initial: GameSettings;
+  /** The opponent to open on, else the saved mode's. */
+  opponent: Opponent | null;
   onStart: (patch: Partial<GameSettings>) => void;
   onOpenGame: (id: string) => void;
   onClose: () => void;
 }) {
   const lobby = useLobby((ticket) => onOpenGame(ticket.gameId));
   const opponent: Opponent =
-    initial.mode === 'bot' || initial.mode === 'botvbot' || initial.mode === 'hotseat' ? initial.mode : 'online';
+    asked ??
+    (initial.mode === 'bot' || initial.mode === 'botvbot' || initial.mode === 'hotseat' ? initial.mode : 'online');
   return (
     <VariantPlayDialog
       variant={getVariant(initial.variantId)}

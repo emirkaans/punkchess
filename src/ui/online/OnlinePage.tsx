@@ -65,6 +65,8 @@ interface Props {
   onLobby: () => void;
   /** A game on this device: against the computer, or two players on one screen. */
   onPlayOffline: (mode: Mode) => void;
+  /** Opens the game setup dialog on "a friend". */
+  onInviteFriend: () => void;
   /** Back to the game running on this device, or null when there is none. */
   onResumeGame: (() => void) | null;
   prefs: Prefs;
@@ -83,6 +85,7 @@ export function OnlinePage({ gameId, ...rest }: Props) {
       onOpenGame={rest.onOpenGame}
       defaultVariantId={rest.defaultVariantId}
       onPlayOffline={rest.onPlayOffline}
+      onInviteFriend={rest.onInviteFriend}
       onResumeGame={rest.onResumeGame}
     />
   );

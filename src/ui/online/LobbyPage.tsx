@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TIME_CONTROLS, timeControl } from '../../clock/clock.ts';
-import { getVariant, listVariants } from '../../engine/index.ts';
+import { getVariant } from '../../engine/index.ts';
 import type { Color } from '../../engine/index.ts';
 import { quickTimeControls } from '../../online/lobby.ts';
 import type { Seek } from '../../online/lobby.ts';
@@ -13,8 +13,9 @@ import { useAccount } from '../account.ts';
 import type { ChallengeRequest } from '../../online/challenge.ts';
 import { ProfileLink } from '../ProfileLink.tsx';
 import { FollowStrip } from '../FollowStrip.tsx';
+import { ColorPicker, TimePicker, VariantPicker } from '../PlayOptions.tsx';
 
-type Tab = 'quick' | 'seeks' | 'friend';
+type Tab = 'quick' | 'seeks';
 
 /** Lichess-style speed of a time control, from its estimated length (start + 40 increments). */
 function speedOf(timeControlId: string): 'bullet' | 'blitz' | 'rapid' | 'classical' {
@@ -40,11 +41,14 @@ export function LobbyPage({
   onOpenGame,
   defaultVariantId,
   onPlayOffline,
+  onInviteFriend,
   onResumeGame,
 }: {
   onOpenGame: (id: string) => void;
   defaultVariantId: string;
   onPlayOffline: (mode: Mode) => void;
+  /** Opens the game setup dialog on "a friend" (a game sent by link). */
+  onInviteFriend: () => void;
   onResumeGame: (() => void) | null;
 }) {
   const { t } = useI18n();
@@ -68,11 +72,19 @@ export function LobbyPage({
           ))}
         </div>
       </section>
+      <section className="offline-play invite-play" aria-labelledby="invite-title">
+        <h2 id="invite-title">{t('lobby.inviteTitle')}</h2>
+        <div className="offline-buttons">
+          <button className="primary" onClick={onInviteFriend}>
+            {t('lobby.invite')}
+          </button>
+        </div>
+      </section>
     </main>
   );
 }
 
-/** The lobby: quick pairing, open games, a game for a friend. On /online and the home page. */
+/** The lobby: quick pairing and open games (a game for a friend is in the game setup dialog). On /online and the home page. */
 export function LobbyCard({
   lobby,
   onOpenGame,
@@ -116,7 +128,7 @@ export function LobbyCard({
       </div>
 
       <div className="lobby-tabs" role="tablist">
-        {(['quick', 'seeks', 'friend'] as const).map((id) => (
+        {(['quick', 'seeks'] as const).map((id) => (
           <button
             key={id}
             role="tab"
@@ -134,7 +146,6 @@ export function LobbyCard({
 
       {tab === 'quick' && <QuickPairing mine={mine} lobby={lobby} />}
       {tab === 'seeks' && <SeekList mine={mine} lobby={lobby} defaultVariantId={defaultVariantId} />}
-      {tab === 'friend' && <FriendGame onOpenGame={onOpenGame} defaultVariantId={defaultVariantId} />}
     </section>
   );
 }
@@ -263,57 +274,20 @@ export function SeekList({
               setPosting(false);
             }}
           >
-            <fieldset className="choice-row choice-grid">
-              <legend>{t('newGame.variant')}</legend>
-              {listVariants().map((v) => (
-                <label key={v.id} className={`chip${variantId === v.id ? ' on' : ''}`}>
-                  <input
-                    type="radio"
-                    name="seek-variant"
-                    checked={variantId === v.id}
-                    onChange={() => {
-                      setVariantId(v.id);
-                      onVariant?.(v.id);
-                    }}
-                  />
-                  {vt(v).name}
-                </label>
-              ))}
-            </fieldset>
-            <fieldset className="choice-row choice-grid time">
-              <legend>{t('newGame.time')}</legend>
-              {TIME_CONTROLS.map((tc) => (
-                <label key={tc.id} className={`chip${timeControlId === tc.id ? ' on' : ''}`}>
-                  <input
-                    type="radio"
-                    name="seek-time"
-                    checked={timeControlId === tc.id}
-                    onChange={() => setTimeControlId(tc.id)}
-                  />
-                  {tc.initialMs === null ? t('time.none') : tc.label}
-                </label>
-              ))}
-            </fieldset>
-            <fieldset className="choice-row choice-grid colors">
-              <legend>{t('online.color')}</legend>
-              {(['w', 'random', 'b'] as const).map((c) => (
-                <label key={c} className={`chip${color === c ? ' on' : ''}`}>
-                  <input type="radio" name="seek-color" checked={color === c} onChange={() => setColor(c)} />
-                  {colorLabel(c)}
-                </label>
-              ))}
-            </fieldset>
-            {account.user && (
-              <fieldset className="choice-row choice-grid rated">
-                <legend>{t('lobby.kind')}</legend>
-                {([true, false] as const).map((r) => (
-                  <label key={String(r)} className={`chip${rated === r ? ' on' : ''}`}>
-                    <input type="radio" name="seek-rated" checked={rated === r} onChange={() => setRated(r)} />
-                    {t(r ? 'lobby.rated' : 'lobby.casual')}
-                  </label>
-                ))}
-              </fieldset>
-            )}
+            <VariantPicker
+              value={variantId}
+              onChange={(id) => {
+                setVariantId(id);
+                onVariant?.(id);
+              }}
+            />
+            <TimePicker value={timeControlId} onChange={setTimeControlId} />
+            <ColorPicker
+              value={color}
+              onChange={setColor}
+              rated={account.user ? rated : undefined}
+              onRated={setRated}
+            />
           </form>
         )}
       </div>
@@ -357,7 +331,7 @@ export function FriendGame({
   /** Told when another variant is picked. */
   onVariant?: (variantId: string) => void;
 }) {
-  const { t, vt } = useI18n();
+  const { t } = useI18n();
   const account = useAccount();
   const [rated, setRated] = useState(true);
   const [variantId, setVariantId] = useState(defaultVariantId);
@@ -410,57 +384,15 @@ export function FriendGame({
     >
       <div className="lobby-scroll">
         <p className="muted online-lede">{challenge ? t('challenge.lede', { name: challenge }) : t('online.lede')}</p>
-        <fieldset className="choice-row choice-grid">
-          <legend>{t('newGame.variant')}</legend>
-          {listVariants().map((v) => (
-            <label key={v.id} className={`chip${variantId === v.id ? ' on' : ''}`}>
-              <input
-                type="radio"
-                name="online-variant"
-                checked={variantId === v.id}
-                onChange={() => {
-                  setVariantId(v.id);
-                  onVariant?.(v.id);
-                }}
-              />
-              {vt(v).name}
-            </label>
-          ))}
-        </fieldset>
-        <fieldset className="choice-row choice-grid time">
-          <legend>{t('newGame.time')}</legend>
-          {TIME_CONTROLS.map((tc) => (
-            <label key={tc.id} className={`chip${timeControlId === tc.id ? ' on' : ''}`}>
-              <input
-                type="radio"
-                name="online-time"
-                checked={timeControlId === tc.id}
-                onChange={() => setTimeControlId(tc.id)}
-              />
-              {tc.initialMs === null ? t('time.none') : tc.label}
-            </label>
-          ))}
-        </fieldset>
-        <fieldset className="choice-row choice-grid colors">
-          <legend>{t('online.color')}</legend>
-          {(['w', 'random', 'b'] as const).map((c) => (
-            <label key={c} className={`chip${color === c ? ' on' : ''}`}>
-              <input type="radio" name="online-color" checked={color === c} onChange={() => setColor(c)} />
-              {c === 'random' ? t('online.random') : t(`color.${c}`)}
-            </label>
-          ))}
-        </fieldset>
-        {account.user && (
-          <fieldset className="choice-row choice-grid rated">
-            <legend>{t('lobby.kind')}</legend>
-            {([true, false] as const).map((r) => (
-              <label key={String(r)} className={`chip${rated === r ? ' on' : ''}`}>
-                <input type="radio" name="friend-rated" checked={rated === r} onChange={() => setRated(r)} />
-                {t(r ? 'lobby.rated' : 'lobby.casual')}
-              </label>
-            ))}
-          </fieldset>
-        )}
+        <VariantPicker
+          value={variantId}
+          onChange={(id) => {
+            setVariantId(id);
+            onVariant?.(id);
+          }}
+        />
+        <TimePicker value={timeControlId} onChange={setTimeControlId} />
+        <ColorPicker value={color} onChange={setColor} rated={account.user ? rated : undefined} onRated={setRated} />
         {error && <p className="error">{t(error)}</p>}
       </div>
       <div className="lobby-actions">
