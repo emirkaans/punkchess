@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TIME_CONTROLS } from '../clock/clock.ts';
 import { listVariants } from '../engine/index.ts';
 import type { Color, VariantDefinition } from '../engine/index.ts';
@@ -37,6 +37,30 @@ const GO: Readonly<Record<Opponent, MessageKey>> = {
   hotseat: 'setup.go.hotseat',
 };
 
+/** The dialog's own size (src/ui/styles.css, .modal.play-setup), which it scales from. */
+const BASE = { w: 580, h: 360 };
+
+/**
+ * How much the dialog is scaled up on a large screen: its proportions kept, about 42% of the
+ * window's width (and never more than 62% of its height), from its own size up to 1.6 times it.
+ * Phones and small windows: its own size (it stacks there).
+ */
+export function dialogScale(width: number, height: number): number {
+  if (width <= 620) return 1;
+  const fit = Math.min((width * 0.42) / BASE.w, ((height - 48) * 0.62) / BASE.h);
+  return Math.round(Math.min(1.6, Math.max(1, fit)) * 100) / 100;
+}
+
+function useDialogScale(): number {
+  const [scale, setScale] = useState(() => dialogScale(innerWidth, innerHeight));
+  useEffect(() => {
+    const fit = () => setScale(dialogScale(innerWidth, innerHeight));
+    addEventListener('resize', fit);
+    return () => removeEventListener('resize', fit);
+  }, []);
+  return scale;
+}
+
 /**
  * Starting a game (a variant card on the home page), design "İki Sütun": who you play on the
  * left — online (a random opponent or a friend) or on this device (the computer, bot against bot,
@@ -63,6 +87,7 @@ export function VariantPlayDialog({
 }) {
   const { t, vt } = useI18n();
   const account = useAccount();
+  const scale = useDialogScale();
   const [opponent, setOpponent] = useState<Opponent>('online');
   const [variantId, setVariantId] = useState(variant.id);
   // Online games and games on this device keep their own time and colour (the latter saved).
@@ -171,7 +196,12 @@ export function VariantPlayDialog({
   );
 
   return (
-    <Modal label={t('setup.title')} onClose={onClose} className="play-setup">
+    <Modal
+      label={t('setup.title')}
+      onClose={onClose}
+      className="play-setup"
+      style={scale !== 1 ? { zoom: scale } : undefined}
+    >
       {/* Design "İki Sütun": who you play on the left, only that opponent's options on the right,
           everything centred; one size whoever the opponent. */}
       <aside className="ps-side">

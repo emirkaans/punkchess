@@ -2736,6 +2736,9 @@ button.primary:hover:not(:disabled) {
   padding: 16px;
   overflow-y: auto;
   z-index: 40;
+  /* The page behind a dialog blurs. */
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 .modal.new-game,
 .modal.settings {
@@ -11440,6 +11443,10 @@ a:focus-visible {
   color: var(--muted);
 }
 @media (max-width: 620px) {
+  /* Phones: centred on the screen like on a computer (other dialogs start at the top). */
+  .modal-backdrop.screen:has(.play-setup) {
+    align-items: center;
+  }
   .modal.play-setup {
     grid-template-columns: minmax(0, 1fr);
     height: auto;
