@@ -98,7 +98,11 @@ describe('taç töreni', () => {
       ],
     };
     expect(crowning(v)).toMatchObject({ names: ['Ada'], sub: 'crown.tournament' });
-    expect(crowning(v)!.roster).toEqual(['1. Ada · 6', '2. Bora · 4', '3. Can · 2']);
+    expect(crowning(v)!.podium).toEqual([
+      { name: 'Ada', points: '6' },
+      { name: 'Bora', points: '4' },
+      { name: 'Can', points: '2' },
+    ]);
     expect(crowning({ ...v, you: 'a' })!.sub).toBe('crown.champion');
     expect(crowning({ ...v, standings: [player('a', 'Ada', 0, [])] })).toBeNull();
   });

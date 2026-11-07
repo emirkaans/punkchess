@@ -13565,6 +13565,175 @@ a:focus-visible {
   transform: translateX(-50%);
 }
 
+/* A tournament's podium (design "Kürsü", neon): second, champion, third, on gradient blocks with
+   a torn top edge; the blocks rise, then the names. */
+.crown-podium {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1fr;
+  align-items: end;
+  gap: 10px;
+  width: min(860px, 100%);
+}
+.pod-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+.pod-col .crown-crown {
+  width: clamp(76px, 10vw, 110px);
+  margin-bottom: -2px;
+}
+.pod-name {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font: 400 clamp(26px, 3.4vw, 40px) / 1.05 var(--marker);
+  letter-spacing: 0;
+  color: var(--fg);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: crown-rise 0.4s ease-out 1.9s forwards;
+}
+.pod-1 .pod-name {
+  font-size: clamp(48px, 7vw, 96px);
+  text-shadow: 0 0 30px var(--lime);
+  transform: scale(0.6);
+  animation: crown-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 0.9s forwards;
+}
+.pod-2 .pod-name {
+  color: #ff6fb5;
+  text-shadow: 0 0 18px rgba(255, 46, 147, 0.6);
+}
+.pod-3 .pod-name {
+  color: #ffab5c;
+  text-shadow: 0 0 18px rgba(255, 138, 31, 0.5);
+  animation-delay: 2.05s;
+}
+.pod-pts {
+  margin: 4px 0 8px;
+  font:
+    700 13px/1 'Space Mono',
+    monospace;
+  color: var(--muted);
+  opacity: 0;
+  animation: crown-rise 0.4s ease-out 2.1s forwards;
+}
+.pod-1 .pod-pts {
+  color: var(--lime);
+}
+.pod-block {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  overflow: hidden;
+  font: 400 64px/1 var(--display);
+  color: #0a0a0b;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  animation: pod-up 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) forwards;
+}
+/* Grit, and a torn top edge. */
+.pod-block::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--grit);
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+}
+.pod-block::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 8px;
+  background: #050506;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 30%,
+    92% 70%,
+    84% 20%,
+    73% 80%,
+    61% 30%,
+    50% 75%,
+    38% 25%,
+    27% 85%,
+    15% 30%,
+    6% 70%,
+    0 20%
+  );
+}
+.pod-block b {
+  position: relative;
+  z-index: 1;
+  font-weight: 400;
+}
+.pod-1 .pod-block {
+  height: 150px;
+  background: linear-gradient(160deg, #c6ff3d 0%, #7dff6a 45%, #ff2e93 120%);
+  box-shadow: 0 0 40px rgba(198, 255, 61, 0.35);
+  animation-delay: 0.5s;
+}
+.pod-2 .pod-block {
+  height: 104px;
+  font-size: 52px;
+  background: linear-gradient(160deg, #ff2e93, #9b2cff);
+  box-shadow: 0 0 30px rgba(255, 46, 147, 0.3);
+  animation-delay: 0.35s;
+}
+.pod-3 .pod-block {
+  height: 74px;
+  font-size: 44px;
+  background: linear-gradient(160deg, #ff8a1f, #ff2e93);
+  box-shadow: 0 0 26px rgba(255, 138, 31, 0.3);
+  animation-delay: 0.2s;
+}
+@keyframes pod-up {
+  to {
+    transform: none;
+  }
+}
+.crown-show.still .pod-name,
+.crown-show.still .pod-pts,
+.crown-show.still .pod-block {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+@media (max-width: 640px) {
+  .crown-podium {
+    grid-template-columns: 1fr 1.3fr 1fr;
+    gap: 6px;
+  }
+  .pod-name {
+    font-size: 18px;
+  }
+  .pod-1 .pod-name {
+    font-size: 34px;
+  }
+  .pod-col .crown-crown {
+    width: 64px;
+  }
+  .pod-pts {
+    font-size: 11px;
+  }
+  .pod-1 .pod-block {
+    height: 110px;
+    font-size: 48px;
+  }
+  .pod-2 .pod-block {
+    height: 78px;
+    font-size: 38px;
+  }
+  .pod-3 .pod-block {
+    height: 56px;
+    font-size: 32px;
+  }
+}
+
 /* The note before an Armageddon game (src/ui/online/OnlinePage.tsx). */
 .armageddon-modal {
   max-width: 420px;

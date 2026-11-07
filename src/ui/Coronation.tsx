@@ -10,7 +10,9 @@ import { scoreText } from './TournamentsPage.tsx';
 
 // The end of a tournament or a gang war, shown once to whoever is on its page when it ends
 // (design C, "Taç Töreni"): in the dark a spotlight comes on, the winner's name (a gang's tag)
-// rises, a crown drops onto it and sparks burst; below, the winners and their points.
+// rises, a crown drops onto it and sparks burst; below, the winners and their points. A
+// tournament's first three stand on a podium instead (design "Kürsü", neon): the second on the
+// left, the champion in the middle, the third on the right, their names in the marker font.
 
 type Outcome = 'win' | 'lose' | 'draw';
 
@@ -20,6 +22,8 @@ interface Crowning {
   readonly names: readonly string[];
   readonly sub: MessageKey;
   readonly roster: readonly string[];
+  /** A tournament's first three (one or two when fewer scored), in order, for the podium. */
+  readonly podium: readonly { readonly name: string; readonly points: string }[] | null;
   readonly score: string | null;
   /** Gangs: the viewer's own (back to it) and the winner (a rematch is declared there). */
   readonly myTag: string | null;
@@ -43,6 +47,7 @@ export function crowning(v: TournamentView): Crowning | null {
         names: [war.tags.c, war.tags.d],
         sub: 'crown.draw',
         roster: [],
+        podium: null,
         score: scoreLine,
         myTag,
         winnerTag: null,
@@ -52,6 +57,7 @@ export function crowning(v: TournamentView): Crowning | null {
       names: [war.tags[winner]],
       sub: mine && mine !== winner ? 'crown.lost' : 'crown.war',
       roster: war.players.filter((p) => p.side === winner).map((p) => `${name(p.id)} · ${scoreText(pts(p.id))}`),
+      podium: null,
       score: scoreLine,
       myTag,
       winnerTag: war.tags[winner],
@@ -63,7 +69,8 @@ export function crowning(v: TournamentView): Crowning | null {
     outcome: 'win',
     names: [top[0].username],
     sub: top[0].userId === v.you ? 'crown.champion' : 'crown.tournament',
-    roster: top.map((p, i) => `${i + 1}. ${p.username} · ${scoreText(p.score)}`),
+    roster: [],
+    podium: top.map((p) => ({ name: p.username, points: scoreText(p.score) })),
     score: null,
     myTag: null,
     winnerTag: null,
@@ -185,7 +192,25 @@ export function Coronation({
         ×
       </button>
       <div className="crown-body">
-        {c.outcome === 'draw' ? (
+        {c.podium ? (
+          <div className="crown-podium">
+            {/* Second, first, third: the podium's order from the left. */}
+            {[1, 0, 2].map((i) => {
+              const p = c.podium![i];
+              if (!p) return <div key={i} className="pod-col" />;
+              return (
+                <div key={i} className={`pod-col pod-${i + 1}`}>
+                  {i === 0 && CROWN}
+                  <span className="pod-name">{p.name}</span>
+                  <span className="pod-pts">{t('crown.points', { n: p.points })}</span>
+                  <span className="pod-block">
+                    <b>{i + 1}</b>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : c.outcome === 'draw' ? (
           <div className="crown-duo">
             {tag(c.names[0])}
             {CROWN}
@@ -197,7 +222,7 @@ export function Coronation({
             {tag(c.names[0])}
           </>
         )}
-        <div className="crown-sub">{t(c.sub, { name: c.names[0] })}</div>
+        {!c.podium && <div className="crown-sub">{t(c.sub, { name: c.names[0] })}</div>}
         {c.score && <div className="crown-score">{c.score}</div>}
         {c.roster.length > 0 && (
           <div className="crown-roster">
