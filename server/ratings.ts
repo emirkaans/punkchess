@@ -4,7 +4,6 @@
 
 import { grantGameCoins } from './coins.ts';
 import { recordQuestSafe } from './quests.ts';
-import { MIN_PLIES } from '../src/quests/rules.ts';
 import { recordOfRoom } from '../src/online/record.ts';
 import type { GameRecord } from '../src/online/record.ts';
 import { ABORT_PLIES, ratedRoom } from '../src/online/room.ts';
@@ -266,7 +265,7 @@ export async function settleGame(room: Room, db: D1Database | undefined, now: nu
       account.id,
       {
         k: 'game',
-        finished: room.moves.length >= MIN_PLIES && record.termination !== 'aborted',
+        finished: record.termination !== 'aborted',
         won: winner === color,
         color,
         variantId: room.variantId,

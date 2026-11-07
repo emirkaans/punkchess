@@ -7,7 +7,7 @@
 export type QuestEvent =
   | {
       readonly k: 'game';
-      /** At least MIN_PLIES half-moves (a game aborted at once counts for nothing). */
+      /** Played, not aborted: any length counts, a quick mate as much as a long game. */
       readonly finished: boolean;
       readonly won: boolean;
       readonly color: 'w' | 'b';
@@ -33,9 +33,6 @@ export interface Quest {
   /** How far `e` takes the quest (0 when it does not count). */
   readonly step: (e: QuestEvent) => number;
 }
-
-/** Half-moves a game needs to count (as for the coins a win pays). */
-export const MIN_PLIES = 10;
 
 const game = (test: (e: Extract<QuestEvent, { k: 'game' }>) => boolean) => (e: QuestEvent) =>
   e.k === 'game' && e.finished && test(e) ? 1 : 0;
