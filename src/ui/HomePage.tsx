@@ -130,7 +130,6 @@ export function HomePage({
             </span>
             <Arrow />
           </button>
-          <QuestsCard className="home-quests" />
           {stats && (
             <p className="live-stats">
               <span className="live-dot" aria-hidden="true" />
@@ -195,6 +194,7 @@ export function HomePage({
             );
           })}
         </div>
+        <QuestsCard className="home-quests" />
         <div className="opponents">
           <h2>
             <Crown />
