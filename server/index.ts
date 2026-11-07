@@ -44,6 +44,7 @@ export { Lobby } from './lobby.ts';
 export { Tournament } from './tournament.ts';
 import { withAccountHeaders } from './account-headers.ts';
 import { handleTournaments } from './tournament.ts';
+import { outagePage } from './outage.ts';
 
 const ID_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 
@@ -125,7 +126,18 @@ function withSecurityHeaders(res: Response): Response {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    return withSecurityHeaders(await handle(request, env));
+    try {
+      return withSecurityHeaders(await handle(request, env));
+    } catch (e) {
+      console.error('request failed', e);
+      // A page gets the outage page (server/outage.ts); anything else a plain error.
+      if (request.method === 'GET' && (request.headers.get('accept') ?? '').includes('text/html'))
+        return withSecurityHeaders(outagePage(request));
+      return new Response(JSON.stringify({ error: 'server' }), {
+        status: 500,
+        headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+      });
+    }
   },
   // Every 5 minutes (wrangler.jsonc triggers): a sample of who is on the site, from 23:00 the
   // day's report, and alerts to the owner.

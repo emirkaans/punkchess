@@ -3,6 +3,7 @@
 
 import { useEffect, useSyncExternalStore } from 'react';
 import type { AccountUser, MeResponse, UsernameProblem } from '../online/account.ts';
+import { noteServer } from './serverStatus.ts';
 
 interface AccountState {
   /** Still asking the server. */
@@ -26,7 +27,15 @@ let asked = false;
 export async function refreshAccount(): Promise<void> {
   asked = true;
   try {
-    const res = await fetch('/api/me', { credentials: 'same-origin' });
+    let res: Response;
+    try {
+      res = await fetch('/api/me', { credentials: 'same-origin' });
+    } catch (e) {
+      // No answer at all: the server (or the connection) is down.
+      noteServer(false, () => void refreshAccount());
+      throw e;
+    }
+    noteServer(res.status < 500, () => void refreshAccount());
     const me = res.ok ? ((await res.json()) as MeResponse) : null;
     set({
       loading: false,

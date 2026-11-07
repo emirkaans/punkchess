@@ -14663,3 +14663,122 @@ a:focus-visible {
     font-size: 12px;
   }
 }
+
+/* ---------- A page that broke (src/ui/CrashScreen.tsx, design 1A "Patlama") ---------- */
+.crash {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 20px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 46, 147, 0.18), transparent 55%),
+    var(--bg);
+}
+.crash-logo {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  font: 400 26px var(--logo);
+  color: var(--pink);
+  text-decoration: none;
+}
+.crash-logo span {
+  color: var(--fg);
+}
+.crash-king {
+  display: inline-block;
+  font: 400 64px 'Punk Chess Glyphs', serif;
+  transform: rotate(100deg);
+  filter: drop-shadow(0 0 14px var(--pink));
+}
+.crash-boom {
+  font: 400 clamp(64px, 12vw, 130px) / 0.85 var(--display);
+  letter-spacing: 2px;
+  color: var(--pink);
+  transform: rotate(-4deg);
+  text-shadow:
+    5px 5px 0 #0a0a0b,
+    8px 8px 0 var(--lime);
+}
+.crash p {
+  max-width: 420px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.crash-btns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.crash-btns button,
+.crash-btns a {
+  font: 400 20px/1 var(--display);
+  letter-spacing: 0.05em;
+  padding: 12px 22px;
+  border: 2px solid var(--fg);
+  color: var(--fg);
+  background: transparent;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.crash-btns .crash-reload {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: #0a0a0b;
+}
+
+/* ---------- The server does not answer (design 2B) ---------- */
+.server-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 9px 16px;
+  background: #1a0a12;
+  border-bottom: 2px solid var(--pink);
+  font: 500 14px var(--ui);
+}
+.server-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: 0 0 10px var(--pink);
+  animation: server-blink 1.2s infinite;
+}
+@keyframes server-blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .server-dot {
+    animation: none;
+  }
+}
+.server-strip small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.server-strip button {
+  margin-left: auto;
+  min-height: 0;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  font: 500 14px var(--ui);
+  color: var(--lime);
+  white-space: nowrap;
+  cursor: pointer;
+}
