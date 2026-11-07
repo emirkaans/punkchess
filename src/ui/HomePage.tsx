@@ -194,7 +194,7 @@ export function HomePage({
             );
           })}
         </div>
-        <QuestsCard className="home-quests" />
+        <QuestsCard className="home-quests" neon />
         <div className="opponents">
           <h2>
             <Crown />

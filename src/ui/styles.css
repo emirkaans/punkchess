@@ -13925,11 +13925,185 @@ a:focus-visible {
 .quests-modal .quests-card {
   margin: 0;
 }
-/* On the home page: a row of its own above "Rakibini seç". */
+/* On the home page (design "Neon Tabela"): a narrow neon sign, centred above "Rakibini seç". */
 .home-cards .home-quests {
   flex: 1 1 100%;
-  width: 100%;
+  max-width: 640px;
+  margin: 14px auto;
+}
+.quests-neon {
+  box-sizing: border-box;
+  text-align: center;
+  padding: 26px 22px 20px;
+  background:
+    radial-gradient(ellipse at top, rgba(255, 46, 147, 0.16), transparent 70%),
+    #0c0c0e;
+  border: 2px solid var(--pink);
+  box-shadow:
+    0 0 0 4px #0c0c0e,
+    0 0 0 5px rgba(255, 46, 147, 0.4),
+    0 0 40px rgba(255, 46, 147, 0.25);
+}
+.qn-title {
   margin: 0;
+  font: 400 54px/0.9 var(--display);
+  letter-spacing: 3px;
+  color: #fff;
+  text-shadow:
+    0 0 6px var(--pink),
+    0 0 18px var(--pink),
+    0 0 40px var(--pink);
+  animation: qn-flicker 4s infinite;
+}
+.qn-title em {
+  font-style: normal;
+  color: var(--lime);
+  text-shadow:
+    0 0 6px var(--lime),
+    0 0 20px var(--lime);
+}
+@keyframes qn-flicker {
+  0%,
+  92%,
+  96%,
+  100% {
+    opacity: 1;
+  }
+  93%,
+  95% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qn-title {
+    animation: none;
+  }
+}
+.qn-time {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0 20px;
+  font: 500 13px var(--ui);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.quests-neon.guest .qn-time {
+  text-transform: none;
+  letter-spacing: 0.5px;
+  font-size: 15px;
+}
+.qn-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.qn-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.qn-tile.done {
+  border-color: var(--lime);
+  box-shadow: inset 0 0 20px rgba(198, 255, 61, 0.12);
+}
+.qn-ring {
+  --p: 0;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  font-size: 26px;
+  background:
+    radial-gradient(closest-side, var(--panel) 78%, transparent 80%),
+    conic-gradient(var(--lime) calc(var(--p) * 1%), #2a2a2e 0);
+}
+.qn-tile.done .qn-ring {
+  color: var(--lime);
+}
+.qn-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+.qn-tier {
+  font: 400 14px var(--display);
+  letter-spacing: 2px;
+  color: var(--pink);
+}
+.qn-body b {
+  font: 500 14px/1.25 var(--ui);
+}
+.qn-tile.done .qn-body b {
+  color: var(--muted);
+}
+.qn-body small {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.qn-body .quest-swap {
+  margin: 0;
+}
+.qn-foot {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 18px 0 0;
+  font: 500 14px var(--ui);
+  color: var(--muted);
+}
+.qn-foot b {
+  font-weight: 500;
+  color: var(--lime);
+}
+.qn-foot .done {
+  color: var(--lime);
+}
+@media (max-width: 640px) {
+  .quests-neon {
+    padding: 20px 14px 16px;
+  }
+  .qn-title {
+    font-size: 40px;
+  }
+  .qn-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .qn-tile {
+    flex-direction: row;
+    padding: 10px;
+    text-align: left;
+  }
+  .qn-ring {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+  .qn-body,
+  .qn-body small {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
 }
 .quests-head {
   display: flex;

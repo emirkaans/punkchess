@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { MessageKey } from '../i18n/index.ts';
 import { ALL_DONE_COINS, STREAK_COINS, STREAK_DAYS } from '../quests/rules.ts';
 import { signInWithGoogle, useAccount } from './account.ts';
@@ -41,7 +42,7 @@ const ICONS: Readonly<Record<string, string>> = {
  * Today's three quests (design "Görevler"): progress, coins, the streak towards its seventh-day
  * gift, one change a day. On the home page and in the account menu's window.
  */
-export function QuestsCard({ className = '' }: { className?: string }) {
+export function QuestsCard({ className = '', neon = false }: { className?: string; neon?: boolean }) {
   const { t } = useI18n();
   const account = useAccount();
   const { data } = useQuests();
@@ -53,6 +54,18 @@ export function QuestsCard({ className = '' }: { className?: string }) {
 
   if (!account.user) {
     if (account.loading || !account.canSignIn) return null;
+    if (neon)
+      return (
+        <section className={`quests-neon guest ${className}`} aria-label={t('quests.title')}>
+          <h2 className="qn-title">
+            {t('quests.neon1')} <em>{t('quests.neon2')}</em>
+          </h2>
+          <p className="qn-time">{t('quests.signIn')}</p>
+          <button className="quests-signin" onClick={() => signInWithGoogle()}>
+            {t('account.signIn')}
+          </button>
+        </section>
+      );
     return (
       <section className={`quests-card guest ${className}`} aria-label={t('quests.title')}>
         <h2 className="quests-title">{t('quests.title')}</h2>
@@ -67,6 +80,68 @@ export function QuestsCard({ className = '' }: { className?: string }) {
   // The streak as a week: the days done so far of the current seven, the seventh a gift.
   const inWeek =
     data.streak % STREAK_DAYS === 0 && data.allDone && data.streak > 0 ? STREAK_DAYS : data.streak % STREAK_DAYS;
+  const swap = async (slot: number) => {
+    setBusy(true);
+    await swapQuest(slot);
+    setBusy(false);
+  };
+  if (neon)
+    return (
+      <section className={`quests-neon ${className}`} aria-label={t('quests.title')}>
+        <h2 className="qn-title">
+          {t('quests.neon1')} <em>{t('quests.neon2')}</em>
+        </h2>
+        <p className="qn-time">
+          {left && <span>⏱ {t('quests.neonNext', { h: String(left.h), m: String(left.m) })}</span>}
+          {data.streak > 0 && <span>🔥 {t('quests.streakLabel', { n: String(data.streak) })}</span>}
+        </p>
+        <ul className="qn-row">
+          {data.quests.map((q, slot) => {
+            const finished = q.progress >= q.target;
+            return (
+              <li key={q.id} className={`qn-tile${finished ? ' done' : ''}`}>
+                <span
+                  className="qn-ring"
+                  aria-hidden="true"
+                  style={{ '--p': String((100 * q.progress) / q.target) } as CSSProperties}
+                >
+                  {finished ? '✓' : (ICONS[q.id] ?? '★')}
+                </span>
+                <span className="qn-body">
+                  <span className="qn-tier">{t(`quests.tier.${q.tier}` as MessageKey)}</span>
+                  <b>{t(`quests.q.${q.id}` as MessageKey)}</b>
+                  <small>
+                    <span className="quest-coins">
+                      <CoinIcon />+{q.coins}
+                    </span>
+                    · {q.progress}/{q.target}
+                    {!finished && !data.swapped && (
+                      <button
+                        className="quest-swap"
+                        disabled={busy}
+                        title={t('quests.swapHint')}
+                        onClick={() => void swap(slot)}
+                      >
+                        {t('quests.swap')}
+                      </button>
+                    )}
+                  </small>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="qn-foot">
+          <span className={data.allDone ? 'done' : ''}>
+            {data.allDone ? '✓ ' : ''}
+            {t('quests.bonus')} <b>+{ALL_DONE_COINS}</b>
+          </span>
+          <span>
+            🎁 {t('quests.streakGift', { n: String(STREAK_DAYS) })} <b>+{STREAK_COINS}</b>
+          </span>
+        </p>
+      </section>
+    );
   return (
     <section className={`quests-card ${className}`} aria-label={t('quests.title')}>
       <div className="quests-head">
@@ -104,11 +179,7 @@ export function QuestsCard({ className = '' }: { className?: string }) {
                     className="quest-swap"
                     disabled={busy}
                     title={t('quests.swapHint')}
-                    onClick={async () => {
-                      setBusy(true);
-                      await swapQuest(slot);
-                      setBusy(false);
-                    }}
+                    onClick={() => void swap(slot)}
                   >
                     {t('quests.swap')}
                   </button>
