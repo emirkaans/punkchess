@@ -250,7 +250,6 @@ export async function settleGame(room: Room, db: D1Database | undefined, now: nu
     room.id,
     { w: w?.id, b: b?.id },
     winner,
-    room.moves.length,
     now,
   ).catch(() => ({}));
   // The day's quests (their coins join the game's): who played, won, mated, played a card.

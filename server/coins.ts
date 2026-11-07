@@ -72,17 +72,15 @@ export async function coinBalance(
   return { balance: row?.balance ?? 0, today: row?.today ?? 0 };
 }
 
-/** Coins for a finished online game: its winner's, when signed in (none when too short or capped). */
+/** Coins for a finished online game: its winner's, when signed in (none when capped). */
 export async function grantGameCoins(
   db: D1Database,
   gameId: string,
   players: Readonly<Partial<Record<Color, string>>>,
   winner: Color | null,
-  plies: number,
   now: number,
 ): Promise<Partial<Record<Color, number>>> {
   const out: Partial<Record<Color, number>> = {};
-  if (plies < COIN_RULES.online.minPlies) return out;
   const id = winner ? players[winner] : undefined;
   if (!winner || !id) return out;
   // Wins paid today against this same opponent (the game rows tell who played whom).

@@ -8,10 +8,10 @@ export type CoinReason = 'online' | 'puzzle' | 'daily' | 'rush' | 'quest';
 // against the bot, pays nothing.
 export const COIN_RULES = {
   /**
-   * A won online game (at least `minPlies` half-moves). Against the same opponent only
+   * A won online game, however short (an aborted one is no game). Against the same opponent only
    * `pairDailyMax` games a day pay (two accounts trading wins earn little).
    */
-  online: { win: 10, minPlies: 10, dailyMax: 80, pairDailyMax: 3 },
+  online: { win: 10, dailyMax: 80, pairDailyMax: 3 },
   /** A puzzle solved at the first try (rated puzzles; each puzzle once). */
   puzzle: { solved: 2, dailyMax: 20 },
   /** The daily puzzle, solved. */
