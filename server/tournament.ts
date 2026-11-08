@@ -71,6 +71,7 @@ import { withAccountHeaders } from './account-headers.ts';
 import { isStaffRole } from '../src/online/admin.ts';
 import { currentUser, sameOrigin } from './auth.ts';
 import type { Env } from './game-room.ts';
+import { awardTournament } from './prizes.ts';
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -593,6 +594,14 @@ export class Tournament extends DurableObject<Env> {
       )
       .run()
       .catch((e: unknown) => console.error('saving the tournament standings failed', e));
+    // A tournament's prizes: patches and coins for the podium (server/prizes.ts).
+    if (!state.war && this.env.DB)
+      await awardTournament(
+        this.env.DB,
+        state.id,
+        list.map((p) => ({ userId: p.userId, score: p.score, games: p.sheet.length })),
+        now,
+      ).catch((e: unknown) => console.error('tournament prizes failed', e));
     // A gang war: its result goes to the gangs' record (a tie won in the playoff is a win).
     if (state.war) {
       const score = warScore(state.war, players);

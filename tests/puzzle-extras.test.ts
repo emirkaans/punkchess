@@ -4,8 +4,8 @@ import { RUSH_COUNT, RUSH_START, RUSH_STEP } from '../src/online/puzzle.ts';
 import { parseRoute, pathOf } from '../src/ui/routes.ts';
 
 describe('puzzle rush, bulmaca yamaları, liderler', () => {
-  it('her yama ya oyunla ya bulmacayla kazanılır', () => {
-    for (const p of PATCHES) expect(!!p.earned !== !!p.puzzle).toBe(true);
+  it('her yama ya oyunla ya bulmacayla ya da turnuvayla kazanılır, yalnız biriyle', () => {
+    for (const p of PATCHES) expect([p.earned, p.puzzle, p.tournament].filter(Boolean)).toHaveLength(1);
   });
 
   it('bulmaca yamaları kayda göre verilir, olanlar tekrar verilmez', () => {

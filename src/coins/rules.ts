@@ -2,7 +2,7 @@
 // advantage in a game. All numbers live here so they can be tuned in one place. Pure.
 
 /** Where coins come from; each has its own daily ceiling under the overall one. */
-export type CoinReason = 'online' | 'puzzle' | 'daily' | 'rush' | 'quest';
+export type CoinReason = 'online' | 'puzzle' | 'daily' | 'rush' | 'quest' | 'tournament';
 
 // Coins are earned by winning and solving, not by playing: a game lost or drawn, or a game
 // against the bot, pays nothing.
@@ -24,10 +24,12 @@ export const COIN_RULES = {
    * coins still has a reason to do them.
    */
   quest: { dailyMax: 180 },
+  /** A tournament's prizes (src/achievements/prizes.ts): 300, 200, 100 for the first three. */
+  tournament: { dailyMax: 1000 },
 } as const;
 
 /** Sources outside the overall daily ceiling (each still has its own). */
-export const OUTSIDE_CAP: readonly CoinReason[] = ['quest'];
+export const OUTSIDE_CAP: readonly CoinReason[] = ['quest', 'tournament'];
 
 /**
  * Most coins a player can earn in a day, all sources together. Set against the store's prices

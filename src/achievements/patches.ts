@@ -1,7 +1,8 @@
 // Patches for the battle jacket on a profile: what each one is for and how
 // it looks. A finished online game is checked for every game patch the player
 // does not have yet (server/ratings.ts awards them); puzzle results for the
-// puzzle patches (server/puzzle-patches.ts). Pure.
+// puzzle patches (server/puzzle-patches.ts); a tournament's end for the tournament ones
+// (server/prizes.ts). Pure.
 
 import type { Color } from '../engine/index.ts';
 import { speedOf } from '../rating/categories.ts';
@@ -42,7 +43,7 @@ export interface PuzzlePatchContext {
   readonly rushBest: number;
 }
 
-export type PatchShape = 'circle' | 'shield' | 'star' | 'diamond' | 'rect';
+export type PatchShape = 'circle' | 'shield' | 'star' | 'diamond' | 'rect' | 'crown';
 
 export interface PatchDef {
   readonly id: string;
@@ -54,6 +55,10 @@ export interface PatchDef {
   readonly earned?: (c: PatchContext) => boolean;
   /** A puzzle patch: earned by a puzzle record. */
   readonly puzzle?: (c: PuzzlePatchContext) => boolean;
+  /** A tournament patch: given when a tournament ends (src/achievements/prizes.ts). */
+  readonly tournament?: true;
+  /** One-off: listed only to those who have it (no one can earn it any more). */
+  readonly limited?: true;
 }
 
 const PINK = '#ff2e93';
@@ -119,9 +124,17 @@ export const PATCHES: readonly PatchDef[] = [
   { id: 'puzzles-100', shape: 'circle', fill: LIME, ink: INK, puzzle: (c) => c.puzzlesSolved >= 100 },
   { id: 'daily-7', shape: 'shield', fill: PINK, ink: INK, puzzle: (c) => c.dailyStreak >= 7 },
   { id: 'rush-20', shape: 'star', fill: LIME, ink: INK, puzzle: (c) => c.rushBest >= 20 },
+  // Tournament patches (src/achievements/prizes.ts).
+  { id: 'champion', shape: 'crown', fill: LIME, ink: INK, tournament: true },
+  { id: 'podium', shape: 'shield', fill: BONE, ink: INK, tournament: true },
+  { id: 'first-tournament', shape: 'rect', fill: PINK, ink: INK, tournament: true, limited: true },
 ];
 
 export const patchById = (id: string): PatchDef | undefined => PATCHES.find((p) => p.id === id);
+
+/** The patches a player's jacket lists: all but the one-off ones they do not have. */
+export const listedPatches = (owned: ReadonlySet<string>): PatchDef[] =>
+  PATCHES.filter((p) => !p.limited || owned.has(p.id));
 
 /** Patches this game earns that the player does not have yet. */
 export const newPatches = (c: PatchContext, have: ReadonlySet<string>): string[] =>

@@ -17,6 +17,8 @@ function shapePath(shape: PatchShape, r = SIZE / 2): string {
       return `M0 ${-r} L${r} 0 L0 ${r} L${-r} 0 Z`;
     case 'rect':
       return `M${-r} ${-r * 0.7} H${r} V${r * 0.7} H${-r} Z`;
+    case 'crown':
+      return `M${-r} ${r * 0.62} L${-r} ${-r * 0.55} L${-r * 0.5} ${-r * 0.05} L0 ${-r * 0.9} L${r * 0.5} ${-r * 0.05} L${r} ${-r * 0.55} L${r} ${r * 0.62} Z`;
     case 'star': {
       const pts: string[] = [];
       for (let i = 0; i < 10; i++) {
@@ -50,8 +52,8 @@ export function PatchMark({ patch, label, locked = false }: { patch: PatchDef; l
   const small = patch.shape === 'star' || patch.shape === 'diamond';
   const outline = shapePath(patch.shape);
   const write = (fill: string, size: number) => {
-    // Stars and shields have their middle a little lower or higher.
-    const shift = patch.shape === 'star' ? 2.7 : patch.shape === 'shield' ? -2 : 0;
+    // Stars and shields have their middle a little lower or higher; a crown's words sit on its band.
+    const shift = patch.shape === 'star' ? 2.7 : patch.shape === 'shield' ? -2 : patch.shape === 'crown' ? 8 : 0;
     return text.map((line, i) => (
       <text
         key={i}
@@ -97,7 +99,14 @@ export function PatchMark({ patch, label, locked = false }: { patch: PatchDef; l
       <path d={outline} transform="translate(1.5 3.5)" fill="rgba(0,0,0,0.5)" />
       <path d={outline} fill={patch.fill} />
       <path d={outline} fill={`url(#${uid}-dome)`} />
-      {write(patch.ink, small ? 9.4 : text.length > 1 ? 10.7 : 13.3)}
+      {patch.shape === 'crown' && (
+        <g fill="#ff2e93">
+          <circle cx="0" cy="-22" r="2.6" />
+          <circle cx="-27" cy="-12" r="2.6" />
+          <circle cx="27" cy="-12" r="2.6" />
+        </g>
+      )}
+      {write(patch.ink, small ? 9.4 : text.length > 1 ? 10.7 : patch.shape === 'crown' ? 12 : 13.3)}
       <path d={outline} fill="none" stroke="#000" strokeOpacity="0.4" strokeWidth="1.5" strokeLinejoin="round" />
       <g clipPath={`url(#${uid}-clip)`}>
         <ellipse cx="-10.7" cy="-16" rx="20" ry="10" transform="rotate(-30 -10.7 -16)" fill="#fff" opacity="0.3" />
@@ -130,6 +139,9 @@ const SLOTS: readonly [number, number, number][] = [
   [670, 200, 12],
   [270, 840, -8],
   [730, 840, 8],
+  [500, 240, -3],
+  [235, 260, -14],
+  [765, 260, 14],
 ];
 /** Patches are drawn at SIZE and scaled up to the picture. */
 const PATCH_SCALE = 1.6;

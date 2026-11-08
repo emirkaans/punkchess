@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { JACKETS, jacketOpen, progress } from '../achievements/jackets.ts';
-import { PATCHES } from '../achievements/patches.ts';
+import { listedPatches } from '../achievements/patches.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import type { ProfileResponse } from '../online/profile.ts';
 import { BattleJacket, PatchMark, jacketSrc } from './BattleJacket.tsx';
@@ -60,7 +60,8 @@ export function JacketWindow({ profile, mine, date, onPick, onShare, onClose }: 
   const [tab, setTab] = useState<'patches' | 'jackets'>('patches');
   const [page, setPage] = useState(0);
   const per = tab === 'patches' ? (narrow ? 3 : 8) : narrow ? 4 : 6;
-  const items = tab === 'patches' ? PATCHES.length : JACKETS.length;
+  const listed = listedPatches(new Set(profile.patches.map((p) => p.id)));
+  const items = tab === 'patches' ? listed.length : JACKETS.length;
   const pages = Math.ceil(items / per);
   const shown = Math.min(page, pages - 1);
   const show = (next: 'patches' | 'jackets') => {
@@ -106,10 +107,10 @@ export function JacketWindow({ profile, mine, date, onPick, onShare, onClose }: 
           {tab === 'patches' ? (
             <>
               <h2>
-                {t('jacket.title')} · {profile.patches.length}/{PATCHES.length}
+                {t('jacket.title')} · {profile.patches.length}/{listed.length}
               </h2>
               <ul className="patch-list">
-                {PATCHES.slice(shown * per, shown * per + per).map((patch) => {
+                {listed.slice(shown * per, shown * per + per).map((patch) => {
                   const got = profile.patches.find((p) => p.id === patch.id);
                   return (
                     <li key={patch.id} className={got ? 'got' : 'locked'}>

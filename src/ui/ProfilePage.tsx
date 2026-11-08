@@ -21,7 +21,7 @@ import { loadPrefs } from './prefs.ts';
 import { progress } from '../achievements/jackets.ts';
 import { ProfileLink } from './ProfileLink.tsx';
 import { FriendGame } from './online/LobbyPage.tsx';
-import { PATCHES } from '../achievements/patches.ts';
+import { listedPatches } from '../achievements/patches.ts';
 import { ProfileStats } from './ProfileStats.tsx';
 import { ProfileGames } from './ProfileGames.tsx';
 
@@ -292,7 +292,7 @@ export function ProfilePage({ username, onOpen }: Props) {
                 patches={profile.patches.map((p) => p.id)}
               />
               <span className="jacket-thumb-count">
-                {profile.patches.length}/{PATCHES.length}
+                {profile.patches.length}/{listedPatches(new Set(profile.patches.map((p) => p.id))).length}
               </span>
             </button>
             {(profile.nemesis || profile.victim) && (
