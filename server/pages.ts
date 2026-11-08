@@ -42,6 +42,42 @@ const STATIC: Readonly<Record<string, Preview>> = {
     title: 'Lisanslar · punkchess',
     description: 'punkchess’in kullandığı açık kaynak yazılımlar, fontlar ve veriler ile lisansları.',
   },
+  '/online': {
+    title: 'Online oyna · punkchess',
+    description: 'Hızlı eşleşme, lobi ya da arkadaşına link: online satranç ve varyantları, puanlı ya da puansız.',
+  },
+  '/tournaments': {
+    title: 'Turnuvalar · punkchess',
+    description: 'Arena ve İsviçre usulü satranç turnuvaları: katıl, puan topla, kürsüye çık.',
+  },
+  '/tv': {
+    title: 'Canlı oyunlar · punkchess',
+    description: 'Şu an oynanan en iyi oyunları canlı izle.',
+  },
+  '/gangs': {
+    title: 'Çeteler · punkchess',
+    description: 'Çeteni kur ya da birine katıl; çete savaşlarında başka çetelere meydan oku.',
+  },
+  '/street': {
+    title: 'Punk Sokağı · punkchess',
+    description: 'Karakterini giydir: ceketler, saçlar, botlar, dövmeler. Haftanın vitrininde indirimler.',
+  },
+  '/store': {
+    title: 'Punk Butik · punkchess',
+    description: 'Ceketler, tişörtler ve aksesuarlar: punk coin ile karakterine yeni kıyafetler.',
+  },
+  '/barber': {
+    title: 'Makas & Jilet · punkchess',
+    description: 'Mohikan, jöleli, boyalı: karakterine yeni saç ve sakal.',
+  },
+  '/shoes': {
+    title: 'Bot & Bağcık · punkchess',
+    description: 'Postallar, spor ayakkabılar, dikenli botlar: karakterine yeni ayakkabı.',
+  },
+  '/tattoo': {
+    title: 'Dövmeci · punkchess',
+    description: 'Karakterine dövme yaptır.',
+  },
   '/analysis': {
     title: 'Analiz tahtası · punkchess',
     description: 'Konum kur, oyna, Stockfish ile analiz et. Varyantlar da dahil.',
@@ -135,8 +171,17 @@ export async function pagePreview(
 export async function sitemap(env: AuthEnv, url: URL): Promise<Response> {
   const pages = [
     '/',
+    '/online',
     '/puzzles',
     '/daily',
+    '/tournaments',
+    '/tv',
+    '/gangs',
+    '/street',
+    '/store',
+    '/barber',
+    '/shoes',
+    '/tattoo',
     '/rush',
     '/leaderboard',
     '/analysis',

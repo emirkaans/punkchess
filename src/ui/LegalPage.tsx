@@ -28,9 +28,10 @@ export function LegalPage({ doc, onOpen }: { doc: LegalDoc; onOpen: (path: strin
   useEffect(() => {
     const heading = /<h1>(.*?)<\/h1>/.exec(text)?.[1];
     if (!heading) return;
+    const before = document.title;
     document.title = `${heading} · punkchess`;
     return () => {
-      document.title = 'punkchess';
+      document.title = before;
     };
   }, [text]);
   // Links to the site's own pages stay in the app; files (licence texts) and mail open as usual.
