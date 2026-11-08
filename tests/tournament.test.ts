@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TOURNAMENT_PICK_MAX_MS, startOf } from '../src/online/tournament.ts';
 import {
   EARLY_DRAW_PLIES,
   TOURNAMENT_TIME_CONTROLS,
@@ -186,5 +187,18 @@ describe('gang wars', () => {
       c: 1.5,
       d: 0.5,
     });
+  });
+});
+
+describe('turnuvanın başlangıcı', () => {
+  const now = Date.UTC(2026, 10, 8, 12, 0, 30);
+  it('birkaç dakika sonra ya da seçilen gün ve saatte (dakikaya yuvarlanır, en çok 14 gün sonra)', () => {
+    expect(startOf({ startIn: 5 }, now)).toBe(now + 5 * 60_000);
+    expect(startOf({ startIn: 7 }, now)).toBeNull();
+    const thursday = Date.UTC(2026, 10, 12, 18, 0, 42);
+    expect(startOf({ startsAt: thursday }, now)).toBe(Date.UTC(2026, 10, 12, 18, 0));
+    expect(startOf({ startsAt: now - 60_000 }, now)).toBeNull();
+    expect(startOf({ startsAt: now + TOURNAMENT_PICK_MAX_MS + 120_000 }, now)).toBeNull();
+    expect(startOf({ startsAt: 'yarın' }, now)).toBeNull();
   });
 });

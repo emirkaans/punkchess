@@ -14782,3 +14782,25 @@ a:focus-visible {
   white-space: nowrap;
   cursor: pointer;
 }
+
+/* A tournament's start picked by day and time (src/ui/TournamentsPage.tsx). */
+.t-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 4px 0 10px;
+  font: 500 14px var(--ui);
+}
+.t-pick input {
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--fg);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color-scheme: dark;
+}
+.t-pick b {
+  font-weight: 500;
+  color: var(--lime);
+}

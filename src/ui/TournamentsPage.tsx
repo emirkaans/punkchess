@@ -6,6 +6,7 @@ import {
   SWISS_ROUNDS,
   TOURNAMENT_FORMATS,
   TOURNAMENT_MINUTES,
+  TOURNAMENT_PICK_MAX_MS,
   TOURNAMENT_START_IN,
   TOURNAMENT_TIME_CONTROLS,
   tournamentNameProblem,
@@ -45,6 +46,32 @@ function useNow(): number {
   }, []);
   return now;
 }
+
+const DAY_MS = 86_400_000;
+
+/** A start more than a day away, as its day and time ("Prş 13 Kas 21:00"). */
+const dayText = (at: number, locale: string) =>
+  new Date(at).toLocaleString(locale, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+/** The value of a date-and-time field for `at`, in the browser's time zone. */
+const localInput = (at: number) => {
+  const d = new Date(at);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+/** The picked start's first suggestion: tomorrow at 21:00. */
+const tomorrowEvening = () => {
+  const d = new Date(Date.now() + DAY_MS);
+  d.setHours(21, 0, 0, 0);
+  return localInput(d.getTime());
+};
 
 const clockText = (ms: number) => {
   const s = Math.max(0, Math.round(ms / 1000));
@@ -120,7 +147,7 @@ function Chips<T extends string | number | boolean>({
 }
 
 function TournamentIndex({ onOpen }: { onOpen: (path: string) => void }) {
-  const { t, vt } = useI18n();
+  const { t, vt, locale } = useI18n();
   const account = useAccount();
   const [list, setList] = useState<TournamentList | null>(null);
   const [making, setMaking] = useState(false);
@@ -130,7 +157,9 @@ function TournamentIndex({ onOpen }: { onOpen: (path: string) => void }) {
   const [format, setFormat] = useState<TournamentFormat>('arena');
   const [minutes, setMinutes] = useState<number>(30);
   const [rounds, setRounds] = useState<number>(5);
+  // 0: a day and time picked (pickAt) instead of minutes from now.
   const [startIn, setStartIn] = useState<number>(5);
+  const [pickAt, setPickAt] = useState(tomorrowEvening);
   const [rated, setRated] = useState(true);
   const [error, setError] = useState<MessageKey | null>(null);
   const [busy, setBusy] = useState(false);
@@ -153,13 +182,15 @@ function TournamentIndex({ onOpen }: { onOpen: (path: string) => void }) {
 
   const create = async () => {
     if (tournamentNameProblem(name)) return setError('tournament.problem.name');
+    const start = startIn === 0 ? { startsAt: new Date(pickAt).getTime() } : { startIn };
+    if (startIn === 0 && !Number.isFinite(start.startsAt)) return setError('tournament.problem.time');
     setBusy(true);
     setError(null);
     const res = await fetch('/api/tournaments', {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name, variantId, timeControlId, minutes, startIn, rated, format, rounds }),
+      body: JSON.stringify({ name, variantId, timeControlId, minutes, ...start, rated, format, rounds }),
     }).catch(() => null);
     setBusy(false);
     const data = (await res?.json().catch(() => null)) as { id?: string; error?: string } | null;
@@ -171,7 +202,9 @@ function TournamentIndex({ onOpen }: { onOpen: (path: string) => void }) {
           ? 'tournament.problem.staff'
           : data?.error === 'name'
             ? 'tournament.problem.name'
-            : 'signup.problem.network',
+            : data?.error === 'time'
+              ? 'tournament.problem.time'
+              : 'signup.problem.network',
     );
   };
 
@@ -198,7 +231,9 @@ function TournamentIndex({ onOpen }: { onOpen: (path: string) => void }) {
           </span>
         </span>
         <span className="tz-item-when">
-          {s.status === 'created' ? (
+          {s.status === 'created' && s.startsAt - now > DAY_MS ? (
+            t('tournament.startsOn', { time: dayText(s.startsAt, locale) })
+          ) : s.status === 'created' ? (
             t('tournament.startsIn', { time: clockText(s.startsAt - now) })
           ) : s.status === 'started' && s.format === 'swiss' ? (
             t('tournament.swissLive')
@@ -298,11 +333,25 @@ function TournamentIndex({ onOpen }: { onOpen: (path: string) => void }) {
           <Chips
             legend={t('tournament.startIn')}
             name="t-start"
-            options={TOURNAMENT_START_IN}
-            value={startIn as (typeof TOURNAMENT_START_IN)[number]}
+            options={[...TOURNAMENT_START_IN, 0]}
+            value={startIn}
             onChange={setStartIn}
-            label={(m) => t('tournament.minutes', { n: String(m) })}
+            label={(m) => (m === 0 ? t('tournament.pickTime') : t('tournament.minutes', { n: String(m) }))}
           />
+          {startIn === 0 && (
+            <label className="t-pick">
+              <span>{t('tournament.pickLabel')}</span>
+              <input
+                type="datetime-local"
+                value={pickAt}
+                min={localInput(now + 5 * 60_000)}
+                max={localInput(now + TOURNAMENT_PICK_MAX_MS)}
+                step={300}
+                onChange={(e) => setPickAt(e.target.value)}
+              />
+              {Number.isFinite(new Date(pickAt).getTime()) && <b>{dayText(new Date(pickAt).getTime(), locale)}</b>}
+            </label>
+          )}
           <Chips
             legend={t('lobby.kind')}
             name="t-rated"
@@ -356,7 +405,7 @@ function TournamentRoom({
   onOpen: (path: string) => void;
   onOpenGame: (gameId: string) => void;
 }) {
-  const { t, vt } = useI18n();
+  const { t, vt, locale } = useI18n();
   const account = useAccount();
   const link = useTournament(id, (ticket) => onOpenGame(ticket.gameId));
   const now = useNow() + link.skew;
@@ -432,22 +481,26 @@ function TournamentRoom({
         </div>
         <div className={`tz-clock ${v.status}`}>
           <small>
-            {v.status === 'created'
-              ? t('tournament.startsInLabel')
-              : v.status === 'started' && (swiss || v.war)
-                ? t('tournament.roundLabel')
-                : v.status === 'started'
-                  ? t('tournament.endsInLabel')
-                  : t('tournament.over')}
+            {v.status === 'created' && v.startsAt - now > DAY_MS
+              ? t('tournament.startsOnLabel')
+              : v.status === 'created'
+                ? t('tournament.startsInLabel')
+                : v.status === 'started' && (swiss || v.war)
+                  ? t('tournament.roundLabel')
+                  : v.status === 'started'
+                    ? t('tournament.endsInLabel')
+                    : t('tournament.over')}
           </small>
           <span>
-            {v.status === 'created'
-              ? clockText(v.startsAt - now)
-              : v.status === 'started' && (swiss || v.war)
-                ? `${v.round}/${v.rounds ?? '?'}`
-                : v.status === 'started'
-                  ? clockText(v.endsAt - now)
-                  : '—'}
+            {v.status === 'created' && v.startsAt - now > DAY_MS
+              ? dayText(v.startsAt, locale)
+              : v.status === 'created'
+                ? clockText(v.startsAt - now)
+                : v.status === 'started' && (swiss || v.war)
+                  ? `${v.round}/${v.rounds ?? '?'}`
+                  : v.status === 'started'
+                    ? clockText(v.endsAt - now)
+                    : '—'}
           </span>
         </div>
       </header>

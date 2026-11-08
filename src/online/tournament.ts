@@ -18,6 +18,23 @@ import type { SeatTicket } from './protocol.ts';
 export const TOURNAMENT_MINUTES = [20, 30, 45, 60, 90] as const;
 /** How soon after it is made a tournament can start, in minutes. */
 export const TOURNAMENT_START_IN = [2, 5, 10, 15, 30, 60] as const;
+/** Furthest ahead a start can be picked by day and time (to share the link days before). */
+export const TOURNAMENT_PICK_MAX_MS = 14 * 86_400_000;
+
+/**
+ * When a new tournament starts: `startIn` minutes from now, or a picked `startsAt` (kept to the
+ * minute, from a minute ahead up to TOURNAMENT_PICK_MAX_MS). Null: not allowed.
+ */
+export function startOf(body: { readonly startIn?: unknown; readonly startsAt?: unknown }, now: number): number | null {
+  if (body.startsAt !== undefined) {
+    if (typeof body.startsAt !== 'number' || !Number.isFinite(body.startsAt)) return null;
+    const at = Math.floor(body.startsAt / 60_000) * 60_000;
+    return at >= now + 60_000 && at <= now + TOURNAMENT_PICK_MAX_MS ? at : null;
+  }
+  return (TOURNAMENT_START_IN as readonly number[]).includes(Number(body.startIn))
+    ? now + Number(body.startIn) * 60_000
+    : null;
+}
 export const TOURNAMENT_MAX_PLAYERS = 200;
 /** Time controls a tournament can use: those with a clock. */
 export const TOURNAMENT_TIME_CONTROLS: readonly string[] = TIME_CONTROLS.filter((tc) => tc.initialMs !== null).map(
@@ -276,7 +293,9 @@ export interface CreateTournament {
   readonly timeControlId: string;
   /** Arena: its length. */
   readonly minutes: number;
-  readonly startIn: number;
+  /** Minutes from now (TOURNAMENT_START_IN), unless a day and time was picked: `startsAt`. */
+  readonly startIn?: number;
+  readonly startsAt?: number;
   readonly rated: boolean;
   readonly format?: TournamentFormat;
   /** Swiss: its rounds. */

@@ -31,7 +31,7 @@ import {
   SWISS_ROUND_GAP_MS,
   TOURNAMENT_MAX_PLAYERS,
   TOURNAMENT_MINUTES,
-  TOURNAMENT_START_IN,
+  startOf,
   TOURNAMENT_TIME_CONTROLS,
   buchholz,
   newPlayer,
@@ -726,15 +726,14 @@ export async function handleTournaments(request: Request, env: Env, url: URL): P
   const format: TournamentFormat = body.format === 'swiss' ? 'swiss' : 'arena';
   if (!listVariants().some((v) => v.id === body.variantId)) return json({ error: 'bad-request' }, 400);
   if (!TOURNAMENT_TIME_CONTROLS.includes(String(body.timeControlId))) return json({ error: 'bad-request' }, 400);
-  if (!(TOURNAMENT_START_IN as readonly number[]).includes(Number(body.startIn)))
-    return json({ error: 'bad-request' }, 400);
+  const startsAt = startOf(body, now);
+  if (startsAt === null) return json({ error: 'time' }, 400);
   if (format === 'arena' && !(TOURNAMENT_MINUTES as readonly number[]).includes(Number(body.minutes)))
     return json({ error: 'bad-request' }, 400);
   if (format === 'swiss' && !(SWISS_ROUNDS as readonly number[]).includes(Number(body.rounds)))
     return json({ error: 'bad-request' }, 400);
 
   const id = randomGameId();
-  const startsAt = now + Number(body.startIn) * 60_000;
   const tc = timeControl(String(body.timeControlId));
   const rounds = format === 'swiss' ? Number(body.rounds) : undefined;
   const meta: TournamentMeta = {
