@@ -5084,6 +5084,28 @@ button.primary:hover:not(:disabled) {
   padding: clamp(14px, 2.4vh, 24px);
   gap: clamp(10px, 1.8vh, 18px);
 }
+/*
+ * Opening a game (the form in the Lobby tab): nothing scrolls inside the card. The card keeps
+ * its full height; on a short screen the two "or" rows below step aside for it, and on a very
+ * short one the page scrolls.
+ */
+.online-lobby:has(.seek-form) {
+  height: auto;
+  min-height: calc(100svh - var(--toolbar-h, 73px));
+}
+.lobby-card:has(.seek-form),
+.lobby-card:has(.seek-form) .lobby-panel,
+.lobby-card:has(.seek-form) .lobby-scroll {
+  flex: none;
+}
+.lobby-card:has(.seek-form) .lobby-scroll {
+  overflow: visible;
+}
+@media (max-height: 720px) {
+  .online-lobby:has(.seek-form) .offline-play {
+    display: none;
+  }
+}
 .lobby-card .lobby-panel {
   flex: 1 1 auto;
   min-height: 0;
