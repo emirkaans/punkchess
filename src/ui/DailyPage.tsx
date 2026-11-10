@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { dailyDay, dailyNumber, dailyShareText, gridEmoji, gridSolved, nextDailyAt } from '../online/daily.ts';
 import type { DailyResponse, DailySaved } from '../online/daily.ts';
 import { dailyResults, localStreak, saveLocal } from './dailyStore.ts';
+import { isStaffRole } from '../online/admin.ts';
 import { useAccount } from './account.ts';
 import { Board } from './Board.tsx';
 import { useI18n } from './i18n.tsx';
@@ -211,9 +212,47 @@ export function DailyPage({ prefs }: { prefs: Prefs }) {
           </div>
         )}
 
+        {isStaffRole(account.user?.role) && daily && <StoryShare number={daily.number} />}
         <p className="muted puzzle-note">{t(account.user ? 'daily.note' : 'daily.guestNote')}</p>
         <p className="muted puzzle-credit">{t('puzzle.credit')}</p>
       </aside>
     </main>
+  );
+}
+
+/**
+ * Staff only: today's puzzle as an Instagram story picture (/og/daily-story.png). On a phone the
+ * share sheet opens with it (Instagram → Story); elsewhere it is downloaded. The picture is
+ * fetched ahead, so the share runs straight from the tap (browsers ask for that).
+ */
+function StoryShare({ number }: { number: number }) {
+  const { t } = useI18n();
+  const [file, setFile] = useState<File | null>(null);
+  useEffect(() => {
+    let live = true;
+    void fetch('/og/daily-story.png')
+      .then((r) => (r.ok ? r.blob() : null))
+      .then((b) => live && b && setFile(new File([b], `punkchess-sabotaj-${number}.png`, { type: 'image/png' })))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [number]);
+  const share = async () => {
+    if (!file) return;
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file] }).catch(() => undefined);
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(file);
+    a.download = file.name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  return (
+    <button className="daily-story" disabled={!file} onClick={() => void share()}>
+      {t('daily.storyShare')}
+    </button>
   );
 }

@@ -27,7 +27,8 @@
     "format:check": "prettier --check .",
     "parity": "node --experimental-strip-types --no-warnings scripts/parity.ts",
     "icons": "node --experimental-strip-types --no-warnings scripts/make-icons.ts",
-    "og-assets": "node --experimental-strip-types --no-warnings scripts/make-og-assets.ts"
+    "og-assets": "node --experimental-strip-types --no-warnings scripts/make-og-assets.ts",
+    "story-assets": "node --experimental-strip-types --no-warnings scripts/make-story-assets.ts"
   },
   "dependencies": {
     "react": "^19.3.0",

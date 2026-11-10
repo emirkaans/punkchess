@@ -45,6 +45,7 @@ export { Tournament } from './tournament.ts';
 import { withAccountHeaders } from './account-headers.ts';
 import { handleTournaments } from './tournament.ts';
 import { outagePage } from './outage.ts';
+import { sendDailyStory, storyResponse } from './story.ts';
 
 const ID_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 
@@ -140,11 +141,12 @@ export default {
     }
   },
   // Every 5 minutes (wrangler.jsonc triggers): a sample of who is on the site, from 23:00 the
-  // day's report, and alerts to the owner.
+  // day's report, alerts to the owner, and at 12:00 the daily puzzle's story picture.
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(sampleLive(env));
     ctx.waitUntil(keepDailyReport(env).catch((e: unknown) => console.error('daily report', e)));
     ctx.waitUntil(checkAlerts(env).catch((e: unknown) => console.error('alerts', e)));
+    ctx.waitUntil(sendDailyStory(env, Date.now()).catch((e: unknown) => console.error('daily story', e)));
   },
 } satisfies ExportedHandler<Env>;
 
@@ -250,6 +252,7 @@ async function handle(request: Request, env: Env): Promise<Response> {
   }
   if (url.pathname.startsWith('/api/')) return notFound();
 
+  if (url.pathname === '/og/daily-story.png' && request.method === 'GET') return storyResponse(env, url);
   const og = /^\/og\/([A-Za-z0-9]{8})\.png$/.exec(url.pathname);
   if (og) return toRoom(env, request, og[1], '/og');
 

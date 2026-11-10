@@ -36,7 +36,7 @@ const json = (data: unknown, status = 200) =>
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
 
-const toData = (r: PuzzleRow): PuzzleData => ({
+export const toData = (r: PuzzleRow): PuzzleData => ({
   id: r.id,
   variantId: r.variant_id,
   fen: r.fen,
@@ -48,7 +48,7 @@ const toData = (r: PuzzleRow): PuzzleData => ({
 const COLUMNS = 'p.id, p.variant_id, p.fen, p.moves, p.rating, p.themes';
 
 /** The day's puzzle, picked now if nobody asked for it yet. */
-async function puzzleOf(db: D1Database, day: string): Promise<PuzzleRow | null> {
+export async function puzzleOf(db: D1Database, day: string): Promise<PuzzleRow | null> {
   const kept = await db
     .prepare(`SELECT ${COLUMNS} FROM daily_puzzles d JOIN puzzles p ON p.id = d.puzzle_id WHERE d.day = ?1`)
     .bind(day)

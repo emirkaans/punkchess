@@ -14930,3 +14930,15 @@ a:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Staff: today's puzzle as an Instagram story (src/ui/DailyPage.tsx). */
+.daily-story {
+  align-self: center;
+  margin: 10px auto 0;
+  display: block;
+  padding: 8px 14px;
+  font: 500 14px var(--ui);
+  color: var(--lime);
+  background: transparent;
+  border: 1px dashed var(--lime);
+}

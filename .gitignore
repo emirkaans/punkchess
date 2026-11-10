@@ -5,3 +5,4 @@ data/
 .wrangler
 .dev.vars
 backups/
+story-sample*.png

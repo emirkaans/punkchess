@@ -8,3 +8,4 @@ package-lock.json
 server/og-assets.ts
 # Stockfish.js, distributed unmodified (see /licenses).
 public/stockfish
+server/story-assets.ts
