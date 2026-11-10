@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { createGame, listVariants, setupStartPosition } from '../src/engine/index.ts';
-import { LocalizedError, detectLocale, dictionaries, errorText, translate, translator } from '../src/i18n/index.ts';
+import {
+  LocalizedError,
+  PACK_LOADERS,
+  detectLocale,
+  dictionaries,
+  errorText,
+  loadLocale,
+  translate,
+  translator,
+} from '../src/i18n/index.ts';
+import type { Locale } from '../src/i18n/index.ts';
 import { recordTexts } from '../src/i18n/records.ts';
 import { variantTexts } from '../src/i18n/variant.ts';
 import { decodeLink } from '../src/storage/share.ts';
@@ -24,11 +34,67 @@ describe('çeviri sözlükleri', () => {
     expect(translate('tr', 'status.turn', { color: 'Beyaz' })).toBe('Sıra: Beyaz');
   });
 
-  it('tarayıcı dili: Türkçe ise tr, değilse en', () => {
+  it('tarayıcı dili: Türkçe varsa tr, yoksa sitede olan ilk dil, o da yoksa en', () => {
     expect(detectLocale(['tr-TR', 'en'])).toBe('tr');
     expect(detectLocale(['de-DE', 'tr'])).toBe('tr');
     expect(detectLocale(['en-US'])).toBe('en');
+    expect(detectLocale(['es-MX', 'en'])).toBe('es');
+    expect(detectLocale(['pt-BR'])).toBe('pt');
+    expect(detectLocale(['ru-RU', 'fr-FR'])).toBe('fr');
+    expect(detectLocale(['ja-JP'])).toBe('en');
     expect(detectLocale([])).toBe('en');
+  });
+});
+
+describe('dil paketleri', () => {
+  const packed = Object.keys(PACK_LOADERS) as Locale[];
+
+  it('her pakette her metin var, yer tutucular aynı, boş metin yok', async () => {
+    const tr = dictionaries.tr;
+    const names = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
+    for (const locale of packed) {
+      const { messages } = (await PACK_LOADERS[locale as keyof typeof PACK_LOADERS]()).default;
+      expect(Object.keys(messages).sort(), locale).toEqual(Object.keys(tr).sort());
+      for (const key of Object.keys(tr) as (keyof typeof tr)[]) {
+        expect(names(messages[key]), `${locale} ${key}`).toEqual(names(tr[key]));
+        expect(messages[key].trim(), `${locale} ${key}`).not.toBe('');
+      }
+    }
+  });
+
+  it('paket yüklenince metinler o dilde, yüklenmeden önce İngilizce', async () => {
+    expect(translate('es', 'status.turn', { color: 'x' })).toBe(translate('en', 'status.turn', { color: 'x' }));
+    for (const locale of packed) await loadLocale(locale);
+    for (const locale of packed)
+      expect(translate(locale, 'status.turn', { color: 'x' }), locale).not.toBe(
+        translate('en', 'status.turn', { color: 'x' }),
+      );
+  });
+
+  it('her paketin varyant metinleri tam: ad, açıklama, kural kartı, taş adları, kurulum, rozetler', async () => {
+    for (const locale of packed) await loadLocale(locale);
+    for (const locale of packed) {
+      for (const v of listVariants()) {
+        const t = variantTexts(v, locale);
+        const en = variantTexts(v, 'en');
+        expect(t.name, `${locale} ${v.id}`).toBeTruthy();
+        expect(t.description.length, `${locale} ${v.id}`).toBe(v.description.length);
+        expect(t.rules.bullets.length, `${locale} ${v.id}`).toBe(v.rules.bullets.length);
+        expect(t.rules.examples.length, `${locale} ${v.id}`).toBe(v.rules.examples.length);
+        expect(t.rules.summary, `${locale} ${v.id}`).not.toBe(en.rules.summary);
+        for (const type of v.pieceTypes) expect(t.pieceName(type), `${locale} ${v.id} ${type}`).toBeTruthy();
+        for (const q of v.setup?.questions ?? []) {
+          const lq = t.question(q);
+          expect(lq.title, `${locale} ${v.id} ${q.id}`).not.toBe(en.question(q).title);
+          for (const o of lq.options) expect(o.label, `${locale} ${v.id} ${q.id} ${o.id}`).toBeTruthy();
+        }
+      }
+      const jester = listVariants().find((v) => v.id === 'jester')!;
+      const state = createGame(jester, setupStartPosition(jester, { w: 'g', b: 'g' }));
+      const title = variantTexts(jester, locale).badge('j', state.position, 'w')?.title ?? '';
+      expect(title, locale).toContain(variantTexts(jester, locale).pieceName('n'));
+      expect(title, locale).not.toContain('{name}');
+    }
   });
 });
 

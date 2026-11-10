@@ -758,8 +758,9 @@ const Flame = () => (
  * else (seven looks in turn), spaces kept as gaps. Read out as the plain name.
  */
 function RansomTitle({ text }: { text: string }) {
-  // Words stay whole when the line breaks.
-  const words = text.toLocaleUpperCase('tr').split(/\s+/).filter(Boolean);
+  const { locale } = useI18n();
+  // Words stay whole when the line breaks; capitals by the page's language (Turkish i -> İ only in Turkish).
+  const words = text.toLocaleUpperCase(locale).split(/\s+/).filter(Boolean);
   let n = 0;
   return (
     <h1 className="tz-ransom" aria-label={text}>

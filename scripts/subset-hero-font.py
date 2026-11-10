@@ -17,6 +17,9 @@ ROOT = Path(__file__).resolve().parent.parent
 messages = (ROOT / 'src/i18n/messages.ts').read_text(encoding='utf-8')
 lines = re.findall(r"^  'home\.lede[12]': ([\"'])(.*?)\1,$", messages, flags=re.M)
 assert lines, 'no headline found in messages.ts'
+# The language packs (src/i18n/locales/*.ts), indented one level deeper.
+for pack in sorted((ROOT / 'src/i18n/locales').glob('*.ts')):
+    lines += re.findall(r"^\s+'home\.lede[12]': ([\"'])(.*?)\1,\r?$", pack.read_text(encoding='utf-8'), flags=re.M)
 chars = sorted(set(''.join(text for _, text in lines)) | {' '})
 
 for part in ('latin', 'latin-ext'):

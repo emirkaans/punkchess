@@ -14,13 +14,23 @@ export const cardTone = (r: CardResult) =>
 
 /** One sentence: what the card did, on which squares. */
 export function useCardSentence(variant: VariantDefinition, r: CardResult): string {
-  const { t, vt, locale } = useI18n();
+  const { t: tt, vt, locale } = useI18n();
+  // A sentence may start with a piece name (lower case in it): its first letter in capitals.
+  const t = (key: MessageKey, params?: Parameters<typeof tt>[1]) => {
+    const text = tt(key, params);
+    return text.charAt(0).toLocaleUpperCase(locale) + text.slice(1);
+  };
   if (r.empty) return t('card.result.empty');
   if (r.hidden) return t(`card.result.${r.id}Hidden` as MessageKey);
   const [c0, c1] = r.changes;
   const last = r.changes.at(-1);
-  const piece = (p: Piece | null | undefined) => (p ? vt(variant).pieceName(p.type).toLocaleLowerCase(locale) : '');
-  const side = (c: Color | undefined) => (c ? t(`card.result.side.${c}`) : '');
+  // Piece names in lower case inside the sentence (German nouns keep their capital); a sentence
+  // that starts with one gets its capital back below.
+  const piece = (p: Piece | null | undefined) => {
+    const name = p ? vt(variant).pieceName(p.type) : '';
+    return locale === 'de' ? name : name.toLocaleLowerCase(locale);
+  };
+  const side = (c: Color | undefined) => (c ? tt(`card.result.side.${c}`) : '');
   const owner = c0?.before?.color ?? c0?.after?.color;
   const params: Record<string, string> = {
     square: c0 ? squareName(c0.square) : '',

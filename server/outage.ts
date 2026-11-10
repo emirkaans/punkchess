@@ -1,6 +1,6 @@
 // The page shown when the Worker itself breaks on a page request (design 3, "Kapalı tabelası"),
-// instead of Cloudflare's own error page: one self-contained page, in Turkish or English by the
-// browser's language, that tries again every 30 seconds. Its fonts are static files, which
+// instead of Cloudflare's own error page: one self-contained page, in the browser's language (one of the
+// site's languages), that tries again every 30 seconds. Its fonts are static files, which
 // Cloudflare serves without the Worker, so they load even then.
 
 const TEXT = {
@@ -18,14 +18,58 @@ const TEXT = {
     body: 'Something is wrong on the server; we know and we are on it. The page will reload by itself, nothing to do.',
     retry: 'trying again in 30 s',
   },
+  es: {
+    title: 'Pausa corta · punkchess',
+    sign: 'PAUSA CORTA',
+    sub: 'volvemos enseguida',
+    body: 'Algo falla en el servidor; lo sabemos y estamos en ello. La página se recargará sola, no tienes que hacer nada.',
+    retry: 'reintentando en 30 s',
+  },
+  pt: {
+    title: 'Pausa rápida · punkchess',
+    sign: 'PAUSA RÁPIDA',
+    sub: 'já voltamos',
+    body: 'Algo deu errado no servidor; já sabemos e estamos cuidando. A página recarrega sozinha, não precisa fazer nada.',
+    retry: 'tentando de novo em 30 s',
+  },
+  fr: {
+    title: 'Petite pause · punkchess',
+    sign: 'PETITE PAUSE',
+    sub: 'on revient dans un instant',
+    body: "Quelque chose cloche sur le serveur ; on est au courant et on s'en occupe. La page se rechargera toute seule, rien à faire.",
+    retry: 'nouvel essai dans 30 s',
+  },
+  it: {
+    title: 'Piccola pausa · punkchess',
+    sign: 'PICCOLA PAUSA',
+    sub: 'torniamo subito',
+    body: 'Qualcosa non va sul server; lo sappiamo e ci stiamo lavorando. La pagina si ricarica da sola, non devi fare nulla.',
+    retry: 'riprovo tra 30 s',
+  },
+  de: {
+    title: 'Kurze Pause · punkchess',
+    sign: 'KURZE PAUSE',
+    sub: 'gleich wieder da',
+    body: 'Auf dem Server ist etwas kaputt; wir wissen Bescheid und kümmern uns. Die Seite lädt von selbst neu, du musst nichts tun.',
+    retry: 'neuer Versuch in 30 s',
+  },
 } as const;
+
+type Lang = keyof typeof TEXT;
+
+/** Turkish whenever the browser lists it, else its first language the page has, else English. */
+function pickLang(header: string): Lang {
+  const codes = header.split(',').map((part) => part.trim().slice(0, 2).toLowerCase());
+  if (codes.includes('tr')) return 'tr';
+  return (codes.find((c) => c in TEXT) as Lang | undefined) ?? 'en';
+}
 
 /** The outage page for a request (its language from Accept-Language). */
 export function outagePage(request: Request): Response {
-  const tr = /^tr\b|,\s*tr\b/i.test(request.headers.get('accept-language') ?? 'tr');
-  const t = TEXT[tr ? 'tr' : 'en'];
+  const lang = pickLang(request.headers.get('accept-language') ?? 'tr');
+  const t = TEXT[lang];
   const html = `<!doctype html>
-<html lang="${tr ? 'tr' : 'en'}">
+<html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

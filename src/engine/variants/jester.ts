@@ -123,7 +123,7 @@ export const JESTER: PieceDefinition = {
 };
 
 /** Badge showing the Jester's current form; the texts come from the caller's language. */
-function jesterBadge(
+export function jesterBadge(
   pos: Position,
   color: Color,
   noMoveYet: (name: string) => string,
