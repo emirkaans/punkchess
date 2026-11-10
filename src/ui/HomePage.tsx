@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { listVariants } from '../engine/index.ts';
 import type { LiveStats } from '../online/lobby.ts';
 import { dailyDay, dailyNumber, gridEmoji } from '../online/daily.ts';
@@ -73,6 +73,61 @@ function Arrow() {
   );
 }
 
+/**
+ * Keeps the hero one screen tall in every language: when its text does not fit (a long
+ * headline that wraps to more lines), the headline shrinks (--hero-fit, down to 55%) until it
+ * does; the slogan in the corner shrinks (--slogan-fit) when it would run off the right edge.
+ */
+function useHeroFit(locale: string) {
+  const ref = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const hero = ref.current;
+    if (!hero) return;
+    const fit = () => {
+      hero.style.setProperty('--hero-fit', '1');
+      hero.style.setProperty('--slogan-fit', '1');
+      const screen = window.innerHeight;
+      const copy = hero.querySelector<HTMLElement>('.hero-copy');
+      // The text with the hero's padding (the top one runs under the top bar) within one screen.
+      const fits = () => {
+        const cs = getComputedStyle(hero);
+        const need = (copy?.offsetHeight ?? 0) + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+        return need <= screen + 1 && hero.offsetHeight <= screen + 1;
+      };
+      if (!fits()) {
+        let lo = 0.55;
+        let hi = 1;
+        for (let i = 0; i < 7; i++) {
+          const mid = (lo + hi) / 2;
+          hero.style.setProperty('--hero-fit', String(mid));
+          if (fits()) lo = mid;
+          else hi = mid;
+        }
+        hero.style.setProperty('--hero-fit', String(lo));
+      }
+      const slogan = hero.querySelector<HTMLElement>('.slogan');
+      if (slogan && slogan.offsetWidth) {
+        const room = hero.getBoundingClientRect().right - 8;
+        const r = slogan.getBoundingClientRect();
+        if (r.right > room) hero.style.setProperty('--slogan-fit', String(Math.max(0.5, (room - r.left) / r.width)));
+      }
+    };
+    fit();
+    let frame = 0;
+    const later = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fit);
+    };
+    window.addEventListener('resize', later);
+    document.fonts?.ready.then(later, () => undefined);
+    return () => {
+      window.removeEventListener('resize', later);
+      cancelAnimationFrame(frame);
+    };
+  }, [locale]);
+  return ref;
+}
+
 /** Landing page: hero, the variants and the ways to play. */
 export function HomePage({
   onPlay,
@@ -84,7 +139,8 @@ export function HomePage({
   openVariant,
   onVariantOpened,
 }: Props) {
-  const { t, vt } = useI18n();
+  const { t, vt, locale } = useI18n();
+  const heroRef = useHeroFit(locale);
   const today = dailyDay(Date.now());
   const done = dailyResults()[today];
   const streak = localStreak(today);
@@ -100,7 +156,7 @@ export function HomePage({
   }, [openVariant, onVariantOpened]);
   return (
     <div className="home">
-      <section className="hero">
+      <section className="hero" ref={heroRef}>
         <img className="hero-image" src={`${import.meta.env.BASE_URL}hero.webp`} alt={t('home.heroAlt')} />
         <div className="hero-copy">
           <h1 className="sr-only">punkchess</h1>

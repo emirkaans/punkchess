@@ -907,11 +907,13 @@ button.primary:hover:not(:disabled) {
   position: relative;
   z-index: 2;
   max-width: 780px;
+  /* Its children's margins stay inside it, so its height is all the text takes (useHeroFit). */
+  display: flow-root;
 }
 /* The headline: two lines, the second (the punchline) in pink. */
 .lede {
   font:
-    400 clamp(46px, 7vw, 88px) / 1 'Protest Revolution',
+    400 calc(clamp(46px, 7vw, 88px) * var(--hero-fit, 1)) / 1 'Protest Revolution',
     var(--marker);
   margin: clamp(10px, 2vh, 18px) 0 clamp(12px, 2.5vh, 20px);
   text-shadow:
@@ -976,7 +978,8 @@ button.primary:hover:not(:disabled) {
   box-shadow: none;
 }
 .slogan {
-  font: 400 30px/1 var(--marker);
+  /* --slogan-fit: smaller when a long slogan would run off the edge (HomePage, useHeroFit). */
+  font: 400 calc(30px * var(--slogan-fit, 1)) / 1 var(--marker);
   color: #d7d3cb;
   text-align: center;
   transform: rotate(-8deg);
@@ -4067,25 +4070,132 @@ button.primary:hover:not(:disabled) {
 .site-footer-bottom a {
   color: var(--muted);
 }
-.site-footer-lang {
-  display: flex;
-  gap: 6px;
+/* Languages (design C, "Çıkartma"): flags as crooked stickers with a white edge
+   (src/ui/LangFlag.tsx); in the footer one lime tag button, the list opening upward. */
+.lang-flag {
+  flex: none;
+  display: block;
+  width: 26px;
+  height: 18px;
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 2px #f1eee8,
+    3px 3px 0 2px #000;
+  transform: rotate(-4deg);
 }
-.site-footer-lang button {
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: transparent;
+.lang-row:nth-child(even) .lang-flag,
+.account-lang:nth-child(odd) .lang-flag {
+  transform: rotate(3deg);
+}
+.lang-code {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.account-menu .account-lang,
+.lang-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.account-menu .account-lang.on,
+.lang-row.on {
+  color: var(--pink);
+  border-color: var(--pink);
+}
+.account-lang.on .lang-code,
+.lang-row.on .lang-code {
+  display: none;
+}
+.account-lang.on::after,
+.lang-row.on::after {
+  content: '✓';
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--pink);
+}
+.account-value .lang-flag {
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  margin-right: 8px;
+  vertical-align: -1px;
+  box-shadow: 0 0 0 1.5px #f1eee8;
+}
+.lang-picker {
+  position: relative;
+}
+.lang-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+  padding: 7px 12px 7px 11px;
+  border: 0;
+  background: var(--lime);
+  color: var(--on-lime, #0a0a0b);
+  transform: rotate(-1.5deg);
+  box-shadow: 4px 4px 0 #000;
+}
+.lang-trigger:hover {
+  background: var(--lime);
+  color: #0a0a0b;
+  transform: rotate(-1.5deg) translate(-1px, -1px);
+  box-shadow: 5px 5px 0 #000;
+}
+.lang-trigger b {
+  font: 400 19px/1 var(--display);
+  letter-spacing: 1.5px;
+}
+.lang-chev {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  transition: transform 0.15s;
+}
+.lang-picker.open .lang-chev {
+  transform: rotate(180deg);
+}
+.lang-drop {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 12px);
+  z-index: 30;
+  min-width: 230px;
+  padding: 6px 0;
+  background: #141416;
+  border: 2px solid var(--pink);
+  box-shadow: 6px 6px 0 #000;
+  transform: rotate(0.6deg);
+}
+.lang-drop.from-left {
+  right: auto;
+  left: 0;
+}
+.lang-row {
+  width: calc(100% - 12px);
+  margin: 0 6px;
+  min-height: 0;
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  border-bottom-color: #232327;
+  border-radius: 0;
+  background: none;
   color: var(--fg);
+  text-align: left;
   font:
-    700 12px/1 'Space Mono',
+    400 15px/1.2 'Space Mono',
     monospace;
 }
-.site-footer-lang button.on {
-  border-color: var(--pink);
-  background: var(--pink);
-  color: var(--bg);
+.lang-row:last-child {
+  border-bottom-color: transparent;
+}
+.lang-row:hover {
+  background: #1b1b1f;
+  color: var(--fg);
 }
 @media (max-width: 900px) {
   .site-footer-grid {
@@ -5017,10 +5127,6 @@ button.primary:hover:not(:disabled) {
 }
 .account-back {
   color: var(--muted);
-}
-.account-menu .account-lang.on {
-  color: var(--lime);
-  border-color: var(--lime);
 }
 .account-section {
   display: flex;

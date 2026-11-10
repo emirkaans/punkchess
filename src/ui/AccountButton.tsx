@@ -2,6 +2,7 @@ import { CoinIcon } from './CoinToast.tsx';
 import { useCoins } from './coins.ts';
 import { useEffect, useRef, useState } from 'react';
 import { LOCALES } from '../i18n/index.ts';
+import { LangFlag } from './LangFlag.tsx';
 import type { Locale } from '../i18n/index.ts';
 import { signInWithGoogle, signOut, useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
@@ -163,7 +164,11 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
                   setView('main');
                 }}
               >
-                {name}
+                <LangFlag locale={code} />
+                <span>{name}</span>
+                <span className="lang-code" aria-hidden="true">
+                  {code.toUpperCase()}
+                </span>
               </button>
             ))}
           </>
@@ -227,7 +232,10 @@ export function AccountButton({ locale, onLocale, onSettings, onPreferences }: P
               <button role="menuitem" className="account-row" onClick={() => setView('language')}>
                 <RowIcon d={ROW_ICONS.globe} />
                 <span>{t('toolbar.language')}</span>
-                <span className="account-value">{LOCALES[locale]}</span>
+                <span className="account-value">
+                  <LangFlag locale={locale} />
+                  {LOCALES[locale]}
+                </span>
                 <Chevron />
               </button>
               <button

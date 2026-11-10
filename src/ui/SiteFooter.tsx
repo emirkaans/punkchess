@@ -1,8 +1,8 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { listVariants } from '../engine/index.ts';
-import { LOCALES } from '../i18n/index.ts';
 import type { Locale, MessageKey } from '../i18n/index.ts';
 import { useI18n } from './i18n.tsx';
+import { LangPicker } from './LangFlag.tsx';
 import { Crown } from './Punk.tsx';
 
 const MAIL = 'info@punkchess.com';
@@ -104,20 +104,7 @@ export function SiteFooter({ locale, onLocale, onNavigate, onVariant }: Props) {
       <div className="site-footer-bottom">
         <span>{t('footer.copyright', { year: String(new Date().getFullYear()) })}</span>
         <a href={`mailto:${MAIL}`}>{MAIL}</a>
-        <div className="site-footer-lang" role="group" aria-label={t('toolbar.language')}>
-          {(Object.keys(LOCALES) as Locale[]).map((l) => (
-            <button
-              key={l}
-              className={l === locale ? 'on' : ''}
-              aria-pressed={l === locale}
-              lang={l}
-              title={LOCALES[l]}
-              onClick={() => onLocale(l)}
-            >
-              {l.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        <LangPicker locale={locale} onLocale={onLocale} />
       </div>
     </footer>
   );
