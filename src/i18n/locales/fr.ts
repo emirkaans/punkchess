@@ -236,7 +236,7 @@ const pack: LocalePack = {
     'leaders.back': 'Tous',
     'menu.logo': 'accueil punkchess',
     'home.lede1': 'Les échecs ont',
-    'home.lede2': 'de mauvaises fréquentations.',
+    'home.lede2': 'de mauvaises\nfréquentations.',
     'home.pitch':
       'Échecs gratuits en ligne, variantes bizarres, gangs, tournois et un peu de chaos. Rien à télécharger. Pas de dress code.',
     'home.play': 'Jouer',

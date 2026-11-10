@@ -20,7 +20,8 @@ assert lines, 'no headline found in messages.ts'
 # The language packs (src/i18n/locales/*.ts), indented one level deeper.
 for pack in sorted((ROOT / 'src/i18n/locales').glob('*.ts')):
     lines += re.findall(r"^\s+'home\.lede[12]': ([\"'])(.*?)\1,\r?$", pack.read_text(encoding='utf-8'), flags=re.M)
-chars = sorted(set(''.join(text for _, text in lines)) | {' '})
+# A '\n' (written as backslash-n in the source) in a headline is a line break, not a letter.
+chars = sorted(set(''.join(text.replace('\\n', ' ') for _, text in lines)) | {' '})
 
 for part in ('latin', 'latin-ext'):
     options = subset.Options()

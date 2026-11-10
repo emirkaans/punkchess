@@ -11,7 +11,9 @@ describe('ana sayfa başlık fontu', () => {
       Object.entries(PACK_LOADERS).map(async ([l, load]) => [l, (await load()).default.messages] as const),
     );
     for (const [locale, dict] of [...Object.entries(dictionaries), ...packs]) {
-      const missing = [...new Set(dict['home.lede1'] + dict['home.lede2'])].filter((c) => !covered.has(c));
+      const missing = [...new Set(dict['home.lede1'] + dict['home.lede2'])].filter(
+        (c) => c !== '\n' && !covered.has(c),
+      );
       expect(missing, locale).toEqual([]);
     }
   });

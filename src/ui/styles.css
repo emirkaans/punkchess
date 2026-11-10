@@ -922,6 +922,9 @@ button.primary:hover:not(:disabled) {
 }
 .lede span {
   display: block;
+  /* A headline may set its own line break (a newline in the text), where a long last word
+     would look stranded. */
+  white-space: pre-line;
 }
 .lede span + span {
   color: var(--pink);
