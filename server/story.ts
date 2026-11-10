@@ -1,7 +1,7 @@
 // The daily puzzle as an Instagram story (server/story-image.ts):
 //   GET /og/daily-story.png   today's story picture (kept in the edge cache for the day)
-// and, from the cron, the picture sent to the owner on Telegram once a day at 12:00 (Turkey),
-// to be saved and posted.
+// and, from the cron, the picture sent to the owner on Telegram once a day, as soon as the new
+// day (and its puzzle) starts at midnight, Turkish time, to be saved and posted.
 
 import { createGame, findMove, getVariant, makeMove, parseSquare } from '../src/engine/index.ts';
 import type { PieceType } from '../src/engine/index.ts';
@@ -17,9 +17,6 @@ let assets: Promise<StoryAssets> | null = null;
 const loadAssets = () =>
   (assets ??= unpackStory({ frame: STORY_FRAME, pieces: STORY_PIECES, glyphs: STORY_GLYPHS, banners: STORY_BANNERS }));
 
-/** The hour (Turkey) the story goes out on Telegram. */
-export const STORY_HOUR = 12;
-const TURKEY_MS = 3 * 3_600_000;
 /** A try that did not end is tried again this much later. */
 const RETRY_MS = 15 * 60_000;
 
@@ -76,10 +73,9 @@ export async function storyResponse(env: Env, url: URL): Promise<Response> {
   return res;
 }
 
-/** From the cron: at 12:00 (Turkey) and after, once a day, the story to the owner on Telegram. */
+/** From the cron: once a day, the first run of the day (just after midnight, Turkey), the story to the owner on Telegram. */
 export async function sendDailyStory(env: Env, now: number): Promise<void> {
   if (!env.DB || !env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return;
-  if (new Date(now + TURKEY_MS).getUTCHours() < STORY_HOUR) return;
   const kind = `story:${dailyDay(now)}`;
   // Claimed first: two cron runs at once send one picture. A claim marks the try (its time); a
   // sent picture is marked with 0. A try that did not end (failed, or the Worker stopped

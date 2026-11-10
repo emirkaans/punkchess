@@ -183,6 +183,7 @@ const pack: LocalePack = {
     'daily.streak': 'días seguidos',
     'daily.share': 'Compartir',
     'daily.storyShare': '📸 Compartir en story (staff)',
+    'daily.storyDownload': '⬇ Descargar PNG (admin)',
     'daily.copied': '¡Copiado!',
     'daily.next': 'Próximo problema en {time}',
     'daily.newOne': 'Hay un problema nuevo: recarga la página.',
