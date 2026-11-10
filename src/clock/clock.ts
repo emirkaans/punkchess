@@ -29,9 +29,33 @@ export const TIME_CONTROLS: readonly TimeControl[] = [
   tc(15, 10),
 ];
 
+/** A custom time control's choices: minutes per side and seconds added a move. */
+export const CUSTOM_MINUTES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 40, 45, 60, 90, 120, 180] as const;
+export const CUSTOM_INCREMENTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 45, 60] as const;
+
+/**
+ * The time control of an id: one of TIME_CONTROLS, or a custom "minutes+increment" made of the
+ * choices above ("12+5"); anything else is no clock. An id is valid when timeControl(id).id === id.
+ */
 export function timeControl(id: string): TimeControl {
-  return TIME_CONTROLS.find((t) => t.id === id) ?? TIME_CONTROLS[0];
+  const listed = TIME_CONTROLS.find((t) => t.id === id);
+  if (listed) return listed;
+  const m = /^(\d{1,3})\+(\d{1,2})$/.exec(id);
+  if (m) {
+    const minutes = Number(m[1]);
+    const inc = Number(m[2]);
+    if (
+      (CUSTOM_MINUTES as readonly number[]).includes(minutes) &&
+      (CUSTOM_INCREMENTS as readonly number[]).includes(inc)
+    )
+      return tc(minutes, inc);
+  }
+  return TIME_CONTROLS[0];
 }
+
+/** Whether an id is a custom time control (valid, but not one of the listed ones). */
+export const isCustomTime = (id: string): boolean =>
+  !TIME_CONTROLS.some((t) => t.id === id) && timeControl(id).id === id;
 
 /** Below this the display turns red and shows tenths. */
 export const LOW_TIME_MS = 10_000;

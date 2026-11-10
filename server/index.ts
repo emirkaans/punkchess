@@ -215,6 +215,16 @@ async function handle(request: Request, env: Env): Promise<Response> {
   if (url.pathname === '/api/tv' && request.method === 'GET') {
     return env.LOBBY.get(env.LOBBY.idFromName('main')).fetch(`https://lobby/tv${url.search}`);
   }
+  if (url.pathname === '/api/live' && request.method === 'GET') {
+    // The same list for everyone: kept a few seconds in the edge cache, so the lobby's one
+    // Durable Object is not asked by every visitor.
+    const key = new Request(`${url.origin}/api/live`);
+    const cached = await caches.default.match(key).catch(() => undefined);
+    if (cached) return cached;
+    const fresh = await env.LOBBY.get(env.LOBBY.idFromName('main')).fetch('https://lobby/games');
+    if (fresh.ok) await caches.default.put(key, fresh.clone()).catch(() => undefined);
+    return fresh;
+  }
   if (url.pathname === '/api/stats' && request.method === 'GET') {
     return env.LOBBY.get(env.LOBBY.idFromName('main')).fetch('https://lobby/stats');
   }

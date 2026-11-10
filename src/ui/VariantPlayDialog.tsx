@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { TIME_CONTROLS } from '../clock/clock.ts';
 import { listVariants } from '../engine/index.ts';
 import type { Color, VariantDefinition } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import { useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
 import { Modal } from './Modal.tsx';
+import { TimePicker } from './PlayOptions.tsx';
 import { ApiError, createOnlineGame } from './online/connection.ts';
 import type { Lobby } from './online/LobbyPage.tsx';
 import { playerIdentity } from './online/lobbyConnection.ts';
@@ -139,8 +139,6 @@ export function VariantPlayDialog({
   };
 
   const colorLabel = (c: Color | 'random') => (c === 'random' ? t('online.random') : t(`color.${c}`));
-  const timeLabel = (id: string) =>
-    id === 'none' ? t('time.none') : (TIME_CONTROLS.find((tc) => tc.id === id)?.label ?? id);
   const levels = (value: number, set: (n: number) => void, label: string) => (
     <div className="ps-group">
       <span className="ps-label">{label}</span>
@@ -180,23 +178,7 @@ export function VariantPlayDialog({
       </div>
     </div>
   );
-  const time = (
-    <div className="ps-group">
-      <span className="ps-label">{t('newGame.time')}</span>
-      <div className="ps-times">
-        {TIME_CONTROLS.map((tc) => (
-          <button
-            key={tc.id}
-            type="button"
-            aria-pressed={timeControlId === tc.id}
-            onClick={() => setTimeControlId(tc.id)}
-          >
-            {timeLabel(tc.id)}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+  const time = <TimePicker value={timeControlId} onChange={setTimeControlId} />;
 
   return (
     <Modal

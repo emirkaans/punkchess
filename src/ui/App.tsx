@@ -72,7 +72,7 @@ import { fetchGameInfo, useRecordFeed } from './online/connection.ts';
 import { parseRoute, pathOf } from './routes.ts';
 import type { Route } from './routes.ts';
 import type { GameState } from '../engine/index.ts';
-import { TIME_CONTROLS, remainingMs } from '../clock/clock.ts';
+import { remainingMs, timeControl as timeControlOf } from '../clock/clock.ts';
 import { applyPrefs, directMove, loadPrefs, savePrefs } from './prefs.ts';
 import type { Prefs } from './prefs.ts';
 import { isClassic, isRuleCardHidden, loadSettings, saveSettings } from './settings.ts';
@@ -684,7 +684,7 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
 
   const top: Color = flipped ? 'w' : 'b';
   const bottom: Color = flipped ? 'b' : 'w';
-  const timeControl = TIME_CONTROLS.find((tc) => tc.id === settings.timeControl);
+  const timeControl = timeControlOf(settings.timeControl);
   const gameLabel = [
     texts.name,
     settings.mode === 'hotseat' ? t('mode.hotseatShort') : `${playerName(players.w)} – ${playerName(players.b)}`,

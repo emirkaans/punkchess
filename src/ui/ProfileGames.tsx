@@ -34,7 +34,15 @@ function finalState(variant: VariantDefinition, game: ProfileGame): GameState | 
 }
 
 /** The finished game's last position, small, from the profile player's side, its last move marked. */
-function MiniBoard({ variant, state, flipped }: { variant: VariantDefinition; state: GameState; flipped: boolean }) {
+export function MiniBoard({
+  variant,
+  state,
+  flipped,
+}: {
+  variant: VariantDefinition;
+  state: GameState;
+  flipped: boolean;
+}) {
   const last = state.moves.at(-1)?.move;
   const squares: number[] = [];
   for (let r = 7; r >= 0; r--) for (let f = 0; f < 8; f++) squares.push(r * 8 + f);

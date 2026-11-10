@@ -14,8 +14,9 @@ import type { ChallengeRequest } from '../../online/challenge.ts';
 import { ProfileLink } from '../ProfileLink.tsx';
 import { FollowStrip } from '../FollowStrip.tsx';
 import { ColorPicker, TimePicker, VariantPicker } from '../PlayOptions.tsx';
+import { LiveGames, useLiveList } from './LiveGames.tsx';
 
-type Tab = 'quick' | 'seeks';
+type Tab = 'quick' | 'seeks' | 'live';
 
 /** Lichess-style speed of a time control, from its estimated length (start + 40 increments). */
 function speedOf(timeControlId: string): 'bullet' | 'blitz' | 'rapid' | 'classical' {
@@ -98,6 +99,7 @@ export function LobbyCard({
   const [tab, setTab] = useState<Tab>('quick');
   const account = useAccount();
   const mine = lobby.seeks.find((s) => s.id === lobby.mySeek) ?? null;
+  const live = useLiveList(tab === 'live');
 
   return (
     <section className="online-card lobby-card">
@@ -128,7 +130,7 @@ export function LobbyCard({
       </div>
 
       <div className="lobby-tabs" role="tablist">
-        {(['quick', 'seeks'] as const).map((id) => (
+        {(['quick', 'seeks', 'live'] as const).map((id) => (
           <button
             key={id}
             role="tab"
@@ -138,6 +140,7 @@ export function LobbyCard({
           >
             {t(`lobby.tab.${id}`)}
             {id === 'seeks' && lobby.seeks.length > 0 && <span className="lobby-count">{lobby.seeks.length}</span>}
+            {id === 'live' && !!live?.total && <span className="lobby-count">{live.total}</span>}
           </button>
         ))}
       </div>
@@ -146,6 +149,7 @@ export function LobbyCard({
 
       {tab === 'quick' && <QuickPairing mine={mine} lobby={lobby} />}
       {tab === 'seeks' && <SeekList mine={mine} lobby={lobby} defaultVariantId={defaultVariantId} />}
+      {tab === 'live' && <LiveGames list={live} onOpen={onOpenGame} />}
     </section>
   );
 }

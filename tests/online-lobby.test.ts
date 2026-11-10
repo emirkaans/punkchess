@@ -39,7 +39,11 @@ describe('lobi', () => {
     });
     expect(makeSeek('s1', alice, { variantId: v, timeControlId: '3+2', color: 'mor' }, false, 1)?.color).toBe('random');
     expect(makeSeek('s1', alice, { variantId: 'yok', timeControlId: '3+2', color: 'w' }, false, 1)).toBeNull();
-    expect(makeSeek('s1', alice, { variantId: v, timeControlId: '7+7', color: 'w' }, false, 1)).toBeNull();
+    // A custom time made of the slider's choices is fine; anything else is not.
+    expect(makeSeek('s1', alice, { variantId: v, timeControlId: '7+7', color: 'w' }, false, 1)?.timeControlId).toBe(
+      '7+7',
+    );
+    expect(makeSeek('s1', alice, { variantId: v, timeControlId: '7+11', color: 'w' }, false, 1)).toBeNull();
   });
 
   it('hızlı eşleşme: aynı süredeki en eski hızlı ilan, kendi ilanı ve lobi ilanları hariç', () => {

@@ -55,6 +55,16 @@ export interface TvResponse {
   readonly game: LiveGame | null;
 }
 
+/** Most games the lobby's "Playing now" tab lists (GET /api/live). */
+export const LIVE_LIST_MAX = 12;
+
+/** What GET /api/live answers. */
+export interface LiveList {
+  readonly games: readonly LiveGame[];
+  /** All games under way (more than listed when there are many). */
+  readonly total: number;
+}
+
 /** The game TV shows: the best-rated rated game, else the most recently started one. */
 export function pickTv(games: Iterable<LiveGame>, skip: string | null = null): LiveGame | null {
   let best: LiveGame | null = null;

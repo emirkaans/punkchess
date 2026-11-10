@@ -5393,10 +5393,20 @@ button.primary:hover:not(:disabled) {
   white-space: nowrap;
 }
 .seek-player {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
   font-weight: 700;
 }
+/* The rated tag goes to the next line rather than being cut. */
+.seek-player .rated-tag {
+  flex: none;
+  margin-left: 0;
+  overflow: visible;
+}
 .seek-rating {
-  margin-left: 6px;
+  margin-left: 0;
   font-weight: 400;
   color: var(--muted);
 }
@@ -14826,4 +14836,97 @@ a:focus-visible {
 .t-pick b {
   font-weight: 500;
   color: var(--lime);
+}
+
+/* A custom time: minutes and seconds a move on sliders (src/ui/PlayOptions.tsx). */
+.ps-custom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+.ps-custom label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 500 12px var(--ui);
+  color: var(--muted);
+}
+.ps-custom label b {
+  margin-left: 4px;
+  font: 400 18px/1 var(--display);
+  color: var(--fg);
+}
+.ps-custom input[type='range'] {
+  width: 100%;
+  accent-color: var(--pink);
+}
+.ps-speed {
+  grid-column: 1 / -1;
+  text-align: center;
+  font: 500 12px var(--ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+
+/* The lobby's "Playing now" tab (src/ui/online/LiveGames.tsx): the games under way as boards. */
+.live-games {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.live-game a {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+  text-align: center;
+}
+.live-board {
+  display: block;
+  border: 2px solid transparent;
+  box-shadow: 3px 3px 0 #000;
+}
+.live-game a:hover .live-board {
+  border-color: var(--pink);
+}
+.live-game.mine .live-board {
+  border-color: var(--lime);
+}
+.live-names {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 13px;
+}
+.live-names b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.live-game small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.live-game.mine small {
+  color: var(--lime);
+}
+.live-more {
+  margin: 4px 0 0;
+  font-size: 12px;
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .live-games {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

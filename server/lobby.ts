@@ -13,7 +13,7 @@ import type { Presence } from '../src/online/follow.ts';
 import { createRoom, joinRoom } from '../src/online/room.ts';
 import { randomGameId } from '../src/online/record.ts';
 import { QUICK_VARIANT, cleanPlayer, gameRequest, makeSeek, quickMatch, sortSeeks } from '../src/online/lobby.ts';
-import { LIVE_GAME_MAX_MS, pickTv } from '../src/online/lobby.ts';
+import { LIVE_GAME_MAX_MS, LIVE_LIST_MAX, pickTv } from '../src/online/lobby.ts';
 import type {
   LiveGame,
   LiveStats,
@@ -60,6 +60,7 @@ export class Lobby extends DurableObject<Env> {
     const url = new URL(request.url);
     if (url.pathname === '/live' && request.method === 'POST') return this.live(url, request);
     if (url.pathname === '/tv' && request.method === 'GET') return this.tv(url);
+    if (url.pathname === '/games' && request.method === 'GET') return this.games();
     if (url.pathname === '/presence' && request.method === 'POST') return this.presence(request);
     if (url.pathname === '/stats' && request.method === 'GET') return this.stats();
     if (request.headers.get('Upgrade') !== 'websocket') return new Response('expected a websocket', { status: 426 });
@@ -130,6 +131,15 @@ export class Lobby extends DurableObject<Env> {
     }
     const presence: Presence = { lobby: [...lobby], games };
     return new Response(JSON.stringify(presence), { headers: { 'content-type': 'application/json' } });
+  }
+
+  /** The games under way, the best-rated first, then the newest (the lobby's "Playing now" tab). */
+  private async games(): Promise<Response> {
+    const games = [...(await this.liveGames()).values()].filter((g): g is LiveGame => typeof g !== 'number');
+    games.sort((a, b) => (b.rated ? (b.rating ?? 0) : 0) - (a.rated ? (a.rating ?? 0) : 0) || b.at - a.at);
+    return new Response(JSON.stringify({ games: games.slice(0, LIVE_LIST_MAX), total: games.length }), {
+      headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=5' },
+    });
   }
 
   /** The game to watch now (?skip=<id>: another one than that, when there is one). */
