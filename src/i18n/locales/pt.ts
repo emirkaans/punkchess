@@ -234,8 +234,8 @@ const pack: LocalePack = {
     'leaders.more': 'Top 100',
     'leaders.back': 'Todos',
     'menu.logo': 'início do punkchess',
-    'home.lede1': 'O Xadrez Agora',
-    'home.lede2': 'Tem Más Companhias.',
+    'home.lede1': 'O xadrez anda',
+    'home.lede2': 'com a turma errada.',
     'home.pitch':
       'Xadrez online grátis, variantes malucas, gangues, torneios e um pouco de caos. Sem downloads. Sem dress code.',
     'home.play': 'Jogar agora',

@@ -233,8 +233,8 @@ const pack: LocalePack = {
     'leaders.more': 'Top 100',
     'leaders.back': 'Tutti',
     'menu.logo': 'home di punkchess',
-    'home.lede1': 'Gli scacchi ora',
-    'home.lede2': 'hanno cattive amicizie.',
+    'home.lede1': 'Gli scacchi',
+    'home.lede2': 'sulla cattiva strada.',
     'home.pitch':
       "Scacchi online gratis, strane varianti nuove, bande, tornei e un po' di caos. Niente download. Niente dress code.",
     'home.play': 'Gioca ora',

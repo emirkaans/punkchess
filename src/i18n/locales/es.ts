@@ -233,8 +233,8 @@ const pack: LocalePack = {
     'leaders.more': 'Top 100',
     'leaders.back': 'Todos',
     'menu.logo': 'inicio de punkchess',
-    'home.lede1': 'El ajedrez tiene',
-    'home.lede2': 'malas compañías.',
+    'home.lede1': 'El ajedrez va',
+    'home.lede2': 'por mal camino.',
     'home.pitch':
       'Ajedrez online gratis, variantes raras, bandas, torneos y un poco de caos. Sin descargas. Sin código de vestimenta.',
     'home.play': 'Jugar ya',

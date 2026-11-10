@@ -233,8 +233,8 @@ const pack: LocalePack = {
     'leaders.more': 'Top 100',
     'leaders.back': 'Alle',
     'menu.logo': 'punkchess Startseite',
-    'home.lede1': 'Schach hat jetzt',
-    'home.lede2': 'schlechte Freunde.',
+    'home.lede1': 'Schach gerät',
+    'home.lede2': 'auf die schiefe Bahn.',
     'home.pitch':
       'Kostenlos Schach online, schräge neue Varianten, Gangs, Turniere und ein bisschen Chaos. Ohne Download. Ohne Dresscode.',
     'home.play': 'Jetzt spielen',
