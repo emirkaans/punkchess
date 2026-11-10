@@ -14648,10 +14648,13 @@ a:focus-visible {
   margin: 0 auto 14px;
   padding: 14px 16px 16px;
   box-sizing: border-box;
-  border: 3px solid #2b2128;
+  border: 3px solid #2b2128cc;
   border-radius: 6px;
-  background: radial-gradient(ellipse at 50% 0%, #3a1640 0%, #121014 70%);
-  box-shadow: inset 0 0 40px #000a;
+  /* Glass: the wall and its graffiti show through, misted; the item cards stay solid. */
+  background: radial-gradient(ellipse at 50% 0%, #3a164085 0%, #12101466 70%);
+  -webkit-backdrop-filter: blur(5px) saturate(1.15);
+  backdrop-filter: blur(5px) saturate(1.15);
+  box-shadow: inset 0 0 40px #0008;
 }
 .vitrin::before {
   content: '';
@@ -14692,7 +14695,7 @@ a:focus-visible {
   gap: 5px;
   min-width: 0;
   padding: 8px;
-  background: #141016e6;
+  background: #141016;
   border: 1px solid var(--border);
   color: var(--fg);
   text-align: left;
