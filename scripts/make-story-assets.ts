@@ -61,7 +61,7 @@ const frameSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${STORY_W}" hei
   <rect width="${STORY_W}" height="${STORY_H}" fill="#0e0e10"/>
   <g transform="translate(262 196) scale(1.45)">${CROWN}</g>
   <text x="364" y="276" font-family="Permanent Marker" font-size="104"><tspan fill="${PINK}">punk</tspan><tspan fill="${BONE}">chess</tspan></text>
-  <text x="${STORY_W / 2}" y="430" text-anchor="middle" font-family="Bebas Neue" font-size="136" letter-spacing="6"><tspan fill="${BONE}">GÜNÜN </tspan><tspan fill="${PINK}">SABOTAJI</tspan></text>
+  <text x="${STORY_W / 2}" y="430" text-anchor="middle" font-family="Bebas Neue" font-size="136" letter-spacing="6"><tspan fill="${BONE}">DAILY </tspan><tspan fill="${PINK}">SABOTAGE</tspan></text>
   <rect x="${STORY_BX - 12 + 24}" y="${STORY_BY - 12 + 24}" width="${BOARD + 24}" height="${BOARD + 24}" fill="#000"/>
   <rect x="${STORY_BX - 12}" y="${STORY_BY - 12}" width="${BOARD + 24}" height="${BOARD + 24}" fill="${PINK}"/>
   <text x="${STORY_W / 2}" y="1700" text-anchor="middle" font-family="Space Mono" font-weight="700" font-size="48" fill="${BONE}">punkchess.com/daily</text>

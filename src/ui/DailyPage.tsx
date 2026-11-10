@@ -232,7 +232,7 @@ function StoryShare({ number }: { number: number }) {
     let live = true;
     void fetch('/og/daily-story.png')
       .then((r) => (r.ok ? r.blob() : null))
-      .then((b) => live && b && setFile(new File([b], `punkchess-sabotaj-${number}.png`, { type: 'image/png' })))
+      .then((b) => live && b && setFile(new File([b], `punkchess-daily-sabotage-${number}.png`, { type: 'image/png' })))
       .catch(() => undefined);
     return () => {
       live = false;

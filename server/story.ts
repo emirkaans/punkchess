@@ -60,7 +60,7 @@ async function todaysStory(env: Env, now: number): Promise<{ png: Uint8Array; da
 /** GET /og/daily-story.png */
 export async function storyResponse(env: Env, url: URL): Promise<Response> {
   const now = Date.now();
-  const key = new Request(`${url.origin}/og/daily-story.png?day=${dailyDay(now)}`);
+  const key = new Request(`${url.origin}/og/daily-story.png?day=${dailyDay(now)}&v=2`);
   const cached = await caches.default.match(key).catch(() => undefined);
   if (cached) return cached;
   const story = await todaysStory(env, now);
@@ -69,7 +69,7 @@ export async function storyResponse(env: Env, url: URL): Promise<Response> {
     headers: {
       'content-type': 'image/png',
       'cache-control': 'public, max-age=600',
-      'content-disposition': `inline; filename="punkchess-sabotaj-${story.number}.png"`,
+      'content-disposition': `inline; filename="punkchess-daily-sabotage-${story.number}.png"`,
     },
   });
   await caches.default.put(key, res.clone()).catch(() => undefined);
@@ -97,10 +97,10 @@ export async function sendDailyStory(env: Env, now: number): Promise<void> {
   form.set('chat_id', env.TELEGRAM_CHAT_ID);
   form.set(
     'caption',
-    `Günün sabotajı #${story.number} · hikaye görseli
-Link etiketi: https://punkchess.com/daily`,
+    `Daily Sabotage #${story.number} · story picture
+Link sticker: https://punkchess.com/daily`,
   );
-  form.set('photo', new Blob([story.png], { type: 'image/png' }), `punkchess-sabotaj-${story.number}.png`);
+  form.set('photo', new Blob([story.png], { type: 'image/png' }), `punkchess-daily-sabotage-${story.number}.png`);
   const ok = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendPhoto`, {
     method: 'POST',
     body: form,
