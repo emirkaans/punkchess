@@ -5071,7 +5071,7 @@ button.primary:hover:not(:disabled) {
  * bar, its tab content scrolls inside, and the main button stays visible.
  */
 .online-lobby:has(.lobby-card) {
-  max-width: 760px;
+  max-width: 620px;
   height: calc(100svh - var(--toolbar-h, 73px));
   padding-block: clamp(10px, 2.5vh, 28px);
   display: flex;
@@ -6740,8 +6740,9 @@ a:focus-visible {
 }
 
 /* The lobby on the home page, under the hero; a variant card's dialog (online first, then this device). */
+/* Narrower than the page's sections: a card a little wider than tall, not a banner. */
 .home-lobby {
-  width: min(760px, calc(100% - 32px));
+  width: min(620px, calc(100% - 32px));
   margin: 32px auto 0;
 }
 .home-lobby .lobby-card {
