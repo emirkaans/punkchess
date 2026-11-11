@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { listVariants } from '../engine/index.ts';
 import type { Color, VariantDefinition } from '../engine/index.ts';
 import type { MessageKey } from '../i18n/index.ts';
@@ -41,24 +41,32 @@ const GO: Readonly<Record<Opponent, MessageKey>> = {
 const BASE = { w: 580, h: 360 };
 
 /**
- * How much the dialog is scaled up on a large screen: its proportions kept, about 60% of the
- * window's width (and never more than 75% of its height), from its own size up to twice it.
- * Phones and small windows: its own size (it stacks there).
+ * How much the dialog is scaled, given its own height `contentH` (at its own size, as tall as
+ * its content needs, at least BASE.h): on a large screen up to about 60% of the window's width
+ * and 75% of its height, at most twice its size; and always small enough that the whole of it
+ * fits the window's height, down to 55% (phones too, where it stacks), so nothing ever scrolls.
  */
-export function dialogScale(width: number, height: number): number {
-  if (width <= 620) return 1;
-  const fit = Math.min((width * 0.6) / BASE.w, ((height - 48) * 0.75) / BASE.h);
-  return Math.round(Math.min(2, Math.max(1, fit)) * 100) / 100;
+export function dialogScale(width: number, height: number, contentH: number = BASE.h): number {
+  const room = (height - 24) / contentH;
+  const grow = width <= 620 ? 1 : Math.min(2, (width * 0.6) / BASE.w, ((height - 48) * 0.75) / contentH);
+  return Math.round(Math.max(0.55, Math.min(Math.max(1, grow), room)) * 100) / 100;
 }
 
-function useDialogScale(): number {
-  const [scale, setScale] = useState(() => dialogScale(innerWidth, innerHeight));
-  useEffect(() => {
-    const fit = () => setScale(dialogScale(innerWidth, innerHeight));
+/** Scales the dialog (CSS zoom) to its content and the window, after every render and resize. */
+function useDialogFit() {
+  const ref = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const modal = ref.current?.parentElement;
+      if (!modal) return;
+      modal.style.zoom = '1';
+      modal.style.zoom = String(dialogScale(innerWidth, innerHeight, modal.offsetHeight));
+    };
+    fit();
     addEventListener('resize', fit);
     return () => removeEventListener('resize', fit);
-  }, []);
-  return scale;
+  });
+  return ref;
 }
 
 /**
@@ -90,7 +98,7 @@ export function VariantPlayDialog({
 }) {
   const { t, vt } = useI18n();
   const account = useAccount();
-  const scale = useDialogScale();
+  const sideRef = useDialogFit();
   const [opponent, setOpponent] = useState<Opponent>(firstOpponent);
   const [variantId, setVariantId] = useState(variant.id);
   // Online games and games on this device keep their own time and colour (the latter saved).
@@ -181,15 +189,10 @@ export function VariantPlayDialog({
   const time = <TimePicker value={timeControlId} onChange={setTimeControlId} />;
 
   return (
-    <Modal
-      label={t('setup.title')}
-      onClose={onClose}
-      className="play-setup"
-      style={scale !== 1 ? { zoom: scale } : undefined}
-    >
+    <Modal label={t('setup.title')} onClose={onClose} className="play-setup">
       {/* Design "İki Sütun": who you play on the left, only that opponent's options on the right,
           everything centred; one size whoever the opponent. */}
-      <aside className="ps-side">
+      <aside className="ps-side" ref={sideRef}>
         <h2>{t('setup.title')}</h2>
         {GROUPS.map(([label, list]) => (
           <div key={label} className="ps-opp-group">

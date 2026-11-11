@@ -11378,7 +11378,10 @@ a:focus-visible {
   display: grid;
   grid-template-columns: 205px minmax(0, 1fr);
   width: min(580px, 100%);
-  height: 360px;
+  /* As tall as its content (online adds the colour and the rated switch); the whole dialog is
+     then scaled to the window (VariantPlayDialog, useDialogFit), so it never scrolls. */
+  min-height: 360px;
+  max-height: none;
   padding: 0;
   overflow: hidden;
   border-top: 3px solid var(--pink);
@@ -11477,7 +11480,6 @@ a:focus-visible {
   gap: 10px;
   min-width: 0;
   padding: 16px 18px 14px;
-  overflow-y: auto;
 }
 .ps-main > .setup-close {
   position: absolute;
@@ -11703,9 +11705,7 @@ a:focus-visible {
   }
   .modal.play-setup {
     grid-template-columns: minmax(0, 1fr);
-    height: auto;
-    max-height: calc(100dvh - 24px);
-    overflow-y: auto;
+    min-height: 0;
   }
   /* The opponents as chips, centred under the centred title (the close button at the corner). */
   .ps-side {

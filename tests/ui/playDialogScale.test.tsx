@@ -17,4 +17,14 @@ describe('oyun başlatma penceresi ölçeği', () => {
     // A wide but low window: 75% of the height decides.
     expect(dialogScale(2400, 700)).toBeCloseTo(((700 - 48) * 0.75) / 360, 2);
   });
+
+  it('içerik uzarsa ölçek ona göre: pencere her zaman ekrana sığar', () => {
+    // Online adds rows: a 460 px tall dialog on a 1822×860 window is scaled by its own height.
+    const scale = dialogScale(1822, 860, 460);
+    expect(scale * 460).toBeLessThanOrEqual(860 - 24);
+    // A low window shrinks it below its own size (phones too), never under 55%.
+    expect(dialogScale(1280, 420, 460)).toBeCloseTo((420 - 24) / 460, 2);
+    expect(dialogScale(375, 560, 700)).toBeCloseTo((560 - 24) / 700, 2);
+    expect(dialogScale(375, 300, 900)).toBe(0.55);
+  });
 });
