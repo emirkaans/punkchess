@@ -978,6 +978,7 @@ const pack: LocalePack = {
     'footer.playNow': 'Jouer',
     'footer.community': 'Communauté',
     'footer.blurb': 'Échecs gratuits en ligne, variantes étranges, gangs, tournois et un peu de chaos.',
+    'meta.title': 'punkchess · Échecs en ligne gratuits et variantes',
     'footer.copyright': '© {year} punkchess',
     'contact.link': 'Contact',
     'contact.title': 'Contact',

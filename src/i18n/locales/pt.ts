@@ -974,6 +974,7 @@ const pack: LocalePack = {
     'footer.playNow': 'Jogar agora',
     'footer.community': 'Comunidade',
     'footer.blurb': 'Xadrez online grátis, variantes estranhas, gangues, torneios e um pouco de caos.',
+    'meta.title': 'punkchess · Xadrez online grátis e variantes',
     'footer.copyright': '© {year} punkchess',
     'contact.link': 'Contato',
     'contact.title': 'Contato',

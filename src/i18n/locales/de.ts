@@ -977,6 +977,7 @@ const pack: LocalePack = {
     'footer.playNow': 'Jetzt spielen',
     'footer.community': 'Community',
     'footer.blurb': 'Kostenlos Schach online, seltsame neue Varianten, Gangs, Turniere und ein bisschen Chaos.',
+    'meta.title': 'punkchess · Kostenloses Online-Schach und Varianten',
     'footer.copyright': '© {year} punkchess',
     'contact.link': 'Kontakt',
     'contact.title': 'Kontakt',

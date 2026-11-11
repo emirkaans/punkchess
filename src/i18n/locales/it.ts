@@ -976,6 +976,7 @@ const pack: LocalePack = {
     'footer.playNow': 'Gioca ora',
     'footer.community': 'Community',
     'footer.blurb': "Scacchi online gratis, strane varianti nuove, bande, tornei e un po' di caos.",
+    'meta.title': 'punkchess · Scacchi online gratis e varianti',
     'footer.copyright': '© {year} punkchess',
     'contact.link': 'Contatti',
     'contact.title': 'Contatti',

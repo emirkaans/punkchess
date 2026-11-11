@@ -22,8 +22,21 @@ export function I18nProvider({ locale, children }: { locale: Locale; children: R
     });
     return () => clearTimeout(timer);
   }, [locale, ready]);
-  return <LocaleContext.Provider value={ready ? locale : 'en'}>{children}</LocaleContext.Provider>;
+  const shown = ready ? locale : 'en';
+  // The tab title and <html lang> follow the language (index.html names the tab in Turkish). A
+  // page that set its own title (LegalPage) keeps it: only the site's own title is replaced.
+  useEffect(() => {
+    const title = translator(shown)('meta.title');
+    if (document.title === siteTitle || document.title === INDEX_TITLE) document.title = title;
+    siteTitle = title;
+    document.documentElement.lang = shown;
+  }, [shown]);
+  return <LocaleContext.Provider value={shown}>{children}</LocaleContext.Provider>;
 }
+
+/** The tab title index.html ships with, and the site's title in the language last shown. */
+const INDEX_TITLE = translator('tr')('meta.title');
+let siteTitle = INDEX_TITLE;
 
 export interface I18n {
   readonly locale: Locale;

@@ -22,18 +22,19 @@ const TEXTS: Readonly<Record<LegalDoc, Partial<Record<Locale, string>> & { en: s
 };
 
 export function LegalPage({ doc, onOpen }: { doc: LegalDoc; onOpen: (path: string) => void }) {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const text = TEXTS[doc][locale] ?? TEXTS[doc].en;
-  // The tab title in the page's language (the server names it in Turkish).
+  const siteTitle = t('meta.title');
+  // The tab title in the page's language (the server names it in Turkish); leaving the page
+  // gives the site's title back, in the current language.
   useEffect(() => {
     const heading = /<h1>(.*?)<\/h1>/.exec(text)?.[1];
     if (!heading) return;
-    const before = document.title;
     document.title = `${heading} · punkchess`;
     return () => {
-      document.title = before;
+      document.title = siteTitle;
     };
-  }, [text]);
+  }, [text, siteTitle]);
   // Links to the site's own pages stay in the app; files (licence texts) and mail open as usual.
   const follow = (e: MouseEvent<HTMLElement>) => {
     const a = e.target instanceof Element ? e.target.closest('a') : null;

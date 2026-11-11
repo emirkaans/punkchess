@@ -975,6 +975,7 @@ const pack: LocalePack = {
     'footer.playNow': 'Jugar ya',
     'footer.community': 'Comunidad',
     'footer.blurb': 'Ajedrez online gratis, variantes raras, bandas, torneos y un poco de caos.',
+    'meta.title': 'punkchess · Ajedrez online gratis y variantes',
     'footer.copyright': '© {year} punkchess',
     'contact.link': 'Contacto',
     'contact.title': 'Contacto',
