@@ -68,7 +68,12 @@ interface Props {
   onPremove?: (p: Premove) => void;
   onCancelPremove?: () => void;
   /** A card being played: clicks pick its targets instead of moving pieces. */
-  cardTargets?: { readonly squares: readonly Square[]; readonly picked: readonly Square[] } | null;
+  cardTargets?: {
+    readonly squares: readonly Square[];
+    readonly picked: readonly Square[];
+    /** Barikat: the lines the wall could take, drawn as ghost walls; one lights up under the pointer. */
+    readonly ways?: readonly (readonly Square[])[];
+  } | null;
   onCardTarget?: (sq: Square) => void;
   /** The card just played: its squares are ringed, the first one gets a before→after badge. */
   cardNote?: CardResult | null;
@@ -138,6 +143,8 @@ export function Board({
   const boardRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<Square | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  // Barikat: the line (index in cardTargets.ways) whose end the pointer is over.
+  const [wayHover, setWayHover] = useState<number | null>(null);
   // Mirrors `drag` synchronously: pointer events can fire faster than React re-renders.
   const dragRef = useRef<Drag | null>(null);
   const updateDrag = (d: Drag | null) => {
@@ -409,6 +416,9 @@ export function Board({
   const noteClass = cardNote ? `card-note card-note-${cardTone(cardNote)}` : '';
 
   const rect = boardRef.current?.getBoundingClientRect();
+  const ways = cardTargets?.ways ?? [];
+  const lit = wayHover !== null && wayHover < ways.length ? wayHover : null;
+  const wayEnd = (sq: Square) => ways.findIndex((w) => w[0] === sq || w[w.length - 1] === sq);
   const squares = [];
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
@@ -465,11 +475,31 @@ export function Board({
           aria-pressed={selected === sq}
           tabIndex={sq === focusSq ? 0 : -1}
           onFocus={() => setFocusSq(sq)}
+          onPointerEnter={ways.length ? () => setWayHover(wayEnd(sq) >= 0 ? wayEnd(sq) : null) : undefined}
+          onPointerLeave={ways.length ? () => setWayHover(null) : undefined}
         >
           {piece && !dragging && <PieceView variant={variant} piece={piece} position={position} square={sq} />}
           {target && <span className={target.captured ? 'hint capture' : 'hint'} />}
           {premoveDest && <span className={piece ? 'hint capture premove-hint' : 'hint premove-hint'} />}
-          {cardTarget && <span className={piece ? 'hint capture card-hint' : 'hint card-hint'} />}
+          {cardTarget && wayEnd(sq) < 0 && <span className={piece ? 'hint capture card-hint' : 'hint card-hint'} />}
+          {ways.some((w) => w.includes(sq)) && (
+            <span
+              className={`card-ghost${lit === null ? '' : ways[lit].includes(sq) ? ' on' : ' off'}`}
+              aria-hidden="true"
+            >
+              <PieceView
+                variant={variant}
+                piece={{ type: 'o', color: position.turn }}
+                position={position}
+                square={sq}
+              />
+            </span>
+          )}
+          {wayEnd(sq) >= 0 && (
+            <span className="way-arrow" aria-hidden="true">
+              {rankOf(ways[wayEnd(sq)][0]) === rankOf(ways[wayEnd(sq)][2]) ? '↔' : '↕'}
+            </span>
+          )}
           {squareMarks.map(
             (m) =>
               m.icon && (

@@ -36,6 +36,18 @@ export function pickTargets(moves: readonly Move[], pick: CardPick): Square[] {
   return [...out];
 }
 
+/**
+ * Barikat after its middle square: the lines the wall could stand on ([end, middle, end] each),
+ * when it could stand either way (shown on the board as ghost walls to pick from); else none.
+ */
+export function pickWays(moves: readonly Move[], pick: CardPick): Square[][] {
+  if (pick.picked.length !== 1) return [];
+  const ways = moves
+    .filter((m) => m.card?.id === pick.id && squaresOf(m).length === 3 && squaresOf(m)[1] === pick.picked[0])
+    .map((m) => [...squaresOf(m)]);
+  return ways.length > 1 ? ways : [];
+}
+
 /** The hint for a second click: which kind of square to pick. */
 export const secondPickKind = (id: string): 'piece' | 'home' | 'end' =>
   id === 'exile' ? 'home' : id === 'wall' ? 'end' : 'piece';

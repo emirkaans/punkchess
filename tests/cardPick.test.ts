@@ -6,7 +6,7 @@ import { parseSquare as sq, squareName } from '../src/engine/board.ts';
 import { createGame } from '../src/engine/game.ts';
 import { legalMoves } from '../src/engine/legality.ts';
 import { anarsi as v } from '../src/engine/variants/anarsi.ts';
-import { clickTarget, pickTargets } from '../src/ui/cardPick.ts';
+import { clickTarget, pickTargets, pickWays } from '../src/ui/cardPick.ts';
 
 const movesOf = (placement: string, head: string) =>
   legalMoves(v, createGame(v, `${placement} w - - 0 10 ${head}`).position).filter((m) => m.card);
@@ -43,5 +43,14 @@ describe('kart hedefi seçme', () => {
     expect(played(clickTarget(moves, pick, sq('a4')))).toBe('a3-a4-a5');
     const old = movesOf('4k3/7p/8/8/8/8/7P/K7', 'wall.-.0000');
     expect(played(clickTarget(old, pick, sq('e4')))).toBe('d4-e4-f4');
+  });
+
+  it('Barikat: iki yön varsa ikisi de hayalet duvar olarak gösterilir, yoksa hiçbiri', () => {
+    const moves = movesOf('4k3/7p/8/8/8/8/7P/K7', 'wall.-.0000.2');
+    expect(pickWays(moves, { id: 'wall', picked: [] })).toEqual([]);
+    const ways = pickWays(moves, { id: 'wall', picked: [sq('e4')] }).map((w) => w.map(squareName).join('-'));
+    expect(ways.sort()).toEqual(['d4-e4-f4', 'e3-e4-e5']);
+    // On the edge file only the column fits: nothing to choose.
+    expect(pickWays(moves, { id: 'wall', picked: [sq('a4')] })).toEqual([]);
   });
 });

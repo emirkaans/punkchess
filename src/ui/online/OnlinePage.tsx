@@ -22,7 +22,7 @@ import { ControlButton, ICONS, MoreButton } from '../GameControls.tsx';
 import { lastCardResult, secretMoves } from '../cardResult.ts';
 import type { Viewer } from '../cardResult.ts';
 import { CardResultBubble } from '../CardResultBubble.tsx';
-import { clickTarget, pickTargets } from '../cardPick.ts';
+import { clickTarget, pickTargets, pickWays } from '../cardPick.ts';
 import type { CardPick } from '../cardPick.ts';
 import { Board } from '../Board.tsx';
 import type { Premove } from '../Board.tsx';
@@ -682,7 +682,11 @@ function OnlineGame({
                 onCancelPremove={() => setPremove(null)}
                 cardTargets={
                   cardPick && cardPick.id !== CHAOS
-                    ? { squares: pickTargets(cardMoves, cardPick), picked: cardPick.picked }
+                    ? {
+                        squares: pickTargets(cardMoves, cardPick),
+                        picked: cardPick.picked,
+                        ways: pickWays(cardMoves, cardPick),
+                      }
                     : null
                 }
                 onCardTarget={onCardTarget}

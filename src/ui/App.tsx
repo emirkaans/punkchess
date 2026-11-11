@@ -9,7 +9,7 @@ import type { AnalysisSeed } from './AnalysisPage.tsx';
 import { Board } from './Board.tsx';
 import { CardGuide } from './CardGuide.tsx';
 import { CardLog, CardPickBar, CardRack, useCardMoves } from './CardRack.tsx';
-import { clickTarget, pickTargets } from './cardPick.ts';
+import { clickTarget, pickTargets, pickWays } from './cardPick.ts';
 import type { CardPick } from './cardPick.ts';
 import { BoardResizer } from './BoardResizer.tsx';
 import { GameControls, GameTools } from './GameControls.tsx';
@@ -1010,7 +1010,11 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
                       onMove={onMove}
                       cardTargets={
                         cardPick && cardPick.id !== CHAOS
-                          ? { squares: pickTargets(cardMoves, cardPick), picked: cardPick.picked }
+                          ? {
+                              squares: pickTargets(cardMoves, cardPick),
+                              picked: cardPick.picked,
+                              ways: pickWays(cardMoves, cardPick),
+                            }
                           : null
                       }
                       onCardTarget={onCardTarget}
