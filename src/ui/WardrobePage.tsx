@@ -1,3 +1,4 @@
+import { SignInGate } from './SignInGate.tsx';
 import { useState } from 'react';
 import { DEFAULT_AVATAR } from '../avatar/avatar.ts';
 import { figureSvg, itemView } from '../avatar/figure.ts';
@@ -7,7 +8,7 @@ import { EMPTY_OUTFIT, SHOE_SLOTS, STORE_ITEMS, STORE_SLOTS, wearKombin } from '
 const WARDROBE_SLOTS = [...STORE_SLOTS, ...SHOE_SLOTS];
 import type { Outfit, OutfitSlot } from '../avatar/outfit.ts';
 import type { MessageKey } from '../i18n/index.ts';
-import { signInWithGoogle, useAccount } from './account.ts';
+import { useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
 import { useShop } from './shop.tsx';
 
@@ -31,17 +32,7 @@ export function WardrobePage({ onOpen }: { onOpen: (path: string) => void }) {
   const { store, ready, msg, name, act, busy, wearSaved, saveKombin } = useShop();
 
   if (!account.loading && !account.user) {
-    return (
-      <main className="store-page">
-        <h1 className="store-title">{t('wardrobe.title')}</h1>
-        <p className="muted">{t('wardrobe.signIn')}</p>
-        {account.canSignIn && (
-          <button className="primary" onClick={() => signInWithGoogle('/wardrobe')}>
-            {t('account.signIn')}
-          </button>
-        )}
-      </main>
-    );
+    return <SignInGate title={t('wardrobe.title')} text={t('wardrobe.signIn')} returnTo={'/wardrobe'} />;
   }
 
   const worn = store?.outfit ?? account.user?.outfit ?? EMPTY_OUTFIT;

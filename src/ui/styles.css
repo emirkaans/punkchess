@@ -4463,11 +4463,6 @@ button.primary:hover:not(:disabled) {
   }
 }
 /* Puzzle Rush (/rush). */
-.puzzle-modes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
 .rush-splash {
   display: grid;
   place-items: center;
@@ -4546,10 +4541,83 @@ button.primary:hover:not(:disabled) {
   margin: 0;
   font-size: 14px;
 }
-.daily-link {
-  justify-self: start;
-  min-height: 36px;
-  font-size: 14px;
+/* The puzzle modes (src/ui/PuzzlePage.tsx): two loud tiles, Daily Sabotage pink, Rush lime. */
+.puzzle-modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 4px 0;
+}
+.mode-tile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 62px;
+  padding: 10px 14px;
+  border: 2px solid #0a0a0b;
+  color: #0a0a0b;
+  font: 400 21px/1.05 var(--display);
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+  box-shadow: 5px 5px 0 #000;
+  cursor: pointer;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.mode-tile.daily {
+  background: var(--pink);
+  transform: rotate(-1deg);
+}
+.mode-tile.rush {
+  background: var(--lime);
+  transform: rotate(1deg);
+}
+.mode-tile:hover,
+.mode-tile:focus-visible {
+  transform: translate(-2px, -2px) rotate(0deg);
+  box-shadow: 8px 8px 0 #000;
+}
+.mode-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+.mode-arrow {
+  font-size: 22px;
+  transition: transform 0.12s;
+}
+.mode-tile:hover .mode-arrow {
+  transform: translateX(4px);
+}
+/* Daily Sabotage solved: on to the puzzles (the loud one), and share. */
+.daily-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 10px 18px;
+  border: 2px solid #0a0a0b;
+  background: var(--lime);
+  color: #0a0a0b;
+  font: 400 22px/1.05 var(--display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 6px 6px 0 var(--pink);
+  cursor: pointer;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.daily-more:hover,
+.daily-more:focus-visible {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 var(--pink);
+}
+.daily-share {
+  min-height: 40px;
 }
 .daily-box {
   display: inline-grid;
@@ -15086,4 +15154,99 @@ a:focus-visible {
   color: var(--lime);
   background: transparent;
   border: 1px dashed var(--lime);
+}
+
+/* A page that needs an account, signed out (src/ui/SignInGate.tsx): a card in the middle of the
+   screen with the neon crown, the page's name and the Google button. */
+.signin-gate {
+  display: grid;
+  place-items: center;
+  min-height: calc(100svh - var(--toolbar-h, 73px));
+  padding: 40px 16px 64px;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 46, 147, 0.14), transparent 38%),
+    radial-gradient(circle at 82% 78%, rgba(198, 255, 61, 0.1), transparent 36%);
+}
+.signin-card {
+  position: relative;
+  width: min(440px, 100%);
+  padding: 34px 30px 28px;
+  border: 2px solid var(--pink);
+  background: #141016;
+  box-shadow: 10px 10px 0 #000;
+  text-align: center;
+  transform: rotate(-1deg);
+}
+.signin-drip {
+  position: absolute;
+  top: 100%;
+  width: 7px;
+  height: 0;
+  border-radius: 0 0 4px 4px;
+  background: var(--pink);
+  animation: signin-drip 1.4s ease-in forwards;
+}
+@keyframes signin-drip {
+  to {
+    height: 46px;
+  }
+}
+.signin-crown {
+  width: 96px;
+  height: 66px;
+  overflow: visible;
+}
+.signin-crown path {
+  fill: none;
+  stroke: #e9ffb0;
+  stroke-width: 6;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px #c6ff3d) drop-shadow(0 0 10px #c6ff3d) drop-shadow(0 0 22px rgba(198, 255, 61, 0.7));
+}
+.signin-title {
+  margin: 12px 0 6px;
+  font: 400 clamp(36px, 9vw, 52px)/1 var(--marker);
+  color: var(--pink);
+  transform: rotate(-3deg);
+}
+.signin-text {
+  margin: 0 0 24px;
+  color: #cfcac2;
+  font-size: 15px;
+}
+.signin-google {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 24px;
+  border: 2px solid #0a0a0b;
+  background: #f1eee8;
+  color: #0a0a0b;
+  font: 400 21px/1 var(--display);
+  letter-spacing: 0.04em;
+  box-shadow: 5px 5px 0 var(--pink);
+  cursor: pointer;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.signin-google:hover,
+.signin-google:focus-visible {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--pink);
+}
+.signin-google svg {
+  width: 22px;
+  height: 22px;
+}
+.signin-free {
+  margin: 16px 0 0;
+  color: #8d8a85;
+  font: 400 12px 'Space Mono', monospace;
+}
+@media (prefers-reduced-motion: reduce) {
+  .signin-drip {
+    animation: none;
+    height: 46px;
+  }
 }

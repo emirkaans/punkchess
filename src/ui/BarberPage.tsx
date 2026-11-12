@@ -1,10 +1,11 @@
+import { SignInGate } from './SignInGate.tsx';
 import { useState } from 'react';
 import { AVATAR_OPTIONS, DEFAULT_AVATAR, TALL_VIEW } from '../avatar/avatar.ts';
 import { colorSwatch } from '../avatar/barber.ts';
 import { BARBER_SLOTS, EMPTY_OUTFIT, NATURAL_BEARD, STORE_ITEMS } from '../avatar/outfit.ts';
 import type { OutfitSlot, StoreItem } from '../avatar/outfit.ts';
 import type { MessageKey } from '../i18n/index.ts';
-import { refreshAccount, signInWithGoogle, useAccount } from './account.ts';
+import { refreshAccount, useAccount } from './account.ts';
 import { AvatarView } from './CharacterCreator.tsx';
 import { CoinIcon } from './CoinToast.tsx';
 import { useI18n } from './i18n.tsx';
@@ -33,17 +34,7 @@ export function BarberPage({ onOpen }: { onOpen: (path: string) => void }) {
   const [natLast, setNatLast] = useState(false);
 
   if (!account.loading && !account.user) {
-    return (
-      <main className="store-page">
-        <h1 className="store-title">{t('barber.title')}</h1>
-        <p className="muted">{t('barber.signIn')}</p>
-        {account.canSignIn && (
-          <button className="primary" onClick={() => signInWithGoogle('/barber')}>
-            {t('account.signIn')}
-          </button>
-        )}
-      </main>
-    );
+    return <SignInGate title={t('barber.title')} text={t('barber.signIn')} returnTo={'/barber'} />;
   }
 
   const items = (slot: OutfitSlot) => STORE_ITEMS.filter((i) => i.slot === slot);

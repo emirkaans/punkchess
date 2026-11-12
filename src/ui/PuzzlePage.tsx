@@ -14,6 +14,9 @@ import { NewPatches } from './NewPatches.tsx';
 import { usePuzzleRunner } from './puzzleRunner.ts';
 import type { Prefs } from './prefs.ts';
 
+/** The variants with puzzles: none yet for a variant played with cards (hidden cards and mines). */
+const PUZZLE_VARIANTS = () => listVariants().filter((v) => !v.cards);
+
 const GUEST_KEY = 'puzzle:rating';
 
 /**
@@ -212,7 +215,7 @@ export function PuzzlePage({
 
         <fieldset className="choice-row puzzle-themes">
           <legend>{t('newGame.variant')}</legend>
-          {listVariants().map((v) => (
+          {PUZZLE_VARIANTS().map((v) => (
             <button key={v.id} className={`chip${variantId === v.id ? ' on' : ''}`} onClick={() => pickVariant(v.id)}>
               {vt(v).name}
             </button>
@@ -234,11 +237,23 @@ export function PuzzlePage({
         )}
 
         <div className="puzzle-modes">
-          <button className="daily-link" onClick={() => onOpen('/daily')}>
-            🔥 {t('puzzle.daily')} →
+          <button className="mode-tile daily" onClick={() => onOpen('/daily')}>
+            <span className="mode-icon" aria-hidden="true">
+              🔥
+            </span>
+            <span className="mode-name">{t('puzzle.daily')}</span>
+            <span className="mode-arrow" aria-hidden="true">
+              →
+            </span>
           </button>
-          <button className="daily-link" onClick={() => onOpen('/rush')}>
-            ⚡ {t('rush.title')} →
+          <button className="mode-tile rush" onClick={() => onOpen('/rush')}>
+            <span className="mode-icon" aria-hidden="true">
+              ⚡
+            </span>
+            <span className="mode-name">{t('rush.title')}</span>
+            <span className="mode-arrow" aria-hidden="true">
+              →
+            </span>
           </button>
         </div>
 

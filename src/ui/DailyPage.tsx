@@ -22,7 +22,7 @@ function countdown(ms: number): string {
  * the player's is a square of the grid; the grid and the streak can be shared.
  * It does not change the puzzle rating.
  */
-export function DailyPage({ prefs }: { prefs: Prefs }) {
+export function DailyPage({ prefs, onOpen }: { prefs: Prefs; onOpen: (path: string) => void }) {
   const { t } = useI18n();
   const account = useAccount();
   const [daily, setDaily] = useState<DailyResponse | null>(null);
@@ -202,7 +202,10 @@ export function DailyPage({ prefs }: { prefs: Prefs }) {
             <p className="daily-streak">
               <strong>🔥 {streak}</strong> {t('daily.streak')}
             </p>
-            <button className="primary analysis-go" onClick={share}>
+            <button className="daily-more" onClick={() => onOpen('/puzzles')}>
+              {t('daily.morePuzzles')} <span aria-hidden="true">→</span>
+            </button>
+            <button className="daily-share" onClick={share}>
               {copied ? t('daily.copied') : t('daily.share')}
             </button>
             <NewPatches ids={patches} />

@@ -878,7 +878,13 @@ function GameScreen({ prefs, setPrefs }: { prefs: Prefs; setPrefs: Dispatch<SetS
         ) : page === 'rush' ? (
           <RushPage prefs={prefs} />
         ) : page === 'daily' ? (
-          <DailyPage prefs={prefs} />
+          <DailyPage
+            prefs={prefs}
+            onOpen={(path) => {
+              history.pushState(null, '', path);
+              applyRouteRef.current(parseRoute(path));
+            }}
+          />
         ) : page === 'puzzles' ? (
           <PuzzlePage
             puzzleId={puzzleId}

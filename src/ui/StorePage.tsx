@@ -1,3 +1,4 @@
+import { SignInGate } from './SignInGate.tsx';
 import { useState } from 'react';
 import { DEFAULT_AVATAR } from '../avatar/avatar.ts';
 import { figureSvg, itemView } from '../avatar/figure.ts';
@@ -5,7 +6,7 @@ import { EMPTY_OUTFIT, STORE_ITEMS, STORE_SLOTS, TATTOO_SLOTS } from '../avatar/
 import type { StoreItem } from '../avatar/outfit.ts';
 import { SHOE_KINDS, shoeKind } from '../avatar/shoes.ts';
 import type { MessageKey } from '../i18n/index.ts';
-import { signInWithGoogle, useAccount } from './account.ts';
+import { useAccount } from './account.ts';
 import { CoinIcon } from './CoinToast.tsx';
 import { useI18n } from './i18n.tsx';
 import { onDeal, onSale, priceOf } from '../store/vitrin.ts';
@@ -73,17 +74,7 @@ export function StorePage({
   ];
 
   if (!account.loading && !account.user) {
-    return (
-      <main className="store-page">
-        <h1 className="store-title">{title}</h1>
-        <p className="muted">{t('store.signIn')}</p>
-        {account.canSignIn && (
-          <button className="primary" onClick={() => signInWithGoogle(`/${kind}`)}>
-            {t('account.signIn')}
-          </button>
-        )}
-      </main>
-    );
+    return <SignInGate title={title} text={t('store.signIn')} returnTo={`/${kind}`} />;
   }
 
   return (

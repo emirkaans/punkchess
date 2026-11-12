@@ -1,3 +1,4 @@
+import { SignInGate } from './SignInGate.tsx';
 import { EMPTY_OUTFIT } from '../avatar/outfit.ts';
 import type { Outfit } from '../avatar/outfit.ts';
 import { BODY_TYPES, bodyShape, customBody } from '../avatar/body.ts';
@@ -13,7 +14,7 @@ import {
 } from '../avatar/avatar.ts';
 import type { Avatar, AvatarPart } from '../avatar/avatar.ts';
 import type { MessageKey } from '../i18n/index.ts';
-import { refreshAccount, signInWithGoogle, useAccount } from './account.ts';
+import { refreshAccount, useAccount } from './account.ts';
 import { useI18n } from './i18n.tsx';
 
 /** Each part's icon for the phone rail (24×24 strokes). */
@@ -99,17 +100,7 @@ export function CharacterCreator({ next, onOpen }: Props) {
   };
 
   if (!account.loading && !account.user) {
-    return (
-      <main className="character-page">
-        <h1 className="character-title">{t('character.title')}</h1>
-        <p className="muted">{t('character.signIn')}</p>
-        {account.canSignIn && (
-          <button className="primary" onClick={() => signInWithGoogle('/character')}>
-            {t('account.signIn')}
-          </button>
-        )}
-      </main>
-    );
+    return <SignInGate title={t('character.title')} text={t('character.signIn')} returnTo={'/character'} />;
   }
 
   const colour = optionColor(part, AVATAR_OPTIONS[part][0].id) !== null;
