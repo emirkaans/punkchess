@@ -11,9 +11,10 @@ export const SQ = 66;
 export const BOARD_X = 51;
 export const BOARD_Y = (OG_H - 8 * SQ) / 2;
 
-const LIGHT = [0xd6, 0xd0, 0xc3];
-const DARK = [0x1c, 0x1c, 0x1f];
-const LAST = [0xff, 0x2e, 0x93];
+// The site's default board, Kot Ceket (src/ui/styles.css, [data-board='kot']).
+const LIGHT = [0xcc, 0xd2, 0xd8];
+const DARK = [0x5e, 0x70, 0x88];
+const LAST = [0xe8, 0xd6, 0x8c];
 
 export interface OgAssets {
   /** The frame, RGB, OG_W x OG_H. */
@@ -67,7 +68,7 @@ export function composeBoard(
     const y0 = BOARD_Y + (7 - rank) * SQ;
     const base = (file + rank) % 2 === 1 ? LIGHT : DARK;
     const lit = lastMove && (lastMove.from === sq || lastMove.to === sq);
-    const color = lit ? base.map((c, i) => Math.round(c * 0.62 + LAST[i] * 0.38)) : base;
+    const color = lit ? base.map((c, i) => Math.round(c * 0.4 + LAST[i] * 0.6)) : base;
     for (let y = 0; y < SQ; y++) {
       let o = ((y0 + y) * OG_W + x0) * 3;
       for (let x = 0; x < SQ; x++, o += 3) {

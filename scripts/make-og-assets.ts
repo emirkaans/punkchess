@@ -38,13 +38,21 @@ const frameSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${OG_W}" height
   <circle cx="${BOARD_X - 4}" cy="${BOARD_Y - 6}" r="16" fill="#ff2e93" opacity="0.85"/>
   <circle cx="${BOARD_X + 22}" cy="${BOARD_Y - 22}" r="5" fill="#ff2e93" opacity="0.85"/>
   <circle cx="${BOARD_X + boardSize + 6}" cy="${BOARD_Y + boardSize + 4}" r="12" fill="#c6ff3d" opacity="0.8"/>
-  <g transform="translate(${LOGO_X - 97.5} 52) scale(1.3)" fill="none" stroke="#c6ff3d" stroke-width="5.5" stroke-linejoin="round">
-    <path d="${CROWN}"/>
+  <defs>
+    <filter id="neon" filterUnits="userSpaceOnUse" x="-70" y="-70" width="290" height="250">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="far"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="near"/>
+      <feMerge><feMergeNode in="far"/><feMergeNode in="far"/><feMergeNode in="near"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g transform="translate(${LOGO_X - 97.5} 52) scale(1.3)" fill="none" stroke-linejoin="round" filter="url(#neon)">
+    <path d="${CROWN}" stroke="#c6ff3d" stroke-width="7"/>
+    <path d="${CROWN}" stroke="#e9ffb0" stroke-width="3.2"/>
   </g>
   <text x="${LOGO_X}" y="308" text-anchor="middle" font-family="Permanent Marker" font-size="118" fill="#ff2e93">PUNK</text>
   <text x="${LOGO_X}" y="422" text-anchor="middle" font-family="Permanent Marker" font-size="118" fill="#f1eee8">CHESS</text>
   <rect x="${LOGO_X - 95}" y="452" width="190" height="7" rx="3.5" fill="#ff2e93"/>
-  <text x="${LOGO_X}" y="${OG_H - 62}" text-anchor="middle" font-family="Oswald" font-weight="700" font-size="30" fill="#a3a0a8" letter-spacing="3">PUNKCHESS.COM</text>
+  <text x="${LOGO_X}" y="${OG_H - 62}" text-anchor="middle" font-family="Oswald" font-weight="700" font-size="32" fill="#a3a0a8" letter-spacing="1">punkchess.com</text>
 </svg>`;
 
 const frameRgba = render(frameSvg).pixels;
@@ -57,19 +65,20 @@ for (let i = 0, j = 0; i < frameRgba.length; i += 4, j += 3) {
 
 // --- piece pictures: every piece of every variant, both colours (punk style) ---
 
-const GLYPH_STYLE: Record<Color, { fill: string; stroke: string }> = {
-  w: { fill: '#e9e4d8', stroke: '#111111' },
-  b: { fill: '#18181b', stroke: '#ff2e93' },
+// The Klasik piece colours (src/ui/styles.css, [data-pieces='klasik']).
+const GLYPH_STYLE: Record<Color, { fill: string; stroke: string; opacity: number }> = {
+  w: { fill: '#fafafa', stroke: '#222222', opacity: 1 },
+  b: { fill: '#222222', stroke: '#ffffff', opacity: 0.35 },
 };
 
 function pieceSvg(icon: { kind: 'glyph'; glyph: string } | { kind: 'svg'; svg: (c: Color) => string }, c: Color) {
   if (icon.kind === 'glyph') {
     const glyph = icon.glyph.replace('︎', '');
-    const { fill, stroke } = GLYPH_STYLE[c];
+    const { fill, stroke, opacity } = GLYPH_STYLE[c];
     // The UI draws glyphs at 80% of the square.
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${SQ}" height="${SQ}" viewBox="0 0 ${SQ} ${SQ}">
       <text x="${SQ / 2}" y="${SQ * 0.82}" text-anchor="middle" font-family="Noto Sans Symbols 2" font-size="${SQ * 0.8}"
-        fill="${fill}" stroke="${stroke}" stroke-width="2.2" stroke-linejoin="round" paint-order="stroke">${glyph}</text>
+        fill="${fill}" stroke="${stroke}" stroke-opacity="${opacity}" stroke-width="2.2" stroke-linejoin="round" paint-order="stroke">${glyph}</text>
     </svg>`;
   }
   // SVG icons fill 84% of the square, centred.
