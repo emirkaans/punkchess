@@ -202,12 +202,14 @@ export function DailyPage({ prefs, onOpen }: { prefs: Prefs; onOpen: (path: stri
             <p className="daily-streak">
               <strong>🔥 {streak}</strong> {t('daily.streak')}
             </p>
-            <button className="daily-more" onClick={() => onOpen('/puzzles')}>
-              {t('daily.morePuzzles')} <span aria-hidden="true">→</span>
-            </button>
-            <button className="daily-share" onClick={share}>
-              {copied ? t('daily.copied') : t('daily.share')}
-            </button>
+            <div className="daily-cta">
+              <button className="daily-more" onClick={() => onOpen('/puzzles')}>
+                {t('daily.morePuzzles')} <span aria-hidden="true">→</span>
+              </button>
+              <button className="daily-share" onClick={share}>
+                {copied ? t('daily.copied') : t('daily.share')}
+              </button>
+            </div>
             <NewPatches ids={patches} />
             <p className="muted daily-next">
               {stale ? t('daily.newOne') : t('daily.next', { time: countdown(nextDailyAt(now) - now) })}

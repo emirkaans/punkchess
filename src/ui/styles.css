@@ -4575,8 +4575,11 @@ button.primary:hover:not(:disabled) {
   background: var(--lime);
   transform: rotate(1deg);
 }
-.mode-tile:hover,
+.mode-tile:hover:not(:disabled),
 .mode-tile:focus-visible {
+  border-color: #0a0a0b;
+  /* The text stays dark on its colour (buttons turn pink under the pointer elsewhere). */
+  color: #0a0a0b;
   transform: translate(-2px, -2px) rotate(0deg);
   box-shadow: 8px 8px 0 #000;
 }
@@ -4591,33 +4594,50 @@ button.primary:hover:not(:disabled) {
 .mode-tile:hover .mode-arrow {
   transform: translateX(4px);
 }
-/* Daily Sabotage solved: on to the puzzles (the loud one), and share. */
-.daily-more {
+/* Daily Sabotage solved: on to the puzzles (the loud one, lime) and share (quieter, pink
+   tint), side by side. */
+.daily-cta {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-wrap: wrap;
+  align-items: stretch;
   gap: 10px;
-  min-height: 56px;
-  padding: 10px 18px;
+}
+.daily-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 20px;
   border: 2px solid #0a0a0b;
   background: var(--lime);
   color: #0a0a0b;
-  font: 400 22px/1.05 var(--display);
+  font: 400 20px/1.05 var(--display);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  box-shadow: 6px 6px 0 var(--pink);
+  box-shadow: 4px 4px 0 #000;
   cursor: pointer;
   transition:
     transform 0.12s,
     box-shadow 0.12s;
 }
-.daily-more:hover,
+.daily-more:hover:not(:disabled),
 .daily-more:focus-visible {
+  border-color: #0a0a0b;
+  color: #0a0a0b;
   transform: translate(-2px, -2px);
-  box-shadow: 8px 8px 0 var(--pink);
+  box-shadow: 6px 6px 0 #000;
 }
 .daily-share {
-  min-height: 40px;
+  min-height: 48px;
+  padding: 8px 20px;
+  border: 2px solid rgba(255, 46, 147, 0.55);
+  background: rgba(255, 46, 147, 0.12);
+  color: #f6c1dc;
+}
+.daily-share:hover:not(:disabled) {
+  border-color: var(--pink);
+  background: rgba(255, 46, 147, 0.2);
+  color: #fff;
 }
 .daily-box {
   display: inline-grid;
