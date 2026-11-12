@@ -146,7 +146,7 @@ export async function pagePreview(
     title: preview.title,
     description: preview.description,
     pageUrl: `${url.origin}${url.pathname}`,
-    imageUrl: `${url.origin}/og.png`,
+    imageUrl: `${url.origin}/og.png?v=2`,
   });
   return new HTMLRewriter()
     .on('meta[property^="og:"], meta[name^="twitter:"], meta[name="description"]', {

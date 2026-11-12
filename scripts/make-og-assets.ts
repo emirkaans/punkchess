@@ -27,7 +27,10 @@ function render(svg: string): { pixels: Uint8Array; width: number; height: numbe
 
 // --- the frame: dark ground, board border, logo and lines on the right ---
 
-const CROWN = 'M6 30L4 8L15 19L24 4L33 19L44 8L42 30Z M8 36H40';
+// The crown of the logo (as on the posters): an outline, flat at the bottom, drawn in lime.
+const CROWN = 'M12 92 L12 22 L48 56 L75 12 L102 56 L138 22 L138 92 Z';
+// The logo's column: the middle of the room right of the board.
+const LOGO_X = 895;
 const boardSize = 8 * SQ;
 const frameSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${OG_W}" height="${OG_H}" viewBox="0 0 ${OG_W} ${OG_H}">
   <rect width="${OG_W}" height="${OG_H}" fill="#0a0a0b"/>
@@ -35,16 +38,13 @@ const frameSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${OG_W}" height
   <circle cx="${BOARD_X - 4}" cy="${BOARD_Y - 6}" r="16" fill="#ff2e93" opacity="0.85"/>
   <circle cx="${BOARD_X + 22}" cy="${BOARD_Y - 22}" r="5" fill="#ff2e93" opacity="0.85"/>
   <circle cx="${BOARD_X + boardSize + 6}" cy="${BOARD_Y + boardSize + 4}" r="12" fill="#c6ff3d" opacity="0.8"/>
-  <g transform="translate(655 150) scale(2.6)" fill="none" stroke="#ff2e93" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round">
+  <g transform="translate(${LOGO_X - 97.5} 52) scale(1.3)" fill="none" stroke="#c6ff3d" stroke-width="5.5" stroke-linejoin="round">
     <path d="${CROWN}"/>
   </g>
-  <text x="655" y="330" font-family="Permanent Marker" font-size="112" fill="#ff2e93">PUNK</text>
-  <text x="655" y="440" font-family="Permanent Marker" font-size="112" fill="#f1eee8">CHESS</text>
-  <g transform="rotate(-4 660 500)">
-    <rect x="650" y="470" width="430" height="58" fill="#c6ff3d"/>
-    <text x="670" y="512" font-family="Oswald" font-weight="700" font-size="34" fill="#0a0a0b">AYNI OYUN. FARKLI TAVIR.</text>
-  </g>
-  <text x="655" y="${OG_H - 40}" font-family="Oswald" font-weight="700" font-size="26" fill="#a3a0a8" letter-spacing="2">PUNKCHESS.COM</text>
+  <text x="${LOGO_X}" y="308" text-anchor="middle" font-family="Permanent Marker" font-size="118" fill="#ff2e93">PUNK</text>
+  <text x="${LOGO_X}" y="422" text-anchor="middle" font-family="Permanent Marker" font-size="118" fill="#f1eee8">CHESS</text>
+  <rect x="${LOGO_X - 95}" y="452" width="190" height="7" rx="3.5" fill="#ff2e93"/>
+  <text x="${LOGO_X}" y="${OG_H - 62}" text-anchor="middle" font-family="Oswald" font-weight="700" font-size="30" fill="#a3a0a8" letter-spacing="3">PUNKCHESS.COM</text>
 </svg>`;
 
 const frameRgba = render(frameSvg).pixels;
