@@ -28,6 +28,7 @@ import { ACCOUNT_ID, ACCOUNT_NAME } from './account-headers.ts';
 import type { SeatAccount } from '../src/online/room.ts';
 import { ratingCategory } from '../src/rating/categories.ts';
 import { DEFAULT_GLICKO, PROVISIONAL_RD } from '../src/rating/glicko2.ts';
+import { seekAlertDue, sendSeekAlert } from './seek-alert.ts';
 
 interface Attachment {
   readonly player: LobbyPlayer | null;
@@ -46,6 +47,14 @@ const BURST_MS = 10_000;
 export class Lobby extends DurableObject<Env> {
   // Recent message times per connection (kept in memory: a hibernated lobby starts afresh).
   private recent = new WeakMap<WebSocket, number[]>();
+  // When each player's last seek was sent to the owner on Telegram (in memory, as above).
+  private alerted = new Map<string, number>();
+
+  /** A new seek: the owner hears of it on Telegram (server/seek-alert.ts). */
+  private alertSeek(ws: WebSocket, seek: Seek) {
+    if (!seekAlertDue(this.alerted, seek.player.id, Date.now())) return;
+    this.ctx.waitUntil(sendSeekAlert(this.env, seek, this.attachment(ws).account?.id ?? null));
+  }
 
   /** Too many messages from one connection: the rest of the burst is dropped. */
   private flooding(ws: WebSocket): boolean {
@@ -264,6 +273,7 @@ export class Lobby extends DurableObject<Env> {
         const seek = makeSeek(crypto.randomUUID(), player, msg, false, Date.now());
         if (!seek) return this.send(ws, { t: 'error', code: 'bad-request' });
         this.setSeek(ws, seek);
+        this.alertSeek(ws, seek);
         return this.broadcast();
       }
       case 'quick': {
@@ -285,6 +295,7 @@ export class Lobby extends DurableObject<Env> {
         );
         if (!seek) return this.send(ws, { t: 'error', code: 'bad-request' });
         this.setSeek(ws, seek);
+        this.alertSeek(ws, seek);
         return this.broadcast();
       }
       case 'cancel':
