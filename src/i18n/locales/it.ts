@@ -725,6 +725,8 @@ const pack: LocalePack = {
     'lobby.findOpponent': 'Trova un avversario',
     'lobby.online': '{n} giocatori online',
     'lobby.reconnecting': 'Connessione persa, riconnetto…',
+    'lobby.connecting': 'Connessione…',
+    'lobby.connected': 'Connesso',
     'lobby.quickHint':
       'Scacchi standard. Se qualcuno aspetta con la stessa cadenza vieni abbinato subito; altrimenti aspetti il prossimo.',
     'lobby.searching': 'Cerco un avversario…',

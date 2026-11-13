@@ -11,6 +11,7 @@ import { PieceView } from './PieceView.tsx';
 import { Crown } from './Punk.tsx';
 import { LobbyCard } from './online/LobbyPage.tsx';
 import { useLobby } from './online/lobbyConnection.ts';
+import { useAccount } from './account.ts';
 import { VariantPlayDialog } from './VariantPlayDialog.tsx';
 import type { GameSettings, Mode } from './settings.ts';
 
@@ -179,6 +180,7 @@ export function HomePage({
     onVariantOpened?.();
   }, [openVariant, onVariantOpened]);
   const heroLobby = useHeroLobby();
+  const admin = useAccount().user?.role === 'admin';
   const lobbyCard = <LobbyCard lobby={lobby} onOpenGame={onOpenGame} defaultVariantId={listVariants()[0].id} />;
   return (
     <div className="home">
@@ -212,7 +214,8 @@ export function HomePage({
             </span>
             <Arrow />
           </button>
-          {stats && (
+          {/* Games and players right now: admins only, while the site is quiet. */}
+          {stats && admin && (
             <p className="live-stats">
               <span className="live-dot" aria-hidden="true" />
               {t('home.liveGames', { n: String(stats.games) })} · {t('home.livePlayers', { n: String(stats.players) })}

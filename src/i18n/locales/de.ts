@@ -725,6 +725,8 @@ const pack: LocalePack = {
     'lobby.findOpponent': 'Gegner suchen',
     'lobby.online': '{n} Spieler online',
     'lobby.reconnecting': 'Verbindung weg, verbinde neu…',
+    'lobby.connecting': 'Verbinde…',
+    'lobby.connected': 'Verbunden',
     'lobby.quickHint':
       'Standardschach. Wartet jemand mit derselben Bedenkzeit, wirst du sofort gepaart; sonst wartest du auf den Nächsten.',
     'lobby.searching': 'Suche einen Gegner…',

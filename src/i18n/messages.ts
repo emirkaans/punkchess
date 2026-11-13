@@ -746,6 +746,8 @@ export const tr = {
   'lobby.findOpponent': 'Rakip ara',
   'lobby.online': '{n} oyuncu çevrimiçi',
   'lobby.reconnecting': 'Bağlantı koptu, yeniden bağlanılıyor…',
+  'lobby.connecting': 'Bağlanıyor…',
+  'lobby.connected': 'Bağlı',
   'lobby.quickHint':
     'Standart satranç. Aynı süreyi bekleyen biri varsa hemen eşleşirsin; yoksa sıra sende, ilk gelen rakibin olur.',
   'lobby.searching': 'Rakip aranıyor…',
@@ -2417,6 +2419,8 @@ export const en: Record<MessageKey, string> = {
   'lobby.findOpponent': 'Find an opponent',
   'lobby.online': '{n} players online',
   'lobby.reconnecting': 'Connection lost, reconnecting…',
+  'lobby.connecting': 'Connecting…',
+  'lobby.connected': 'Connected',
   'lobby.quickHint':
     'Standard chess. If someone is waiting with the same time control you are paired at once; otherwise you wait for the next one.',
   'lobby.searching': 'Looking for an opponent…',

@@ -723,6 +723,8 @@ const pack: LocalePack = {
     'lobby.findOpponent': 'Achar adversário',
     'lobby.online': '{n} jogadores online',
     'lobby.reconnecting': 'Conexão perdida, reconectando…',
+    'lobby.connecting': 'Conectando…',
+    'lobby.connected': 'Conectado',
     'lobby.quickHint':
       'Xadrez padrão. Se alguém espera com o mesmo controle de tempo, vocês são pareados na hora; senão você espera o próximo.',
     'lobby.searching': 'Procurando adversário…',

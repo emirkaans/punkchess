@@ -5654,6 +5654,9 @@ button.primary:hover:not(:disabled) {
   font-size: 18px;
 }
 .lobby-title {
+  /* Takes the room left of the name and shrinks (its status line is cut short) rather than
+     pushing the name to a line of its own. */
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -5713,8 +5716,24 @@ button.primary:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  max-width: 100%;
   font-size: 13px;
   color: var(--muted);
+}
+/* One line, whatever it says: the card does not change size while it connects. */
+.lobby-online > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lobby-online::before {
+  flex: none;
+}
+/* Waiting for the lobby: the time controls keep their look (the line above says it is connecting). */
+.quick-tile:disabled {
+  opacity: 1;
+  cursor: progress;
 }
 .lobby-online::before {
   content: '';

@@ -109,8 +109,18 @@ export function LobbyCard({
             {BOLT}
             <h1>{withEnglishWords(t('online.title'))}</h1>
           </div>
-          <span className={`lobby-online${lobby.status === 'open' ? '' : ' off'}`}>
-            {lobby.status === 'open' ? t('lobby.online', { n: String(lobby.online) }) : t('lobby.reconnecting')}
+          {/* One short line, so the card keeps its size while it connects. The number of players
+              online is for admins only while the site is quiet. */}
+          <span className={`lobby-online${lobby.status === 'open' ? '' : ' off'}`} role="status">
+            <span>
+              {lobby.status === 'connecting'
+                ? t('lobby.connecting')
+                : lobby.status === 'closed'
+                  ? t('lobby.reconnecting')
+                  : account.user?.role === 'admin'
+                    ? t('lobby.online', { n: String(lobby.online) })
+                    : t('lobby.connected')}
+            </span>
           </span>
           <FollowStrip onOpenGame={onOpenGame} />
         </div>

@@ -726,6 +726,8 @@ const pack: LocalePack = {
     'lobby.findOpponent': 'Trouver un adversaire',
     'lobby.online': '{n} joueurs en ligne',
     'lobby.reconnecting': 'Connexion perdue, reconnexion…',
+    'lobby.connecting': 'Connexion…',
+    'lobby.connected': 'Connecté',
     'lobby.quickHint':
       "Échecs standard. Si quelqu'un attend avec la même cadence, vous êtes appariés tout de suite ; sinon tu attends le prochain.",
     'lobby.searching': "Recherche d'un adversaire…",

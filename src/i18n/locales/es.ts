@@ -723,6 +723,8 @@ const pack: LocalePack = {
     'lobby.findOpponent': 'Buscar rival',
     'lobby.online': '{n} jugadores online',
     'lobby.reconnecting': 'Conexión perdida, reconectando…',
+    'lobby.connecting': 'Conectando…',
+    'lobby.connected': 'Conectado',
     'lobby.quickHint':
       'Ajedrez estándar. Si alguien espera con el mismo ritmo, os emparejamos al instante; si no, esperas al siguiente.',
     'lobby.searching': 'Buscando rival…',
