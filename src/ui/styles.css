@@ -3539,14 +3539,26 @@ button.primary:hover:not(:disabled) {
   flex: none;
   min-height: 52px;
 }
+/* Whose move and the castling rights side by side. */
+.analysis-meta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.analysis-row.turn {
+  display: grid;
+  gap: 6px;
+}
 @media (min-width: 900px) {
   .analysis-side.editing {
     height: var(--board);
   }
+  /* As tall as the room beside the board; its content is scaled to fit it (AnalysisPage,
+     useFitHeight), so it never scrolls. */
   .analysis-edit-scroll {
     flex: 1 1 auto;
-    overflow-y: auto;
-    padding-right: 4px;
+    overflow: hidden;
   }
 }
 .analysis-page .viewer-moves {

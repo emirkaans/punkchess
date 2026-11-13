@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import { formatScore } from '../ai/analysis.ts';
 import {
@@ -85,6 +85,29 @@ export interface AnalysisSeed {
   readonly cursor: number;
 }
 
+/**
+ * Scales an element's content (CSS zoom) so that all of it fits the element's height, down to
+ * 60%; at its own size when it fits (or when the element is as tall as its content). Runs after
+ * every render and on resize.
+ */
+function useFitHeight<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const el = ref.current;
+      if (!el) return;
+      el.style.zoom = '1';
+      const room = el.clientHeight;
+      const need = el.scrollHeight;
+      el.style.zoom = need > room + 1 ? String(Math.max(0.6, Math.floor((room / need) * 100) / 100)) : '1';
+    };
+    fit();
+    addEventListener('resize', fit);
+    return () => removeEventListener('resize', fit);
+  });
+  return ref;
+}
+
 export function AnalysisPage({
   initialVariantId,
   seed = null,
@@ -93,6 +116,7 @@ export function AnalysisPage({
   seed?: AnalysisSeed | null;
 }) {
   const { t, vt } = useI18n();
+  const fitRef = useFitHeight<HTMLDivElement>();
   const [variantId, setVariantId] = useState(seed?.variantId ?? initialVariantId);
   const variant = getVariant(variantId);
   const texts = vt(variant);
@@ -339,8 +363,9 @@ export function AnalysisPage({
 
         {mode === 'edit' ? (
           <>
-            {/* The settings scroll when the screen is short; the button below stays in view. */}
-            <div className="analysis-edit-scroll">
+            {/* The settings fill the room beside the board; when the screen is short they are
+                scaled down to fit (useFitHeight), so nothing scrolls. The button stays below. */}
+            <div className="analysis-edit-scroll" ref={fitRef}>
               <label className="analysis-field">
                 <span>{t('analysisPage.variant')}</span>
                 <select value={variantId} onChange={(e) => changeVariant(e.target.value)}>
@@ -403,36 +428,38 @@ export function AnalysisPage({
               </div>
               <p className="muted analysis-hint">{t('analysisPage.hint')}</p>
 
-              <fieldset className="analysis-row">
-                <legend>{t('analysisPage.toMove')}</legend>
-                {(['w', 'b'] as Color[]).map((c) => (
-                  <label key={c} className={`chip${editPos.turn === c ? ' on' : ''}`}>
-                    <input
-                      type="radio"
-                      name="analysis-turn"
-                      checked={editPos.turn === c}
-                      onChange={() => setEditPos((p) => ({ ...p, turn: c }))}
-                    />
-                    {t(`color.${c}`)}
-                  </label>
-                ))}
-              </fieldset>
+              <div className="analysis-meta">
+                <fieldset className="analysis-row turn">
+                  <legend>{t('analysisPage.toMove')}</legend>
+                  {(['w', 'b'] as Color[]).map((c) => (
+                    <label key={c} className={`chip${editPos.turn === c ? ' on' : ''}`}>
+                      <input
+                        type="radio"
+                        name="analysis-turn"
+                        checked={editPos.turn === c}
+                        onChange={() => setEditPos((p) => ({ ...p, turn: c }))}
+                      />
+                      {t(`color.${c}`)}
+                    </label>
+                  ))}
+                </fieldset>
 
-              <fieldset className="analysis-row castling">
-                <legend>{t('analysisPage.castling')}</legend>
-                {(['wK', 'wQ', 'bK', 'bQ'] as CastleRight[]).map((right) => (
-                  <label key={right} className={`chip${editPos.castling[right] ? ' on' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={editPos.castling[right]}
-                      onChange={() =>
-                        setEditPos((p) => ({ ...p, castling: { ...p.castling, [right]: !p.castling[right] } }))
-                      }
-                    />
-                    {t(`color.${right[0] as Color}`)} {right[1] === 'K' ? 'O-O' : 'O-O-O'}
-                  </label>
-                ))}
-              </fieldset>
+                <fieldset className="analysis-row castling">
+                  <legend>{t('analysisPage.castling')}</legend>
+                  {(['wK', 'wQ', 'bK', 'bQ'] as CastleRight[]).map((right) => (
+                    <label key={right} className={`chip${editPos.castling[right] ? ' on' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={editPos.castling[right]}
+                        onChange={() =>
+                          setEditPos((p) => ({ ...p, castling: { ...p.castling, [right]: !p.castling[right] } }))
+                        }
+                      />
+                      {t(`color.${right[0] as Color}`)} {right[1] === 'K' ? 'O-O' : 'O-O-O'}
+                    </label>
+                  ))}
+                </fieldset>
+              </div>
 
               <div className="analysis-buttons">
                 <button onClick={() => loadPosition(parseFen(variant, variant.startPosition))}>
