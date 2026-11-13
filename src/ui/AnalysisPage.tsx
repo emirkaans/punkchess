@@ -96,10 +96,14 @@ function useFitHeight<T extends HTMLElement>() {
     const fit = () => {
       const el = ref.current;
       if (!el) return;
+      // A few rounds: scaled down, the content gets relatively wider (the palette's squares
+      // grow with it), so its height is measured again until it fits.
+      let zoom = 1;
       el.style.zoom = '1';
-      const room = el.clientHeight;
-      const need = el.scrollHeight;
-      el.style.zoom = need > room + 1 ? String(Math.max(0.6, Math.floor((room / need) * 100) / 100)) : '1';
+      for (let i = 0; i < 5 && el.scrollHeight > el.clientHeight + 1 && zoom > 0.6; i++) {
+        zoom = Math.max(0.6, Math.floor(((zoom * el.clientHeight) / el.scrollHeight) * 100) / 100);
+        el.style.zoom = String(zoom);
+      }
     };
     fit();
     addEventListener('resize', fit);
@@ -378,86 +382,108 @@ export function AnalysisPage({
               </label>
 
               {/* Two rows: the move tool and the white pieces, then the eraser and the black pieces. */}
-              <div
-                className="palette"
-                role="group"
-                aria-label={t('analysisPage.pieces')}
-                style={{ '--cols': pieceTypes.length + 1 } as CSSProperties}
-              >
-                {toolButton(
-                  'move',
-                  tool.kind === 'move',
-                  t('analysisPage.toolMove'),
-                  () => setTool({ kind: 'move' }),
-                  <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
-                  </svg>,
-                )}
-                {(['w', 'b'] as Color[]).flatMap((color) => [
-                  ...(color === 'b'
-                    ? [
-                        toolButton(
-                          'erase',
-                          tool.kind === 'erase',
-                          t('analysisPage.toolErase'),
-                          () => {
-                            setTool({ kind: 'erase' });
-                            setPickFrom(null);
-                          },
-                          <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M20 20H9L4 15a2 2 0 0 1 0-3l8-8a2 2 0 0 1 3 0l5 5a2 2 0 0 1 0 3l-8 8" />
-                            <path d="M8 9l7 7" />
-                          </svg>,
-                        ),
-                      ]
-                    : []),
-                  ...pieceTypes.map((type) => {
-                    const active = tool.kind === 'piece' && samePiece(tool.piece, { type, color });
-                    return toolButton(
-                      `${color}${type}`,
-                      active,
-                      `${t(`color.${color}`)} ${texts.pieceName(type)}`,
-                      () => {
-                        setTool({ kind: 'piece', piece: { type, color } });
-                        setPickFrom(null);
-                      },
-                      <PieceView variant={variant} piece={{ type, color }} />,
-                    );
-                  }),
-                ])}
+              <div className="editor-tools">
+                <div
+                  className="palette"
+                  role="group"
+                  aria-label={t('analysisPage.pieces')}
+                  style={{ '--cols': pieceTypes.length + 1 } as CSSProperties}
+                >
+                  {toolButton(
+                    'move',
+                    tool.kind === 'move',
+                    t('analysisPage.toolMove'),
+                    () => setTool({ kind: 'move' }),
+                    <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
+                    </svg>,
+                  )}
+                  {(['w', 'b'] as Color[]).flatMap((color) => [
+                    ...(color === 'b'
+                      ? [
+                          toolButton(
+                            'erase',
+                            tool.kind === 'erase',
+                            t('analysisPage.toolErase'),
+                            () => {
+                              setTool({ kind: 'erase' });
+                              setPickFrom(null);
+                            },
+                            <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M20 20H9L4 15a2 2 0 0 1 0-3l8-8a2 2 0 0 1 3 0l5 5a2 2 0 0 1 0 3l-8 8" />
+                              <path d="M8 9l7 7" />
+                            </svg>,
+                          ),
+                        ]
+                      : []),
+                    ...pieceTypes.map((type) => {
+                      const active = tool.kind === 'piece' && samePiece(tool.piece, { type, color });
+                      return toolButton(
+                        `${color}${type}`,
+                        active,
+                        `${t(`color.${color}`)} ${texts.pieceName(type)}`,
+                        () => {
+                          setTool({ kind: 'piece', piece: { type, color } });
+                          setPickFrom(null);
+                        },
+                        <PieceView variant={variant} piece={{ type, color }} />,
+                      );
+                    }),
+                  ])}
+                </div>
+                <p className="muted analysis-hint">{t('analysisPage.hint')}</p>
               </div>
-              <p className="muted analysis-hint">{t('analysisPage.hint')}</p>
 
-              <div className="analysis-meta">
-                <fieldset className="analysis-row turn">
+              {/* Two cards: whose move (the kings), and the castling rights as a table. */}
+              <div className="editor-cards">
+                <fieldset className="editor-card">
                   <legend>{t('analysisPage.toMove')}</legend>
-                  {(['w', 'b'] as Color[]).map((c) => (
-                    <label key={c} className={`chip${editPos.turn === c ? ' on' : ''}`}>
-                      <input
-                        type="radio"
-                        name="analysis-turn"
-                        checked={editPos.turn === c}
-                        onChange={() => setEditPos((p) => ({ ...p, turn: c }))}
-                      />
-                      {t(`color.${c}`)}
-                    </label>
-                  ))}
+                  <div className="editor-turn">
+                    {(['w', 'b'] as Color[]).map((c) => (
+                      <label key={c} className={editPos.turn === c ? 'on' : undefined}>
+                        <input
+                          type="radio"
+                          name="analysis-turn"
+                          checked={editPos.turn === c}
+                          onChange={() => setEditPos((p) => ({ ...p, turn: c }))}
+                        />
+                        <span className="editor-king" aria-hidden="true">
+                          <PieceView variant={variant} piece={{ type: 'k', color: c }} />
+                        </span>
+                        {t(`color.${c}`)}
+                      </label>
+                    ))}
+                  </div>
                 </fieldset>
 
-                <fieldset className="analysis-row castling">
+                <fieldset className="editor-card">
                   <legend>{t('analysisPage.castling')}</legend>
-                  {(['wK', 'wQ', 'bK', 'bQ'] as CastleRight[]).map((right) => (
-                    <label key={right} className={`chip${editPos.castling[right] ? ' on' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={editPos.castling[right]}
-                        onChange={() =>
-                          setEditPos((p) => ({ ...p, castling: { ...p.castling, [right]: !p.castling[right] } }))
-                        }
-                      />
-                      {t(`color.${right[0] as Color}`)} {right[1] === 'K' ? 'O-O' : 'O-O-O'}
-                    </label>
-                  ))}
+                  <div className="editor-castling">
+                    <span />
+                    <span className="editor-col">O-O</span>
+                    <span className="editor-col">O-O-O</span>
+                    {(['w', 'b'] as Color[]).map((c) => [
+                      <span key={c} className="editor-king" title={t(`color.${c}`)}>
+                        <PieceView variant={variant} piece={{ type: 'k', color: c }} />
+                      </span>,
+                      ...(['K', 'Q'] as const).map((side) => {
+                        const right = `${c}${side}` as CastleRight;
+                        return (
+                          <label key={right} className="editor-check">
+                            <input
+                              type="checkbox"
+                              checked={editPos.castling[right]}
+                              aria-label={`${t(`color.${c}`)} ${side === 'K' ? 'O-O' : 'O-O-O'}`}
+                              onChange={() =>
+                                setEditPos((p) => ({ ...p, castling: { ...p.castling, [right]: !p.castling[right] } }))
+                              }
+                            />
+                            <span aria-hidden="true" />
+                          </label>
+                        );
+                      }),
+                    ])}
+                  </div>
                 </fieldset>
               </div>
 

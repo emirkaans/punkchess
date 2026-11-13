@@ -3512,13 +3512,20 @@ button.primary:hover:not(:disabled) {
 .analysis-side.editing {
   gap: 10px;
 }
+/* The palette fills the panel's width; its hint sits right under it. */
 .analysis-side.editing .palette {
-  grid-template-columns: repeat(var(--cols, 7), minmax(0, 46px));
-  gap: 4px;
-  padding: 6px;
+  grid-template-columns: repeat(var(--cols, 7), minmax(0, 60px));
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px;
+}
+.editor-tools {
+  display: grid;
+  gap: 8px;
 }
 .analysis-side.editing .analysis-hint {
   margin: 0;
+  font-size: 13px;
 }
 .analysis-side.editing .analysis-row legend {
   margin-bottom: 4px;
@@ -3533,31 +3540,140 @@ button.primary:hover:not(:disabled) {
   min-height: 38px;
 }
 .analysis-side.editing .analysis-buttons button {
+  flex: 1 1 0;
   min-height: 38px;
+  font-size: 13px;
 }
 .analysis-side.editing .analysis-go {
   flex: none;
   min-height: 52px;
 }
-/* Whose move and the castling rights side by side. */
-.analysis-meta {
+/* Whose move and the castling rights: two cards side by side (src/ui/AnalysisPage.tsx). */
+.editor-cards {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 16px;
-  align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
-.analysis-row.turn {
+.editor-card {
+  min-width: 0;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+.editor-card legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 0;
+  font: 500 13px/1 var(--ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.editor-turn,
+.editor-castling {
+  clear: both;
+}
+.editor-turn {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
-@media (min-width: 900px) {
+.editor-turn label {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font: 400 14px/1 var(--display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.editor-turn label:hover {
+  border-color: var(--pink);
+}
+.editor-turn label.on {
+  border-color: var(--pink);
+  box-shadow: inset 0 0 0 1px var(--pink);
+  color: var(--pink);
+}
+.editor-turn input,
+.editor-check input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.editor-turn label:has(input:focus-visible),
+.editor-check input:focus-visible + span {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+/* A king as the colour's sign (the site's own piece set). */
+.editor-king {
+  --board: 240px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+}
+.editor-king .piece {
+  width: 100%;
+  height: 100%;
+}
+.editor-castling {
+  display: grid;
+  grid-template-columns: auto repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+  align-items: center;
+  justify-items: center;
+}
+.editor-col {
+  font: 400 13px/1 var(--display);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.editor-check {
+  position: relative;
+  display: grid;
+  cursor: pointer;
+}
+.editor-check span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #3a3a42;
+  border-radius: 4px;
+  background: var(--bg);
+}
+.editor-check:hover span {
+  border-color: var(--pink);
+}
+.editor-check input:checked + span {
+  border-color: var(--pink);
+  background: var(--pink);
+}
+.editor-check input:checked + span::after {
+  content: '✓';
+  color: var(--on-pink);
+  font: 700 15px/1 sans-serif;
+}
+/* Beside the board (wider than 1100px; below that the panel sits under it, as tall as it needs). */
+@media (min-width: 1101px) {
   .analysis-side.editing {
     height: var(--board);
   }
-  /* As tall as the room beside the board; its content is scaled to fit it (AnalysisPage,
-     useFitHeight), so it never scrolls. */
+  /* As tall as the board, its groups spread evenly from its top to the button at its foot;
+     on a short screen the content is scaled down to fit (AnalysisPage, useFitHeight). */
   .analysis-edit-scroll {
     flex: 1 1 auto;
+    justify-content: space-between;
     overflow: hidden;
   }
 }
