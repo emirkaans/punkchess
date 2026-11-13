@@ -3514,9 +3514,9 @@ button.primary:hover:not(:disabled) {
 }
 /* The palette fills the panel's width; its hint sits right under it. */
 .analysis-side.editing .palette {
-  grid-template-columns: repeat(var(--cols, 7), minmax(0, 60px));
-  justify-content: space-between;
-  gap: 6px;
+  grid-template-columns: repeat(var(--cols, 7), minmax(0, 52px));
+  justify-content: center;
+  gap: 4px;
   padding: 8px;
 }
 .editor-tools {
@@ -3540,9 +3540,11 @@ button.primary:hover:not(:disabled) {
   min-height: 38px;
 }
 .analysis-side.editing .analysis-buttons button {
-  flex: 1 1 0;
-  min-height: 38px;
-  font-size: 13px;
+  flex: 1 1 auto;
+  min-height: 46px;
+  padding: 6px 10px;
+  font-size: 14px;
+  white-space: nowrap;
 }
 .analysis-side.editing .analysis-go {
   flex: none;
@@ -3555,6 +3557,8 @@ button.primary:hover:not(:disabled) {
   gap: 12px;
 }
 .editor-card {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   margin: 0;
   padding: 12px 14px;
@@ -3575,27 +3579,35 @@ button.primary:hover:not(:disabled) {
 .editor-castling {
   clear: both;
 }
+/* The two turn buttons fill their card (as tall as the castling card beside it). */
 .editor-turn {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  gap: 8px;
 }
 .editor-turn label {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 4px;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 4px;
   border: 1px solid var(--border);
   background: var(--bg);
-  font: 400 14px/1 var(--display);
+  font: 400 17px/1 var(--display);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
 }
 .editor-turn label:hover {
   border-color: var(--pink);
+}
+.editor-turn .editor-king {
+  --board: 320px;
+  width: 42px;
+  height: 42px;
 }
 .editor-turn label.on {
   border-color: var(--pink);
@@ -3629,7 +3641,7 @@ button.primary:hover:not(:disabled) {
 .editor-castling {
   display: grid;
   grid-template-columns: auto repeat(2, minmax(0, 1fr));
-  gap: 6px 8px;
+  gap: 8px;
   align-items: center;
   justify-items: center;
 }
@@ -3646,8 +3658,8 @@ button.primary:hover:not(:disabled) {
 .editor-check span {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   border: 2px solid #3a3a42;
   border-radius: 4px;
   background: var(--bg);
@@ -3662,7 +3674,7 @@ button.primary:hover:not(:disabled) {
 .editor-check input:checked + span::after {
   content: '✓';
   color: var(--on-pink);
-  font: 700 15px/1 sans-serif;
+  font: 700 20px/1 sans-serif;
 }
 /* Beside the board (wider than 1100px; below that the panel sits under it, as tall as it needs). */
 @media (min-width: 1101px) {
