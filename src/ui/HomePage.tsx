@@ -79,7 +79,7 @@ function Arrow() {
  * does; the slogan in the corner shrinks (--slogan-fit) when it would run off the right edge.
  */
 /** A wide and tall enough screen: the "Play online" card sits in the hero, beside the text. */
-const HERO_LOBBY = '(min-width: 1180px) and (min-height: 700px)';
+const HERO_LOBBY = '(min-width: 1000px) and (min-height: 600px)';
 
 function useHeroLobby(): boolean {
   const [wide, setWide] = useState(() => typeof matchMedia === 'function' && matchMedia(HERO_LOBBY).matches);

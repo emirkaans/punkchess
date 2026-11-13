@@ -7242,7 +7242,7 @@ a:focus-visible {
   width: min(620px, calc(100% - 32px));
   margin: 32px auto 0;
 }
-/* A wide screen: the "Play online" card in the hero, right of the text (HomePage, HERO_LOBBY), see-
+/* A wide enough screen: the "Play online" card in the hero, right of the text (HomePage, HERO_LOBBY), see-
    through so the picture shows faintly behind it while the text stays clear. */
 .hero.with-lobby {
   gap: 40px;
