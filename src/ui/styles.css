@@ -3506,26 +3506,127 @@ button.primary:hover:not(:disabled) {
 .analysis-edit-scroll {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  min-height: 0;
+  gap: 14px;
 }
 .analysis-side.editing {
-  gap: 10px;
+  gap: 14px;
 }
-/* The palette fills the panel's width; its hint sits right under it. */
-.analysis-side.editing .palette {
-  grid-template-columns: repeat(var(--cols, 7), minmax(0, 52px));
-  justify-content: center;
-  gap: 4px;
-  padding: 8px;
+/* Top row: the variant picker beside the palette, which is as wide as its pieces. */
+.editor-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
 }
 .editor-tools {
-  display: grid;
-  gap: 8px;
+  flex: none;
+}
+.analysis-side.editing .palette {
+  width: max-content;
+  grid-template-columns: repeat(var(--cols, 7), 42px);
+  gap: 3px;
+  padding: 5px;
 }
 .analysis-side.editing .analysis-hint {
-  margin: 0;
-  font-size: 13px;
+  margin: -6px 0 0;
+  font-size: 12px;
+}
+/* The variant picker (src/ui/VariantPicker.tsx): a narrow button with the variant's emblem. */
+.vpick {
+  position: relative;
+  flex: 1 1 120px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vpick-label {
+  font: 500 13px/1 var(--ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.vpick-button,
+.vpick-button:hover:not(:disabled) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 2px solid var(--pink);
+  background: var(--panel);
+  color: var(--fg);
+  font: 400 19px/1 var(--display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+}
+.vpick-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vpick-emblem {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: var(--pink);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.vpick-chevron {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  transition: transform 0.15s;
+}
+.vpick.open .vpick-chevron {
+  transform: rotate(180deg);
+}
+.vpick-note {
+  font: 400 11px/1.35 'Space Mono', monospace;
+  color: var(--muted);
+}
+.vpick-list {
+  position: absolute;
+  z-index: 30;
+  top: 78px;
+  left: 0;
+  display: grid;
+  width: max(100%, 210px);
+  padding: 4px;
+  border: 2px solid var(--pink);
+  background: #141016;
+  box-shadow: 6px 6px 0 #000;
+}
+.vpick-list button,
+.vpick-list button:hover:not(:disabled) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: 400 18px/1 var(--display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+}
+.vpick-list button:hover:not(:disabled) {
+  background: #2a1020;
+}
+.vpick-list button.on {
+  color: var(--pink);
 }
 .analysis-side.editing .analysis-row legend {
   margin-bottom: 4px;
@@ -3539,12 +3640,73 @@ button.primary:hover:not(:disabled) {
 .analysis-side.editing .analysis-field select {
   min-height: 38px;
 }
-.analysis-side.editing .analysis-buttons button {
-  flex: 1 1 auto;
-  min-height: 46px;
-  padding: 6px 10px;
-  font-size: 14px;
-  white-space: nowrap;
+/* Start / clear / flip: filled lime, pink and cream with a black shadow, stacked beside the
+   cards; under the pointer they only lift (the text keeps its colour). */
+.editor-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+.editor-actions {
+  flex: 1 1 130px;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+/* A phone: the buttons go under the cards, side by side. */
+@media (max-width: 520px) {
+  .editor-actions {
+    flex-basis: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .editor-actions button,
+  .editor-actions button:hover:not(:disabled) {
+    justify-content: center;
+    padding: 6px 4px;
+    font-size: 15px;
+  }
+}
+.editor-actions button,
+.editor-actions button:hover:not(:disabled) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 6px 12px;
+  border: 2px solid #0a0a0b;
+  color: #0a0a0b;
+  font: 400 17px/1 var(--display);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  box-shadow: 3px 3px 0 #000;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.editor-actions .start {
+  background: var(--lime);
+}
+.editor-actions .clear {
+  background: var(--pink);
+}
+.editor-actions .flip {
+  background: #f1eee8;
+}
+.editor-actions button:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 #000;
+}
+.editor-actions svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .analysis-side.editing .analysis-go {
   flex: none;
@@ -3552,16 +3714,16 @@ button.primary:hover:not(:disabled) {
 }
 /* Whose move and the castling rights: two cards side by side (src/ui/AnalysisPage.tsx). */
 .editor-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  flex: none;
+  display: flex;
+  gap: 10px;
 }
 .editor-card {
   display: flex;
   flex-direction: column;
   min-width: 0;
   margin: 0;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
   background: var(--panel);
 }
@@ -3583,7 +3745,7 @@ button.primary:hover:not(:disabled) {
 .editor-turn {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, 64px);
   gap: 8px;
 }
 .editor-turn label {
@@ -3593,10 +3755,10 @@ button.primary:hover:not(:disabled) {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 4px;
+  padding: 10px 2px;
   border: 1px solid var(--border);
   background: var(--bg);
-  font: 400 17px/1 var(--display);
+  font: 400 15px/1 var(--display);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
@@ -3605,9 +3767,9 @@ button.primary:hover:not(:disabled) {
   border-color: var(--pink);
 }
 .editor-turn .editor-king {
-  --board: 320px;
-  width: 42px;
-  height: 42px;
+  --board: 270px;
+  width: 34px;
+  height: 34px;
 }
 .editor-turn label.on {
   border-color: var(--pink);
@@ -3640,8 +3802,8 @@ button.primary:hover:not(:disabled) {
 }
 .editor-castling {
   display: grid;
-  grid-template-columns: auto repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: auto 40px 40px;
+  gap: 6px;
   align-items: center;
   justify-items: center;
 }
@@ -3658,8 +3820,8 @@ button.primary:hover:not(:disabled) {
 .editor-check span {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border: 2px solid #3a3a42;
   border-radius: 4px;
   background: var(--bg);
@@ -3676,19 +3838,7 @@ button.primary:hover:not(:disabled) {
   color: var(--on-pink);
   font: 700 20px/1 sans-serif;
 }
-/* Beside the board (wider than 1100px; below that the panel sits under it, as tall as it needs). */
-@media (min-width: 1101px) {
-  .analysis-side.editing {
-    height: var(--board);
-  }
-  /* As tall as the board, its groups spread evenly from its top to the button at its foot;
-     on a short screen the content is scaled down to fit (AnalysisPage, useFitHeight). */
-  .analysis-edit-scroll {
-    flex: 1 1 auto;
-    justify-content: space-between;
-    overflow: hidden;
-  }
-}
+
 .analysis-page .viewer-moves {
   flex: none;
   height: clamp(160px, calc(var(--board) - 470px), 520px);

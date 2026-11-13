@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import { formatScore } from '../ai/analysis.ts';
 import {
@@ -6,7 +6,6 @@ import {
   emptyBoard,
   getVariant,
   isInCheck,
-  listVariants,
   makeSquare,
   opposite,
   parseFen,
@@ -26,6 +25,7 @@ import { EngineLine } from './analysis/EngineLine.tsx';
 import { addMove, statesTo, treeOf } from './analysis/tree.ts';
 import type { MoveTree } from './analysis/tree.ts';
 import { PieceView } from './PieceView.tsx';
+import { VariantPicker } from './VariantPicker.tsx';
 import { directMove, loadPrefs } from './prefs.ts';
 import { PromotionDialog } from './PromotionDialog.tsx';
 import { ImportDialog, SharePanel } from './ShareTools.tsx';
@@ -85,33 +85,6 @@ export interface AnalysisSeed {
   readonly cursor: number;
 }
 
-/**
- * Scales an element's content (CSS zoom) so that all of it fits the element's height, down to
- * 60%; at its own size when it fits (or when the element is as tall as its content). Runs after
- * every render and on resize.
- */
-function useFitHeight<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
-  useLayoutEffect(() => {
-    const fit = () => {
-      const el = ref.current;
-      if (!el) return;
-      // A few rounds: scaled down, the content gets relatively wider (the palette's squares
-      // grow with it), so its height is measured again until it fits.
-      let zoom = 1;
-      el.style.zoom = '1';
-      for (let i = 0; i < 5 && el.scrollHeight > el.clientHeight + 1 && zoom > 0.6; i++) {
-        zoom = Math.max(0.6, Math.floor(((zoom * el.clientHeight) / el.scrollHeight) * 100) / 100);
-        el.style.zoom = String(zoom);
-      }
-    };
-    fit();
-    addEventListener('resize', fit);
-    return () => removeEventListener('resize', fit);
-  });
-  return ref;
-}
-
 export function AnalysisPage({
   initialVariantId,
   seed = null,
@@ -120,7 +93,6 @@ export function AnalysisPage({
   seed?: AnalysisSeed | null;
 }) {
   const { t, vt } = useI18n();
-  const fitRef = useFitHeight<HTMLDivElement>();
   const [variantId, setVariantId] = useState(seed?.variantId ?? initialVariantId);
   const variant = getVariant(variantId);
   const texts = vt(variant);
@@ -367,142 +339,164 @@ export function AnalysisPage({
 
         {mode === 'edit' ? (
           <>
-            {/* The settings fill the room beside the board; when the screen is short they are
-                scaled down to fit (useFitHeight), so nothing scrolls. The button stays below. */}
-            <div className="analysis-edit-scroll" ref={fitRef}>
-              <label className="analysis-field">
-                <span>{t('analysisPage.variant')}</span>
-                <select value={variantId} onChange={(e) => changeVariant(e.target.value)}>
-                  {listVariants().map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {vt(v).name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <div className="analysis-edit-scroll">
+              {/* The variant beside the palette; the palette is as wide as its pieces. */}
+              <div className="editor-top">
+                <VariantPicker value={variantId} onChange={changeVariant} />
 
-              {/* Two rows: the move tool and the white pieces, then the eraser and the black pieces. */}
-              <div className="editor-tools">
-                <div
-                  className="palette"
-                  role="group"
-                  aria-label={t('analysisPage.pieces')}
-                  style={{ '--cols': pieceTypes.length + 1 } as CSSProperties}
-                >
-                  {toolButton(
-                    'move',
-                    tool.kind === 'move',
-                    t('analysisPage.toolMove'),
-                    () => setTool({ kind: 'move' }),
-                    <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
-                    </svg>,
-                  )}
-                  {(['w', 'b'] as Color[]).flatMap((color) => [
-                    ...(color === 'b'
-                      ? [
-                          toolButton(
-                            'erase',
-                            tool.kind === 'erase',
-                            t('analysisPage.toolErase'),
-                            () => {
-                              setTool({ kind: 'erase' });
-                              setPickFrom(null);
-                            },
-                            <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M20 20H9L4 15a2 2 0 0 1 0-3l8-8a2 2 0 0 1 3 0l5 5a2 2 0 0 1 0 3l-8 8" />
-                              <path d="M8 9l7 7" />
-                            </svg>,
-                          ),
-                        ]
-                      : []),
-                    ...pieceTypes.map((type) => {
-                      const active = tool.kind === 'piece' && samePiece(tool.piece, { type, color });
-                      return toolButton(
-                        `${color}${type}`,
-                        active,
-                        `${t(`color.${color}`)} ${texts.pieceName(type)}`,
-                        () => {
-                          setTool({ kind: 'piece', piece: { type, color } });
-                          setPickFrom(null);
-                        },
-                        <PieceView variant={variant} piece={{ type, color }} />,
-                      );
-                    }),
-                  ])}
-                </div>
-                <p className="muted analysis-hint">{t('analysisPage.hint')}</p>
-              </div>
-
-              {/* Two cards: whose move (the kings), and the castling rights as a table. */}
-              <div className="editor-cards">
-                <fieldset className="editor-card">
-                  <legend>{t('analysisPage.toMove')}</legend>
-                  <div className="editor-turn">
-                    {(['w', 'b'] as Color[]).map((c) => (
-                      <label key={c} className={editPos.turn === c ? 'on' : undefined}>
-                        <input
-                          type="radio"
-                          name="analysis-turn"
-                          checked={editPos.turn === c}
-                          onChange={() => setEditPos((p) => ({ ...p, turn: c }))}
-                        />
-                        <span className="editor-king" aria-hidden="true">
-                          <PieceView variant={variant} piece={{ type: 'k', color: c }} />
-                        </span>
-                        {t(`color.${c}`)}
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-
-                <fieldset className="editor-card">
-                  <legend>{t('analysisPage.castling')}</legend>
-                  <div className="editor-castling">
-                    <span />
-                    <span className="editor-col">O-O</span>
-                    <span className="editor-col">O-O-O</span>
-                    {(['w', 'b'] as Color[]).map((c) => [
-                      <span key={c} className="editor-king" title={t(`color.${c}`)}>
-                        <PieceView variant={variant} piece={{ type: 'k', color: c }} />
-                      </span>,
-                      ...(['K', 'Q'] as const).map((side) => {
-                        const right = `${c}${side}` as CastleRight;
-                        return (
-                          <label key={right} className="editor-check">
-                            <input
-                              type="checkbox"
-                              checked={editPos.castling[right]}
-                              aria-label={`${t(`color.${c}`)} ${side === 'K' ? 'O-O' : 'O-O-O'}`}
-                              onChange={() =>
-                                setEditPos((p) => ({ ...p, castling: { ...p.castling, [right]: !p.castling[right] } }))
-                              }
-                            />
-                            <span aria-hidden="true" />
-                          </label>
+                {/* Two rows: the move tool and the white pieces, then the eraser and the black pieces. */}
+                <div className="editor-tools">
+                  <div
+                    className="palette"
+                    role="group"
+                    aria-label={t('analysisPage.pieces')}
+                    style={{ '--cols': pieceTypes.length + 1 } as CSSProperties}
+                  >
+                    {toolButton(
+                      'move',
+                      tool.kind === 'move',
+                      t('analysisPage.toolMove'),
+                      () => setTool({ kind: 'move' }),
+                      <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
+                      </svg>,
+                    )}
+                    {(['w', 'b'] as Color[]).flatMap((color) => [
+                      ...(color === 'b'
+                        ? [
+                            toolButton(
+                              'erase',
+                              tool.kind === 'erase',
+                              t('analysisPage.toolErase'),
+                              () => {
+                                setTool({ kind: 'erase' });
+                                setPickFrom(null);
+                              },
+                              <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20 20H9L4 15a2 2 0 0 1 0-3l8-8a2 2 0 0 1 3 0l5 5a2 2 0 0 1 0 3l-8 8" />
+                                <path d="M8 9l7 7" />
+                              </svg>,
+                            ),
+                          ]
+                        : []),
+                      ...pieceTypes.map((type) => {
+                        const active = tool.kind === 'piece' && samePiece(tool.piece, { type, color });
+                        return toolButton(
+                          `${color}${type}`,
+                          active,
+                          `${t(`color.${color}`)} ${texts.pieceName(type)}`,
+                          () => {
+                            setTool({ kind: 'piece', piece: { type, color } });
+                            setPickFrom(null);
+                          },
+                          <PieceView variant={variant} piece={{ type, color }} />,
                         );
                       }),
                     ])}
                   </div>
-                </fieldset>
+                </div>
               </div>
+              <p className="muted analysis-hint">{t('analysisPage.hint')}</p>
 
-              <div className="analysis-buttons">
-                <button onClick={() => loadPosition(parseFen(variant, variant.startPosition))}>
-                  {t('analysisPage.start')}
-                </button>
-                <button
-                  onClick={() =>
-                    loadPosition({
-                      ...editPos,
-                      board: emptyBoard(),
-                      castling: { wK: false, wQ: false, bK: false, bQ: false },
-                    })
-                  }
-                >
-                  {t('analysisPage.clear')}
-                </button>
-                <button onClick={() => setFlipped((f) => !f)}>{t('controls.flip')}</button>
+              {/* Two cards (whose move: the kings; the castling rights as a table) and the
+                  start / clear / flip buttons stacked beside them. */}
+              <div className="editor-row">
+                <div className="editor-cards">
+                  <fieldset className="editor-card">
+                    <legend>{t('analysisPage.toMove')}</legend>
+                    <div className="editor-turn">
+                      {(['w', 'b'] as Color[]).map((c) => (
+                        <label key={c} className={editPos.turn === c ? 'on' : undefined}>
+                          <input
+                            type="radio"
+                            name="analysis-turn"
+                            checked={editPos.turn === c}
+                            onChange={() => setEditPos((p) => ({ ...p, turn: c }))}
+                          />
+                          <span className="editor-king" aria-hidden="true">
+                            <PieceView variant={variant} piece={{ type: 'k', color: c }} />
+                          </span>
+                          {t(`color.${c}`)}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <fieldset className="editor-card">
+                    <legend>{t('analysisPage.castling')}</legend>
+                    <div className="editor-castling">
+                      <span />
+                      <span className="editor-col">O-O</span>
+                      <span className="editor-col">O-O-O</span>
+                      {(['w', 'b'] as Color[]).map((c) => [
+                        <span key={c} className="editor-king" title={t(`color.${c}`)}>
+                          <PieceView variant={variant} piece={{ type: 'k', color: c }} />
+                        </span>,
+                        ...(['K', 'Q'] as const).map((side) => {
+                          const right = `${c}${side}` as CastleRight;
+                          return (
+                            <label key={right} className="editor-check">
+                              <input
+                                type="checkbox"
+                                checked={editPos.castling[right]}
+                                aria-label={`${t(`color.${c}`)} ${side === 'K' ? 'O-O' : 'O-O-O'}`}
+                                onChange={() =>
+                                  setEditPos((p) => ({
+                                    ...p,
+                                    castling: { ...p.castling, [right]: !p.castling[right] },
+                                  }))
+                                }
+                              />
+                              <span aria-hidden="true" />
+                            </label>
+                          );
+                        }),
+                      ])}
+                    </div>
+                  </fieldset>
+                </div>
+
+                <div className="editor-actions">
+                  <button
+                    className="start"
+                    title={t('analysisPage.start')}
+                    aria-label={t('analysisPage.start')}
+                    onClick={() => loadPosition(parseFen(variant, variant.startPosition))}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" />
+                    </svg>
+                    {t('analysisPage.startShort')}
+                  </button>
+                  <button
+                    className="clear"
+                    title={t('analysisPage.clear')}
+                    aria-label={t('analysisPage.clear')}
+                    onClick={() =>
+                      loadPosition({
+                        ...editPos,
+                        board: emptyBoard(),
+                        castling: { wK: false, wQ: false, bK: false, bQ: false },
+                      })
+                    }
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
+                    </svg>
+                    {t('analysisPage.clearShort')}
+                  </button>
+                  <button
+                    className="flip"
+                    title={t('controls.flip')}
+                    aria-label={t('controls.flip')}
+                    onClick={() => setFlipped((f) => !f)}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M7 4v16M7 4L3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4" />
+                    </svg>
+                    {t('analysisPage.flipShort')}
+                  </button>
+                </div>
               </div>
 
               <label className="analysis-field">
