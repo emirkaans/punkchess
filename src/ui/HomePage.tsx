@@ -78,6 +78,22 @@ function Arrow() {
  * headline that wraps to more lines), the headline shrinks (--hero-fit, down to 55%) until it
  * does; the slogan in the corner shrinks (--slogan-fit) when it would run off the right edge.
  */
+/** A wide and tall enough screen: the "Play online" card sits in the hero, beside the text. */
+const HERO_LOBBY = '(min-width: 1180px) and (min-height: 700px)';
+
+function useHeroLobby(): boolean {
+  const [wide, setWide] = useState(() => typeof matchMedia === 'function' && matchMedia(HERO_LOBBY).matches);
+  useEffect(() => {
+    if (typeof matchMedia !== 'function') return;
+    const m = matchMedia(HERO_LOBBY);
+    const on = () => setWide(m.matches);
+    on();
+    m.addEventListener('change', on);
+    return () => m.removeEventListener('change', on);
+  }, []);
+  return wide;
+}
+
 function useHeroFit(locale: string) {
   const ref = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
@@ -92,7 +108,8 @@ function useHeroFit(locale: string) {
       const fits = () => {
         const cs = getComputedStyle(hero);
         const need = (copy?.offsetHeight ?? 0) + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-        return need <= screen + 1 && hero.offsetHeight <= screen + 1;
+        // The "Play online" card may make the hero taller (its lobby form): only the text counts then.
+        return need <= screen + 1 && (hero.classList.contains('with-lobby') || hero.offsetHeight <= screen + 1);
       };
       if (!fits()) {
         let lo = 0.55;
@@ -110,6 +127,9 @@ function useHeroFit(locale: string) {
         const room = hero.getBoundingClientRect().right - 8;
         const r = slogan.getBoundingClientRect();
         if (r.right > room) hero.style.setProperty('--slogan-fit', String(Math.max(0.5, (room - r.left) / r.width)));
+        // Under the "Play online" card (a wide but short screen): the slogan steps aside.
+        const card = hero.querySelector<HTMLElement>('.hero-lobby')?.getBoundingClientRect();
+        slogan.style.visibility = card && slogan.getBoundingClientRect().top < card.bottom + 8 ? 'hidden' : '';
       }
     };
     fit();
@@ -120,8 +140,12 @@ function useHeroFit(locale: string) {
     };
     window.addEventListener('resize', later);
     document.fonts?.ready.then(later, () => undefined);
+    // The card in the hero changes height (its tabs, the connection line): the slogan is checked again.
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(later) : null;
+    ro?.observe(hero);
     return () => {
       window.removeEventListener('resize', later);
+      ro?.disconnect();
       cancelAnimationFrame(frame);
     };
   }, [locale]);
@@ -154,9 +178,11 @@ export function HomePage({
     if (v) setPicked(v);
     onVariantOpened?.();
   }, [openVariant, onVariantOpened]);
+  const heroLobby = useHeroLobby();
+  const lobbyCard = <LobbyCard lobby={lobby} onOpenGame={onOpenGame} defaultVariantId={listVariants()[0].id} />;
   return (
     <div className="home">
-      <section className="hero" ref={heroRef}>
+      <section className={`hero${heroLobby ? ' with-lobby' : ''}`} ref={heroRef}>
         <img className="hero-image" src={`${import.meta.env.BASE_URL}hero.webp`} alt={t('home.heroAlt')} />
         <div className="hero-copy">
           <h1 className="sr-only">punkchess</h1>
@@ -206,6 +232,11 @@ export function HomePage({
             </p>
           )}
         </div>
+        {heroLobby && (
+          <section className="hero-lobby" aria-label={t('lobby.tab.seeks')}>
+            {lobbyCard}
+          </section>
+        )}
         <p className="slogan" aria-hidden="true">
           {t('home.slogan1')}
           <br />
@@ -216,9 +247,11 @@ export function HomePage({
         </p>
       </section>
 
-      <section className="home-lobby" aria-label={t('lobby.tab.seeks')}>
-        <LobbyCard lobby={lobby} onOpenGame={onOpenGame} defaultVariantId={listVariants()[0].id} />
-      </section>
+      {!heroLobby && (
+        <section className="home-lobby" aria-label={t('lobby.tab.seeks')}>
+          {lobbyCard}
+        </section>
+      )}
 
       <section className="home-cards" id="variants" aria-label={t('home.variants')}>
         <div className="variant-grid">
