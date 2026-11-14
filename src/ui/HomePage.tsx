@@ -295,7 +295,8 @@ export function HomePage({
           <button className="opponent" onClick={onOnline}>
             <b>1</b>
             <span>
-              {withEnglishWords(t('online.title'))}
+              {/* One piece, so "online" (marked as English) stays on the line of "Play". */}
+              <span>{withEnglishWords(t('online.title'))}</span>
               <small>{t('home.onlineSub')}</small>
             </span>
           </button>

@@ -1153,7 +1153,8 @@ button.primary:hover:not(:disabled) {
   font: 400 26px/1 var(--display);
   color: var(--lime);
 }
-.opponent span {
+/* The label and its note (only the button's own span: "online" inside the label is a span too). */
+.opponent > span {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -14756,6 +14757,14 @@ a:focus-visible {
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--muted);
+}
+/* Signed out: the title, the line and the button in the middle of the card. */
+.quests-neon.guest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 .quests-neon.guest .qn-time {
   text-transform: none;
