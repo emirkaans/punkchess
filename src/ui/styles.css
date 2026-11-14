@@ -3082,6 +3082,10 @@ button.primary:hover:not(:disabled) {
   flex-direction: column;
   gap: 12px;
 }
+/* Text only (no example boards, as Anarşi): a narrower card. */
+.modal.rule-card.compact {
+  width: min(520px, 100%);
+}
 .rule-card h2 {
   margin: 0;
 }

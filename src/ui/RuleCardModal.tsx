@@ -42,7 +42,7 @@ export function RuleCardModal({ variant, onClose }: Props) {
   return (
     <div className="modal-backdrop screen" onClick={onClose}>
       <div
-        className="modal rule-card"
+        className={`modal rule-card${examples.length ? '' : ' compact'}`}
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
